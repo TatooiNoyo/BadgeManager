@@ -331,14 +331,14 @@ fun BadgeInputForm(
     Column {
         OutlinedTextField(
             value = title, onValueChange = onTitleChange,
-            label = { Text("标题 (如: 喝水)") },
+            label = { Text("标题 (如: 小不点)") },
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
             value = remark, onValueChange = onRemarkChange,
-            label = { Text("备注 (如: 8杯/天)") },
+            label = { Text("备注 (如: 15分钟冷却，持续20分钟)") },
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
