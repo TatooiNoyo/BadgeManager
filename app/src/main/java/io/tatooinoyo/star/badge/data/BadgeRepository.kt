@@ -5,11 +5,21 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.util.UUID
 
+// 定义我们预设的渠道
+enum class BadgeChannel(val label: String) {
+    WEB("网页"),
+    APP("应用"),
+    MiniProgram("小程序"),
+    OTHER("其他")
+}
+
 // 1. 徽章数据模型
 data class Badge(
     val id: String = UUID.randomUUID().toString(),
     val title: String,
-    val remark: String
+    val remark: String,
+    val link: String = "",
+    val channel: BadgeChannel = BadgeChannel.OTHER
 )
 
 // 2. 徽章仓库 (单例，全局共享)
@@ -26,10 +36,28 @@ object BadgeRepository {
     val badges: StateFlow<List<Badge>> = _badges.asStateFlow()
 
     // 添加徽章
-    fun addBadge(title: String, remark: String) {
-        val newBadge = Badge(title = title, remark = remark)
+    // 修改方法签名，增加 link 和 channel
+    fun addBadge(title: String, remark: String, link: String, channel: BadgeChannel) {
+        val newBadge = Badge(
+            title = title,
+            remark = remark,
+            link = link,
+            channel = channel
+        )
         _badges.value = _badges.value + newBadge
     }
+
+    // 在 BadgeRepository.kt 中添加
+    fun updateBadge(id: String, title: String, remark: String, link: String, channel: BadgeChannel) {
+        _badges.value = _badges.value.map {
+            if (it.id == id) {
+                it.copy(title = title, remark = remark, link = link, channel = channel)
+            } else {
+                it
+            }
+        }
+    }
+
 
     // 删除徽章
     fun removeBadge(id: String) {
