@@ -48,26 +48,48 @@ import io.tatooinoyo.star.badge.data.BadgeChannel
 import io.tatooinoyo.star.badge.data.BadgeRepository
 
 @Composable
-fun BadgeManagerScreen() {
+fun BadgeManagerScreen(
+    nfcPayload: String? = null,
+    onNfcDataConsumed: () -> Unit = {}
+) {
     // 页面状态：当前正在编辑的徽章。如果是 null，则显示列表；否则显示详情页
     var editingBadge by remember { mutableStateOf<Badge?>(null) }
+
+    // 监听 NFC 数据变化
+    // 当 nfcPayload 变成非空字符串时，我们判断当前是在哪里
+    androidx.compose.runtime.LaunchedEffect(nfcPayload) {
+        if (!nfcPayload.isNullOrEmpty()) {
+            // 如果还没打开详情页，我们无法填充到详情页，
+            // 这里假设默认行为：如果有 NFC 数据进来，且当前处于列表页，
+            // 我们可能只更新列表页的 "添加区域" 的 linkInput 状态。
+            // 具体逻辑在下面传递给 BadgeListContent 或 BadgeDetailContent 处理
+        }
+    }
 
     // 根据状态切换视图
     if (editingBadge == null) {
         BadgeListContent(
-            onItemClick = { badge -> editingBadge = badge }
+            onItemClick = { badge -> editingBadge = badge },
+            nfcPayload = nfcPayload, // 传下去
+            onNfcDataConsumed = onNfcDataConsumed
         )
     } else {
         BadgeDetailContent(
             badge = editingBadge!!,
-            onExit = { editingBadge = null }
+            onExit = { editingBadge = null },
+            nfcPayload = nfcPayload, // 传下去
+            onNfcDataConsumed = onNfcDataConsumed
         )
     }
 }
 
 // === 视图 1: 列表与添加页面 (主页) ===
 @Composable
-fun BadgeListContent(onItemClick: (Badge) -> Unit) {
+fun BadgeListContent(
+    onItemClick: (Badge) -> Unit,
+    nfcPayload: String?,
+    onNfcDataConsumed: () -> Unit
+) {
     // 监听数据
     val badgeList by BadgeRepository.badges.collectAsState()
 
@@ -76,6 +98,15 @@ fun BadgeListContent(onItemClick: (Badge) -> Unit) {
     var remarkInput by remember { mutableStateOf("") }
     var linkInput by remember { mutableStateOf("") }
     var selectedChannel by remember { mutableStateOf(BadgeChannel.HUAWEI) }
+
+
+    // 监听 NFC 数据并填充
+    androidx.compose.runtime.LaunchedEffect(nfcPayload) {
+        if (!nfcPayload.isNullOrEmpty()) {
+            linkInput = nfcPayload // 自动填充到 Link 框
+            onNfcDataConsumed()    // 通知上层清空数据，防止重组时再次覆盖用户的手动修改
+        }
+    }
 
     Column(modifier = Modifier.padding(16.dp)) {
         Text("徽章管理", style = MaterialTheme.typography.headlineMedium)
@@ -170,12 +201,23 @@ fun BadgeListContent(onItemClick: (Badge) -> Unit) {
 
 // === 视图 2: 详情编辑页面 ===
 @Composable
-fun BadgeDetailContent(badge: Badge, onExit: () -> Unit) {
+fun BadgeDetailContent(badge: Badge,
+                       onExit: () -> Unit,
+                       nfcPayload: String?,
+                       onNfcDataConsumed: () -> Unit) {
     // 编辑状态，初始化为传入的徽章数据
     var title by remember { mutableStateOf(badge.title) }
     var remark by remember { mutableStateOf(badge.remark) }
     var link by remember { mutableStateOf(badge.link) }
     var channel by remember { mutableStateOf(badge.channel) }
+
+    // 如果在编辑模式下触碰 NFC，更新当前编辑的链接
+    androidx.compose.runtime.LaunchedEffect(nfcPayload) {
+        if (!nfcPayload.isNullOrEmpty()) {
+            link = nfcPayload
+            onNfcDataConsumed()
+        }
+    }
 
     // 弹窗控制状态
     var showDeleteConfirm by remember { mutableStateOf(false) }
