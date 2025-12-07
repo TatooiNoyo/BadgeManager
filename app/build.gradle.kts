@@ -55,7 +55,6 @@ dependencies {
     implementation(libs.generativeai)
     implementation(libs.androidx.drawerlayout)
     implementation(libs.material)
-    implementation(libs.androidx.cardview)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
