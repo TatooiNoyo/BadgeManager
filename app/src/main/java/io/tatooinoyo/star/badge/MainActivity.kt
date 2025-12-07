@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import io.tatooinoyo.star.badge.data.BadgeRepository
 import io.tatooinoyo.star.badge.service.FloatingButtonService
 import io.tatooinoyo.star.badge.ui.screen.BadgeManagerScreen
 
@@ -47,6 +48,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // 初始化数据库
+        BadgeRepository.initialize(applicationContext)
         // 初始化 NFC Adapter
         nfcAdapter = NfcAdapter.getDefaultAdapter(this)
 

@@ -3,9 +3,16 @@ package io.tatooinoyo.star.badge.data
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import androidx.room.TypeConverter
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import java.util.UUID
 
 // 定义预设的渠道
@@ -18,8 +25,9 @@ enum class BadgeChannel(val label: String, val packageName: String, val classNam
 }
 
 // 1. 徽章数据模型
+@Entity(tableName = "badges")
 data class Badge(
-    val id: String = UUID.randomUUID().toString(),
+    @PrimaryKey val id: String = UUID.randomUUID().toString(),
     val title: String,
     val remark: String,
     val link: String = "",
@@ -63,16 +71,27 @@ data class Badge(
 
 // 2. 徽章仓库 (单例，全局共享)
 object BadgeRepository {
-    // 初始模拟数据
-    private val _badges = MutableStateFlow<List<Badge>>(
-        listOf(
-            Badge(title = "早起打卡", remark = "连续坚持 5 天"),
-            Badge(title = "背单词", remark = "雅思核心词汇 List 1")
-        )
-    )
+    private var database: AppDatabase? = null
+    private var badgeDao: BadgeDao? = null
 
-    // 公开的只读流，供 Service 和 Activity 监听
+    // 内存缓存流，UI 监听这个
+    private val _badges = MutableStateFlow<List<Badge>>(emptyList())
     val badges: StateFlow<List<Badge>> = _badges.asStateFlow()
+
+    // 【必须】在 Application 或 MainActivity onCreate 中尽早调用
+    fun initialize(context: Context) {
+        if (database == null) {
+            database = AppDatabase.getDatabase(context)
+            badgeDao = database?.badgeDao()
+
+            // 启动协程监听数据库变化，并更新到 StateFlow
+            CoroutineScope(Dispatchers.IO).launch {
+                badgeDao?.getAllBadges()?.collectLatest { dbList ->
+                    _badges.value = dbList
+                }
+            }
+        }
+    }
 
     // 添加徽章
     // 修改方法签名，增加 link 和 channel
@@ -83,7 +102,10 @@ object BadgeRepository {
             link = link,
             channel = channel
         )
-        _badges.value = _badges.value + newBadge
+        CoroutineScope(Dispatchers.IO).launch {
+            val newBadge = Badge(title = title, remark = remark, link = link, channel = channel)
+            badgeDao?.insertBadge(newBadge)
+        }
     }
 
     // 在 BadgeRepository.kt 中添加
@@ -94,25 +116,35 @@ object BadgeRepository {
         link: String,
         channel: BadgeChannel
     ) {
-        _badges.value = _badges.value.map {
-            if (it.id == id) {
-                it.copy(title = title, remark = remark, link = link, channel = channel)
-            } else {
-                it
-            }
+        CoroutineScope(Dispatchers.IO).launch {
+            val badge =
+                Badge(id = id, title = title, remark = remark, link = link, channel = channel)
+            badgeDao?.updateBadge(badge)
         }
     }
 
 
     // 删除徽章
     fun removeBadge(id: String) {
-        _badges.value = _badges.value.filter { it.id != id }
+        CoroutineScope(Dispatchers.IO).launch {
+            badgeDao?.deleteBadgeById(id)
+        }
     }
 
-    // (可选) 更新徽章
-    fun updateBadge(id: String, newTitle: String, newRemark: String) {
-        _badges.value = _badges.value.map {
-            if (it.id == id) it.copy(title = newTitle, remark = newRemark) else it
+}
+
+class Converters {
+    @TypeConverter
+    fun fromChannel(channel: BadgeChannel): String {
+        return channel.name // 存枚举的名字，如 "HUAWEI"
+    }
+
+    @TypeConverter
+    fun toChannel(value: String): BadgeChannel {
+        return try {
+            BadgeChannel.valueOf(value)
+        } catch (e: Exception) {
+            BadgeChannel.NETEASE // 默认值，防止枚举改名后崩溃
         }
     }
 }
