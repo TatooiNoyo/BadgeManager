@@ -75,7 +75,7 @@ fun BadgeListContent(onItemClick: (Badge) -> Unit) {
     var titleInput by remember { mutableStateOf("") }
     var remarkInput by remember { mutableStateOf("") }
     var linkInput by remember { mutableStateOf("") }
-    var selectedChannel by remember { mutableStateOf(BadgeChannel.WEB) }
+    var selectedChannel by remember { mutableStateOf(BadgeChannel.HUAWEI) }
 
     Column(modifier = Modifier.padding(16.dp)) {
         Text("徽章管理", style = MaterialTheme.typography.headlineMedium)
@@ -100,7 +100,7 @@ fun BadgeListContent(onItemClick: (Badge) -> Unit) {
                     titleInput = ""
                     remarkInput = ""
                     linkInput = ""
-                    selectedChannel = BadgeChannel.WEB
+                    selectedChannel = BadgeChannel.HUAWEI
                 }
             },
             modifier = Modifier.align(Alignment.End)

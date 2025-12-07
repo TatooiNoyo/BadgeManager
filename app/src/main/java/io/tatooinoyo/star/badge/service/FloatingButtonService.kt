@@ -224,7 +224,7 @@ class FloatingButtonService : Service(), SavedStateRegistryOwner {
                     ) {
                         // 点击徽章的事件：比如弹出提示，或者复制内容
                         Toast.makeText(context, "选中: ${badge.title}", Toast.LENGTH_SHORT).show()
-                        closeMenu()
+                        badge.usage(context)
                     }
                 }
 
