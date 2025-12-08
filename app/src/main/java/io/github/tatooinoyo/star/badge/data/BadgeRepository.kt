@@ -15,6 +15,15 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.util.UUID
 
+
+data class TitleAndRemark(val title:String,val remark:String)
+// 内置的SK,title,remark关系
+val PRESET_BADGES_MAP = mapOf(
+    "SKY-PN-ST-SUM-SP" to TitleAndRemark("云野传说","15s cooling."),
+    "SKY-KC-ST-COB-AI" to TitleAndRemark("光之爱钥匙扣","3m cooling, 3m duration."),
+    "SKY-BK-ST-PRO-ART" to TitleAndRemark("光遇设定集","15m cooling, 20m duration."),
+)
+
 // 定义预设的渠道
 enum class BadgeChannel(val label: String, val packageName: String, val className: String) {
     HUAWEI("华为", "com.netease.sky.huawei", "com.tgc.sky.netease.GameActivity_Netease"),

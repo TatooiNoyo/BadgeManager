@@ -3,22 +3,22 @@ package io.github.tatooinoyo.star.badge.ui.screen
 import android.app.Activity
 import android.nfc.NdefMessage
 import android.nfc.NdefRecord
-import android.nfc.NfcAdapter
 import android.nfc.Tag
 import android.nfc.tech.Ndef
+import android.util.Base64
 import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.tatooinoyo.star.badge.data.Badge
 import io.github.tatooinoyo.star.badge.data.BadgeChannel
 import io.github.tatooinoyo.star.badge.data.BadgeRepository
+import io.github.tatooinoyo.star.badge.data.PRESET_BADGES_MAP
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.io.IOException
 import java.nio.charset.Charset
-import android.util.Base64 // Import Base64
 
 // 定义 UI 状态
 data class BadgeUiState(
@@ -60,9 +60,14 @@ class BadgeManagerViewModel : ViewModel() {
         link: String = _uiState.value.addLink,
         channel: BadgeChannel = _uiState.value.addChannel
     ) {
+        val sk = getSkFromLink(link)
+        val preset = PRESET_BADGES_MAP[sk]
+        // 如果 preset 不为空，使用预置的 title/remark；否则使用传入的参数
+        val finalTitle = preset?.title ?: title
+        val finalRemark = preset?.remark ?: remark
         _uiState.value = _uiState.value.copy(
-            addTitle = title,
-            addRemark = remark,
+            addTitle = finalTitle,
+            addRemark = finalRemark,
             addLink = link,
             addChannel = channel
         )
@@ -71,7 +76,12 @@ class BadgeManagerViewModel : ViewModel() {
     fun addBadge() {
         val state = _uiState.value
         if (state.addTitle.isNotBlank()) {
-            BadgeRepository.addBadge(state.addTitle, state.addRemark, state.addLink, state.addChannel)
+            BadgeRepository.addBadge(
+                state.addTitle,
+                state.addRemark,
+                state.addLink,
+                state.addChannel
+            )
             // 重置输入
             _uiState.value = state.copy(
                 addTitle = "",
@@ -101,9 +111,14 @@ class BadgeManagerViewModel : ViewModel() {
         link: String = _uiState.value.detailLink,
         channel: BadgeChannel = _uiState.value.detailChannel
     ) {
+        val sk = getSkFromLink(link)
+        val preset = PRESET_BADGES_MAP[sk]
+        // 如果 preset 不为空，使用预置的 title/remark；否则使用传入的参数
+        val finalTitle = preset?.title ?: title
+        val finalRemark = preset?.remark ?: remark
         _uiState.value = _uiState.value.copy(
-            detailTitle = title,
-            detailRemark = remark,
+            detailTitle = finalTitle,
+            detailRemark = finalRemark,
             detailLink = link,
             detailChannel = channel
         )
@@ -133,7 +148,8 @@ class BadgeManagerViewModel : ViewModel() {
     }
 
     fun exitEditMode() {
-        _uiState.value = _uiState.value.copy(editingBadge = null, isWritingNfc = false, extractedSk = null)
+        _uiState.value =
+            _uiState.value.copy(editingBadge = null, isWritingNfc = false, extractedSk = null)
     }
 
     // === 拖拽排序 ===
@@ -142,7 +158,7 @@ class BadgeManagerViewModel : ViewModel() {
         list.apply {
             add(to, removeAt(from))
         }
-        
+
         // 更新内存中的 state，让 UI 立即响应
         _uiState.value = _uiState.value.copy(badges = list)
     }
@@ -179,7 +195,7 @@ class BadgeManagerViewModel : ViewModel() {
 
     fun writeNfcTag(tag: Tag, activity: Activity): Boolean {
         if (!_uiState.value.isWritingNfc) return false
-        
+
         val linkToWrite = _uiState.value.detailLink
         if (linkToWrite.isBlank()) {
             activity.runOnUiThread {
@@ -190,7 +206,7 @@ class BadgeManagerViewModel : ViewModel() {
 
         val ndef = Ndef.get(tag)
         if (ndef == null) {
-             activity.runOnUiThread {
+            activity.runOnUiThread {
                 Toast.makeText(activity, "NFC标签不支持NDEF格式", Toast.LENGTH_SHORT).show()
             }
             return false
@@ -199,7 +215,7 @@ class BadgeManagerViewModel : ViewModel() {
         try {
             ndef.connect()
             if (!ndef.isWritable) {
-                 activity.runOnUiThread {
+                activity.runOnUiThread {
                     Toast.makeText(activity, "NFC标签只读", Toast.LENGTH_SHORT).show()
                 }
                 return false
@@ -209,7 +225,7 @@ class BadgeManagerViewModel : ViewModel() {
             val ndefMessage = NdefMessage(arrayOf(ndefRecord))
 
             if (ndef.maxSize < ndefMessage.toByteArray().size) {
-                 activity.runOnUiThread {
+                activity.runOnUiThread {
                     Toast.makeText(activity, "NFC标签容量不足", Toast.LENGTH_SHORT).show()
                 }
                 return false
@@ -223,7 +239,7 @@ class BadgeManagerViewModel : ViewModel() {
             return true
         } catch (e: Exception) {
             e.printStackTrace()
-             activity.runOnUiThread {
+            activity.runOnUiThread {
                 Toast.makeText(activity, "写入失败: ${e.message}", Toast.LENGTH_SHORT).show()
             }
             return false
@@ -236,29 +252,33 @@ class BadgeManagerViewModel : ViewModel() {
         }
     }
 
+    fun getSkFromLink(link: String): String {
+        val decodedSk = try {
+            val uri = android.net.Uri.parse(link)
+            val sParam = uri.getQueryParameter("s")
+
+            if (sParam.isNullOrBlank()) {
+                "链接中未找到 's' 参数。"
+            } else {
+                // Base64 解码
+                val decodedBytes = Base64.decode(sParam, Base64.URL_SAFE) // Sky 的链接通常是 URL_SAFE
+                val decodedString = String(decodedBytes, Charset.forName("UTF-8"))
+
+                // 从解码后的字符串中提取 sk 参数
+                val decodedUri = android.net.Uri.parse("dummy://host?" + decodedString)
+                decodedUri.getQueryParameter("sk") ?: "解码后未找到 'sk' 参数。"
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            "提取失败: ${e.message}"
+        }
+        return decodedSk
+    }
+
     // === SK 提取逻辑 ===
     fun extractSkFromLink(link: String) {
         viewModelScope.launch {
-            val decodedSk = try {
-                val uri = android.net.Uri.parse(link)
-                val sParam = uri.getQueryParameter("s")
-
-                if (sParam.isNullOrBlank()) {
-                    "链接中未找到 's' 参数。"
-                } else {
-                    // Base64 解码
-                    val decodedBytes = Base64.decode(sParam, Base64.URL_SAFE) // Sky 的链接通常是 URL_SAFE
-                    val decodedString = String(decodedBytes, Charset.forName("UTF-8"))
-
-                    // 从解码后的字符串中提取 sk 参数
-                    val decodedUri = android.net.Uri.parse("dummy://host?" + decodedString)
-                    decodedUri.getQueryParameter("sk") ?: "解码后未找到 'sk' 参数。"
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                "提取失败: ${e.message}"
-            }
-            _uiState.value = _uiState.value.copy(extractedSk = decodedSk)
+            _uiState.value = _uiState.value.copy(extractedSk = getSkFromLink(link))
         }
     }
 
