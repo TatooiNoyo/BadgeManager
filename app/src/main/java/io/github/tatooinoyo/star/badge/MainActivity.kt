@@ -3,13 +3,14 @@ package io.github.tatooinoyo.star.badge
 import android.app.PendingIntent
 import android.content.Intent
 import android.content.IntentFilter
-import android.net.Uri
 import android.nfc.NdefMessage
 import android.nfc.NdefRecord
 import android.nfc.NfcAdapter
+import android.nfc.Tag
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.net.Uri
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -21,9 +22,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.tatooinoyo.star.badge.data.BadgeRepository
 import io.github.tatooinoyo.star.badge.service.FloatingButtonService
 import io.github.tatooinoyo.star.badge.ui.screen.BadgeManagerScreen
+import io.github.tatooinoyo.star.badge.ui.screen.BadgeManagerViewModel
 import java.nio.charset.StandardCharsets
 
 class MainActivity : ComponentActivity() {
@@ -31,10 +34,24 @@ class MainActivity : ComponentActivity() {
     // 使用 mutableStateOf 让 Compose 可以感知变化
     private var scannedNfcData by mutableStateOf<String?>(null)
     private var nfcAdapter: NfcAdapter? = null
+    
+    // 全局 ViewModel，方便 Activity 直接调用写入逻辑
+    // 注意：在正式架构中可能需要更好的方式（例如依赖注入），这里为了简单直接在 Compose 内部和 Activity 之间共享
+    // 但为了确保 BadgeManagerScreen 能获取到同一个 ViewModel 实例，最简单的是让 Compose 自己创建，
+    // 或者我们在这里创建传进去。
+    // 为了支持 "Activity 接收到 Tag -> ViewModel.writeNfcTag"，我们需要能访问到 ViewModel。
+    // 这里我们依然让 Compose 拥有 ViewModel，但我们可以通过回调或者共享对象来传递 Tag。
+    
+    // 实际上，ViewModel 是依附于 Activity 的 ViewModelStore 的。
+    // 我们可以在 onNewIntent 中获取 ViewModel 实例（如果在 Activity 中获取）。
+    // 或者更简单的，我们定义一个全局的回调，当 Tag 被发现时，如果正处于写入模式，则调用。
 
     // 增加一个辅助属性，方便判断是否支持 NFC
     private val isNfcSupported: Boolean
         get() = nfcAdapter != null
+        
+    // 临时的 Tag 变量
+    private var currentTag: Tag? = null
 
     // 注册权限请求回调
     private val overlayPermissionLauncher = registerForActivityResult(
@@ -57,9 +74,17 @@ class MainActivity : ComponentActivity() {
         setContent {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
+                    // 获取 ViewModel 实例，它会自动从 Activity 的 ViewModelStore 中获取
+                    val viewModel: BadgeManagerViewModel = viewModel()
+                    
+                    // 当发现新的 Tag 时，尝试写入
+                    // 注意：这里是一个副作用，当 currentTag 更新时触发
+                    // 但更合理的做法是让 ViewModel 处理业务，Activity 只负责传递事件
+                    
                     BadgeManagerScreen(
                         nfcPayload = scannedNfcData,
-                        onNfcDataConsumed = { scannedNfcData = null }
+                        onNfcDataConsumed = { scannedNfcData = null },
+                        viewModel = viewModel
                     )
                 }
             }
@@ -128,6 +153,33 @@ class MainActivity : ComponentActivity() {
 
     // 解析 NFC 数据的方法
     private fun handleNfcIntent(intent: Intent) {
+        val tag: Tag? = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG)
+        
+        // 尝试获取 Activity 作用域的 ViewModel
+        // 注意：这需要在 UI 线程中执行
+        if (tag != null) {
+             // 简单的办法：通过 ViewModelProvider 获取 Activity 的 ViewModel 实例
+            // 但在 Activity 中直接这样写比较 hacky，通常是在 Fragment 或 Compose 中获取。
+            // 这里我们使用一个简单的技巧：我们假设 MainActivity 是 SingleTop 的，
+            // 且 Compose 已经初始化。
+            
+            // 为了将 Tag 传递给 ViewModel，我们可以使用一个更稳健的方法。
+            // 由于 Compose 树中的 viewModel() 也是获取 Activity 范围的（默认情况），
+            // 我们可以直接再次获取它。
+            try {
+                val viewModel = androidx.lifecycle.ViewModelProvider(this)[BadgeManagerViewModel::class.java]
+                if (viewModel.uiState.value.isWritingNfc) {
+                    val success = viewModel.writeNfcTag(tag, this)
+                    if (success) {
+                        // 写入成功，不需要继续解析读取了
+                        return
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
         val rawMsgs = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES)
         if (rawMsgs != null) {
             val msgs = arrayOfNulls<NdefMessage>(rawMsgs.size)

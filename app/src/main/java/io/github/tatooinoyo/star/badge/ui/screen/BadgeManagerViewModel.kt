@@ -1,5 +1,12 @@
 package io.github.tatooinoyo.star.badge.ui.screen
 
+import android.app.Activity
+import android.nfc.NdefMessage
+import android.nfc.NdefRecord
+import android.nfc.NfcAdapter
+import android.nfc.Tag
+import android.nfc.tech.Ndef
+import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.tatooinoyo.star.badge.data.Badge
@@ -9,6 +16,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.io.IOException
+import java.nio.charset.Charset
 
 // 定义 UI 状态
 data class BadgeUiState(
@@ -23,7 +32,8 @@ data class BadgeUiState(
     val detailTitle: String = "",
     val detailRemark: String = "",
     val detailLink: String = "",
-    val detailChannel: BadgeChannel = BadgeChannel.HUAWEI
+    val detailChannel: BadgeChannel = BadgeChannel.HUAWEI,
+    val isWritingNfc: Boolean = false // 是否正在等待写入 NFC
 )
 
 class BadgeManagerViewModel : ViewModel() {
@@ -120,7 +130,7 @@ class BadgeManagerViewModel : ViewModel() {
     }
 
     fun exitEditMode() {
-        _uiState.value = _uiState.value.copy(editingBadge = null)
+        _uiState.value = _uiState.value.copy(editingBadge = null, isWritingNfc = false)
     }
 
     // === NFC 处理逻辑 ===
@@ -134,6 +144,74 @@ class BadgeManagerViewModel : ViewModel() {
         } else {
             // 如果在列表页，更新添加框的链接
             updateAddInput(link = payload)
+        }
+    }
+
+    // === NFC 写入逻辑 ===
+    fun startWritingNfc() {
+        _uiState.value = _uiState.value.copy(isWritingNfc = true)
+    }
+
+    fun cancelWritingNfc() {
+        _uiState.value = _uiState.value.copy(isWritingNfc = false)
+    }
+
+    fun writeNfcTag(tag: Tag, activity: Activity): Boolean {
+        if (!_uiState.value.isWritingNfc) return false
+        
+        val linkToWrite = _uiState.value.detailLink
+        if (linkToWrite.isBlank()) {
+            activity.runOnUiThread {
+                Toast.makeText(activity, "链接为空，无法写入", Toast.LENGTH_SHORT).show()
+            }
+            return false
+        }
+
+        val ndef = Ndef.get(tag)
+        if (ndef == null) {
+             activity.runOnUiThread {
+                Toast.makeText(activity, "NFC标签不支持NDEF格式", Toast.LENGTH_SHORT).show()
+            }
+            return false
+        }
+
+        try {
+            ndef.connect()
+            if (!ndef.isWritable) {
+                 activity.runOnUiThread {
+                    Toast.makeText(activity, "NFC标签只读", Toast.LENGTH_SHORT).show()
+                }
+                return false
+            }
+
+            val ndefRecord = NdefRecord.createUri(linkToWrite)
+            val ndefMessage = NdefMessage(arrayOf(ndefRecord))
+
+            if (ndef.maxSize < ndefMessage.toByteArray().size) {
+                 activity.runOnUiThread {
+                    Toast.makeText(activity, "NFC标签容量不足", Toast.LENGTH_SHORT).show()
+                }
+                return false
+            }
+
+            ndef.writeNdefMessage(ndefMessage)
+            activity.runOnUiThread {
+                Toast.makeText(activity, "写入成功", Toast.LENGTH_SHORT).show()
+            }
+            _uiState.value = _uiState.value.copy(isWritingNfc = false)
+            return true
+        } catch (e: Exception) {
+            e.printStackTrace()
+             activity.runOnUiThread {
+                Toast.makeText(activity, "写入失败: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+            return false
+        } finally {
+            try {
+                ndef.close()
+            } catch (e: IOException) {
+                e.printStackTrace()
+            }
         }
     }
 }

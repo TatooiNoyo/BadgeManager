@@ -85,10 +85,13 @@ fun BadgeManagerScreen(
             remark = uiState.detailRemark,
             link = uiState.detailLink,
             channel = uiState.detailChannel,
+            isWritingNfc = uiState.isWritingNfc,
             onTitleChange = { viewModel.updateDetailInput(title = it) },
             onRemarkChange = { viewModel.updateDetailInput(remark = it) },
             onLinkChange = { viewModel.updateDetailInput(link = it) },
             onChannelChange = { viewModel.updateDetailInput(channel = it) },
+            onWriteNfcClick = { viewModel.startWritingNfc() },
+            onCancelWriteNfcClick = { viewModel.cancelWritingNfc() },
             onSaveClick = { viewModel.saveBadgeUpdate() },
             onDeleteClick = { viewModel.deleteBadge() },
             onExitClick = { viewModel.exitEditMode() }
@@ -196,10 +199,13 @@ fun BadgeDetailContent(
     remark: String,
     link: String,
     channel: BadgeChannel,
+    isWritingNfc: Boolean,
     onTitleChange: (String) -> Unit,
     onRemarkChange: (String) -> Unit,
     onLinkChange: (String) -> Unit,
     onChannelChange: (BadgeChannel) -> Unit,
+    onWriteNfcClick: () -> Unit,
+    onCancelWriteNfcClick: () -> Unit,
     onSaveClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onExitClick: () -> Unit
@@ -222,6 +228,19 @@ fun BadgeDetailContent(
         )
 
         Spacer(modifier = Modifier.weight(1f)) // 占位，把按钮推到底部
+
+        // 新增：写入 NFC 按钮
+        Button(
+            onClick = onWriteNfcClick,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.tertiary
+            )
+        ) {
+            Text("写入链接到 NFC 卡片")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         // 按钮操作区
         Row(
@@ -298,6 +317,20 @@ fun BadgeDetailContent(
             }
         )
     }
+
+    // === NFC 写入等待弹窗 ===
+    if (isWritingNfc) {
+        AlertDialog(
+            onDismissRequest = onCancelWriteNfcClick,
+            title = { Text("准备写入 NFC") },
+            text = { Text("请将 NFC 卡片紧贴手机背面以写入数据。\n目标链接: $link") },
+            confirmButton = {
+                TextButton(onClick = onCancelWriteNfcClick) {
+                    Text("取消")
+                }
+            }
+        )
+    }
 }
 
 // === 提取出来的通用输入表单组件 ===
@@ -351,12 +384,7 @@ fun BadgeInputForm(
                         value = channel.label,
                         onValueChange = {},
                         readOnly = true,
-                        trailingIcon = {
-                            Icon(
-                                Icons.Default.ArrowDropDown,
-                                contentDescription = null
-                            )
-                        },
+                        trailingIcon = { Icon(Icons.Default.ArrowDropDown, contentDescription = null) },
                         modifier = Modifier.width(150.dp),
                         enabled = false, // 禁用自带输入，完全靠点击触发
                         colors = TextFieldDefaults.colors(
