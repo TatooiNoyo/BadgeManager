@@ -1,53 +1,72 @@
 package io.github.tatooinoyo.star.badge.ui.component
 
-
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import io.github.tatooinoyo.star.badge.R
 
 @Composable
 fun FloatingWidget(onClick: () -> Unit) {
-    // 对应 XML 中的 CardView
-    Card(
-        onClick = onClick,
-        modifier = Modifier, // layout_margin="4dp"
-        shape = RoundedCornerShape(24.dp), // cardCornerRadius="24dp"
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp), // cardElevation="8dp"
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF2196F3)) // cardBackgroundColor="#2196F3"
-    ) {
-        // 对应 XML 中的 LinearLayout (Compose 中用 Row 或 Box)
-        Row(
-            modifier = Modifier,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // 对应 XML 中的 ImageView
-            Icon(
-                imageVector = Icons.Default.Menu, // 或者是你之前的 ic_menu_directions 资源
-                contentDescription = "Menu",
-                tint = Color.White,
-                modifier = Modifier.size(24.dp)
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .size(46.dp) // 增大尺寸以适应气泡效果
+            .padding(4.dp) // 外边距
+            .shadow(
+                elevation = 8.dp,
+                shape = CircleShape,
+                spotColor = Color(0x40000000),
+                ambientColor = Color(0x40000000)
             )
-        }
+            .background(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        Color(0xFF64B5F6), // 浅蓝色中心
+                        Color(0xFF2196F3)  // 深蓝色边缘
+                    ),
+                    center = androidx.compose.ui.geometry.Offset(30f, 30f), // 高光偏移
+                    radius = 100f
+                ),
+                shape = CircleShape
+            )
+            .border(
+                width = 1.dp,
+                color = Color(0xFFBBDEFB), // 亮色边框增加立体感
+                shape = CircleShape
+            )
+            .clickable(
+                onClick = onClick,
+                indication = null, // 移除点击涟漪，避免破坏气泡感
+                interactionSource = remember { MutableInteractionSource() }
+            )
+    ) {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_floating_star),
+            contentDescription = "Menu",
+            tint = Color.White,
+            modifier = Modifier.size(28.dp)
+        )
     }
 }
 
-// ==== 添加这个预览函数 ====
-@Preview(showBackground = true, name = "悬浮球预览")
+@Preview(showBackground = false, name = "悬浮球预览")
 @Composable
 fun FloatingWidgetPreview() {
-    // 这里调用你的组件，并传入假的参数
-    FloatingWidget(
-        onClick = {}
-    )
+    FloatingWidget(onClick = {})
 }
