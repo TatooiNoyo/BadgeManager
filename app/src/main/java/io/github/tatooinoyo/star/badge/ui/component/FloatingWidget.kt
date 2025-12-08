@@ -36,7 +36,7 @@ fun FloatingWidget(onClick: () -> Unit) {
                 imageVector = Icons.Default.Menu, // 或者是你之前的 ic_menu_directions 资源
                 contentDescription = "Menu",
                 tint = Color.White,
-                modifier = Modifier.size(10.dp)
+                modifier = Modifier.size(24.dp)
             )
         }
     }
