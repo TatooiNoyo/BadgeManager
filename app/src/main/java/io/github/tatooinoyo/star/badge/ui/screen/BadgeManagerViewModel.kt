@@ -19,8 +19,6 @@ import kotlinx.coroutines.launch
 import java.io.IOException
 import java.nio.charset.Charset
 import android.util.Base64 // Import Base64
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
 
 // 定义 UI 状态
 data class BadgeUiState(
@@ -119,7 +117,8 @@ class BadgeManagerViewModel : ViewModel() {
                 state.detailTitle,
                 state.detailRemark,
                 state.detailLink,
-                state.detailChannel
+                state.detailChannel,
+                originalBadge.orderIndex
             )
             exitEditMode()
         }
@@ -135,6 +134,24 @@ class BadgeManagerViewModel : ViewModel() {
 
     fun exitEditMode() {
         _uiState.value = _uiState.value.copy(editingBadge = null, isWritingNfc = false, extractedSk = null)
+    }
+
+    // === 拖拽排序 ===
+    fun moveBadge(from: Int, to: Int) {
+        val list = _uiState.value.badges.toMutableList()
+        list.apply {
+            add(to, removeAt(from))
+        }
+        
+        // 更新内存中的 state，让 UI 立即响应
+        _uiState.value = _uiState.value.copy(badges = list)
+    }
+
+    fun saveOrder() {
+        val updatedList = _uiState.value.badges.mapIndexed { index, badge ->
+            badge.copy(orderIndex = index)
+        }
+        BadgeRepository.updateBadgeOrder(updatedList)
     }
 
     // === NFC 处理逻辑 ===
@@ -248,5 +265,4 @@ class BadgeManagerViewModel : ViewModel() {
     fun dismissSkDialog() {
         _uiState.value = _uiState.value.copy(extractedSk = null)
     }
-
 }

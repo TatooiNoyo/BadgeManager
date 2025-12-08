@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -53,20 +54,22 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.tatooinoyo.star.badge.data.Badge
 import io.github.tatooinoyo.star.badge.data.BadgeChannel
+import org.burnoutcrew.reorderable.ReorderableItem
+import org.burnoutcrew.reorderable.detectReorder
+import org.burnoutcrew.reorderable.detectReorderAfterLongPress
+import org.burnoutcrew.reorderable.rememberReorderableLazyListState
+import org.burnoutcrew.reorderable.reorderable
 
 @Composable
 fun BadgeManagerScreen(
     nfcPayload: String? = null,
     onNfcDataConsumed: () -> Unit = {},
-    // 使用 viewModel() 函数获取 ViewModel 实例
     viewModel: BadgeManagerViewModel = viewModel()
 ) {
-    // 监听 ViewModel 中的 UI 状态
     val uiState by viewModel.uiState.collectAsState()
-
     val clipboardManager = LocalClipboardManager.current
-    val context = LocalContext.current // 1. 获取 Context 用于显示 Toast
-    // 监听 NFC 数据变化
+    val context = LocalContext.current
+
     LaunchedEffect(nfcPayload) {
         if (!nfcPayload.isNullOrEmpty()) {
             viewModel.onNfcPayloadReceived(nfcPayload)
@@ -74,7 +77,6 @@ fun BadgeManagerScreen(
         }
     }
 
-    // 根据状态切换视图
     if (uiState.editingBadge == null) {
         BadgeListContent(
             uiState = uiState,
@@ -84,7 +86,9 @@ fun BadgeManagerScreen(
             onInputChannelChange = { viewModel.updateAddInput(channel = it) },
             onAddClick = { viewModel.addBadge() },
             onItemClick = { badge -> viewModel.selectBadge(badge) },
-            onExtractSkClick = { link -> viewModel.extractSkFromLink(link) }
+            onExtractSkClick = { link -> viewModel.extractSkFromLink(link) },
+            onMove = { from, to -> viewModel.moveBadge(from, to) },
+            onSaveOrder = { viewModel.saveOrder() }
         )
     } else {
         BadgeDetailContent(
@@ -107,7 +111,6 @@ fun BadgeManagerScreen(
         )
     }
 
-    // SK 提取结果显示弹窗
     uiState.extractedSk?.let { sk ->
         AlertDialog(
             onDismissRequest = { viewModel.dismissSkDialog() },
@@ -128,18 +131,14 @@ fun BadgeManagerScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = {
-                    viewModel.dismissSkDialog()
-                }) {
+                TextButton(onClick = { viewModel.dismissSkDialog() }) {
                     Text("确定")
                 }
             }
-
         )
     }
 }
 
-// === 视图 1: 列表与添加页面 (主页) ===
 @Composable
 fun BadgeListContent(
     uiState: BadgeUiState,
@@ -149,14 +148,19 @@ fun BadgeListContent(
     onInputChannelChange: (BadgeChannel) -> Unit,
     onAddClick: () -> Unit,
     onItemClick: (Badge) -> Unit,
-    onExtractSkClick: (String) -> Unit
+    onExtractSkClick: (String) -> Unit,
+    onMove: (Int, Int) -> Unit,
+    onSaveOrder: () -> Unit
 ) {
+    val reorderableState = rememberReorderableLazyListState(
+        onMove = { from, to -> onMove(from.index, to.index) },
+        onDragEnd = { _, _ -> onSaveOrder() }
+    )
+
     Column(modifier = Modifier.padding(16.dp)) {
         Text("徽章管理", style = MaterialTheme.typography.headlineMedium)
-
         Spacer(modifier = Modifier.height(16.dp))
 
-        // === 添加区域 ===
         BadgeInputForm(
             title = uiState.addTitle, onTitleChange = onInputTitleChange,
             remark = uiState.addRemark, onRemarkChange = onInputRemarkChange,
@@ -178,59 +182,51 @@ fun BadgeListContent(
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
 
-        // === 列表区域 ===
-        Text("点击列表项查看详情/编辑:", style = MaterialTheme.typography.titleMedium)
+        Text("点击查看详情,拖动重排:", style = MaterialTheme.typography.titleMedium)
 
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            state = reorderableState.listState,
+            modifier = Modifier.reorderable(reorderableState),
             contentPadding = PaddingValues(vertical = 8.dp)
         ) {
-            items(uiState.badges) { badge ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp)
-                        .clickable { onItemClick(badge) }, // 点击进入详情
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Row(
+            items(uiState.badges, { it.id }) { badge ->
+                ReorderableItem(reorderableState, key = badge.id) { isDragging ->
+                    val elevation = if (isDragging) 8.dp else 2.dp
+                    Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(vertical = 4.dp)
+                            .clickable { onItemClick(badge) }, // 移除多余的 pointerInput
+                        elevation = CardDefaults.cardElevation(defaultElevation = elevation)
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            // 标题 + 渠道
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = badge.title,
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                SuggestionChip(
-                                    onClick = { },
-                                    label = {
-                                        Text(
-                                            badge.channel.label,
-                                            style = MaterialTheme.typography.labelSmall
-                                        )
-                                    },
-                                    modifier = Modifier.height(24.dp)
-                                )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(text = badge.title, style = MaterialTheme.typography.titleMedium)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    SuggestionChip(
+                                        onClick = { },
+                                        label = { Text(badge.channel.label, style = MaterialTheme.typography.labelSmall) },
+                                        modifier = Modifier.height(24.dp)
+                                    )
+                                }
+                                if (badge.remark.isNotEmpty()) {
+                                    Text(text = badge.remark, style = MaterialTheme.typography.bodyMedium)
+                                } else {
+                                    Text(text = " ", style = MaterialTheme.typography.bodyMedium)
+                                }
                             }
-                            if (badge.remark.isNotEmpty()) {
-                                Text(
-                                    text = badge.remark,
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            } else {
-                                // 当没有备注时，渲染一个不可见的占位符，保持高度一致
-                                Text(
-                                    text = " ", // 一个空格占位
-                                    style = MaterialTheme.typography.bodyMedium,
-                                )
-                            }
+                            Icon(
+                                imageVector = Icons.Default.Menu, // Replace with a drag handle icon
+                                contentDescription = "Drag to reorder",
+                                modifier = Modifier.detectReorder(reorderableState)
+                            )
                         }
                     }
                 }
@@ -238,6 +234,9 @@ fun BadgeListContent(
         }
     }
 }
+
+// ... (BadgeDetailContent and BadgeInputForm remain the same) ...
+
 
 // === 视图 2: 详情编辑页面 ===
 @Composable

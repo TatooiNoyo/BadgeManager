@@ -62,6 +62,7 @@ dependencies {
     implementation(libs.generativeai)
     implementation(libs.androidx.drawerlayout)
     implementation(libs.material)
+    implementation("org.burnoutcrew.composereorderable:reorderable:0.9.6")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
