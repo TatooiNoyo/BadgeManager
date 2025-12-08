@@ -31,7 +31,8 @@ data class Badge(
     val title: String,
     val remark: String,
     val link: String = "",
-    val channel: BadgeChannel = BadgeChannel.NETEASE
+    val channel: BadgeChannel = BadgeChannel.NETEASE,
+    val orderIndex: Int
 ) {
     fun usage(context: Context) {
         try {
@@ -96,14 +97,15 @@ object BadgeRepository {
     // 添加徽章
     // 修改方法签名，增加 link 和 channel
     fun addBadge(title: String, remark: String, link: String, channel: BadgeChannel) {
+        val currentMaxOrder = _badges.value.maxOfOrNull { it.orderIndex } ?: 0
         val newBadge = Badge(
             title = title,
             remark = remark,
             link = link,
-            channel = channel
+            channel = channel,
+            orderIndex = currentMaxOrder + 1
         )
         CoroutineScope(Dispatchers.IO).launch {
-            val newBadge = Badge(title = title, remark = remark, link = link, channel = channel)
             badgeDao?.insertBadge(newBadge)
         }
     }
@@ -114,15 +116,21 @@ object BadgeRepository {
         title: String,
         remark: String,
         link: String,
-        channel: BadgeChannel
+        channel: BadgeChannel,
+        orderIndex: Int // 保持 orderIndex 不变
     ) {
         CoroutineScope(Dispatchers.IO).launch {
-            val badge =
-                Badge(id = id, title = title, remark = remark, link = link, channel = channel)
+            // 这里应该调用 updateBadgeContent，但它没有 orderIndex，所以我们直接更新整个对象
+            val badge = Badge(id, title, remark, link, channel, orderIndex)
             badgeDao?.updateBadge(badge)
         }
     }
 
+    fun updateBadgeOrder(badges: List<Badge>) {
+        CoroutineScope(Dispatchers.IO).launch {
+            badgeDao?.updateBadges(badges)
+        }
+    }
 
     // 删除徽章
     fun removeBadge(id: String) {
