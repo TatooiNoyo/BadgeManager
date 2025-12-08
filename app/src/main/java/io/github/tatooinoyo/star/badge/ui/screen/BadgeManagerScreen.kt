@@ -1,6 +1,7 @@
 package io.github.tatooinoyo.star.badge.ui.screen
 
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -8,11 +9,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
@@ -20,6 +19,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -56,7 +57,6 @@ import io.github.tatooinoyo.star.badge.data.Badge
 import io.github.tatooinoyo.star.badge.data.BadgeChannel
 import org.burnoutcrew.reorderable.ReorderableItem
 import org.burnoutcrew.reorderable.detectReorder
-import org.burnoutcrew.reorderable.detectReorderAfterLongPress
 import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 import org.burnoutcrew.reorderable.reorderable
 
@@ -156,33 +156,54 @@ fun BadgeListContent(
         onMove = { from, to -> onMove(from.index, to.index) },
         onDragEnd = { _, _ -> onSaveOrder() }
     )
+    var isAddAreaExpanded by remember { mutableStateOf(true) }
 
     Column(modifier = Modifier.padding(16.dp)) {
-        Text("徽章管理", style = MaterialTheme.typography.headlineMedium)
-        Spacer(modifier = Modifier.height(16.dp))
-
-        BadgeInputForm(
-            title = uiState.addTitle, onTitleChange = onInputTitleChange,
-            remark = uiState.addRemark, onRemarkChange = onInputRemarkChange,
-            link = uiState.addLink, onLinkChange = onInputLinkChange,
-            channel = uiState.addChannel, onChannelChange = onInputChannelChange,
-            onExtractSkClick = onExtractSkClick
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Button(
-            onClick = onAddClick,
-            modifier = Modifier.align(Alignment.End)
+        // 可点击的标题栏，用于折叠/展开
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { isAddAreaExpanded = !isAddAreaExpanded }
+                .padding(vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Icon(Icons.Default.Add, contentDescription = null)
-            Spacer(modifier = Modifier.width(4.dp))
-            Text("添加徽章")
+            Text("徽章管理", style = MaterialTheme.typography.headlineMedium)
+            Icon(
+                imageVector = if (isAddAreaExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                contentDescription = if (isAddAreaExpanded) "收起" else "展开",
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
+
+        // 使用 AnimatedVisibility 包裹添加表单
+        AnimatedVisibility(visible = isAddAreaExpanded) {
+            Column {
+                Spacer(modifier = Modifier.height(8.dp))
+                BadgeInputForm(
+                    title = uiState.addTitle, onTitleChange = onInputTitleChange,
+                    remark = uiState.addRemark, onRemarkChange = onInputRemarkChange,
+                    link = uiState.addLink, onLinkChange = onInputLinkChange,
+                    channel = uiState.addChannel, onChannelChange = onInputChannelChange,
+                    onExtractSkClick = onExtractSkClick
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    onClick = onAddClick,
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = null)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("添加徽章")
+                }
+            }
         }
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
 
-        Text("点击查看详情,拖动重排:", style = MaterialTheme.typography.titleMedium)
+        Text("点击卡片查看详情,拖拽卡片右侧排序:", style = MaterialTheme.typography.titleMedium)
 
         LazyColumn(
             state = reorderableState.listState,
@@ -196,7 +217,7 @@ fun BadgeListContent(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp)
-                            .clickable { onItemClick(badge) }, // 移除多余的 pointerInput
+                            .clickable { onItemClick(badge) },
                         elevation = CardDefaults.cardElevation(defaultElevation = elevation)
                     ) {
                         Row(
@@ -208,24 +229,35 @@ fun BadgeListContent(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(text = badge.title, style = MaterialTheme.typography.titleMedium)
+                                    Text(
+                                        text = badge.title,
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     SuggestionChip(
                                         onClick = { },
-                                        label = { Text(badge.channel.label, style = MaterialTheme.typography.labelSmall) },
+                                        label = {
+                                            Text(
+                                                badge.channel.label,
+                                                style = MaterialTheme.typography.labelSmall
+                                            )
+                                        },
                                         modifier = Modifier.height(24.dp)
                                     )
                                 }
                                 if (badge.remark.isNotEmpty()) {
-                                    Text(text = badge.remark, style = MaterialTheme.typography.bodyMedium)
+                                    Text(
+                                        text = badge.remark,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
                                 } else {
                                     Text(text = " ", style = MaterialTheme.typography.bodyMedium)
                                 }
                             }
                             Icon(
-                                imageVector = Icons.Default.Menu, // Replace with a drag handle icon
+                                imageVector = Icons.Default.Menu,
                                 contentDescription = "Drag to reorder",
-                                modifier = Modifier.detectReorder(reorderableState)
+                                modifier = Modifier.detectReorder(reorderableState) // 修正了这里
                             )
                         }
                     }
@@ -234,9 +266,6 @@ fun BadgeListContent(
         }
     }
 }
-
-// ... (BadgeDetailContent and BadgeInputForm remain the same) ...
-
 
 // === 视图 2: 详情编辑页面 ===
 @Composable
@@ -258,8 +287,7 @@ fun BadgeDetailContent(
     onExitClick: () -> Unit,
     onExtractSkClick: (String) -> Unit
 ) {
-    // 弹窗控制状态 (这些属于纯 UI 交互状态，可以保留在 Composable 内部，或者也移到 VM)
-    // 这里为了方便，暂时保留在 UI 层
+    // 弹窗控制状态
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var showUpdateConfirm by remember { mutableStateOf(false) }
 
@@ -276,7 +304,7 @@ fun BadgeDetailContent(
             onExtractSkClick = onExtractSkClick
         )
 
-        Spacer(modifier = Modifier.weight(1f)) // 占位，把按钮推到底部
+        Spacer(modifier = Modifier.weight(1f))
 
         // 新增：写入 NFC 按钮
         Button(
