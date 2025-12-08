@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace = "io.tatooinoyo.star.badge"
+    namespace = "io.github.tatooinoyo.star.badge"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "io.tatooinoyo.star.badge"
+        applicationId = "io.github.tatooinoyo.star.badge"
         minSdk = 31
         targetSdk = 35
         versionCode = 1
