@@ -1,7 +1,9 @@
 package io.github.tatooinoyo.star.badge.ui.component
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,19 +19,25 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import io.github.tatooinoyo.star.badge.data.BadgeChannel
 
 // 1. 定义菜单项的数据模型 (替代 XML 中的 item)
 data class DrawerMenuItem(
     val id: String,
     val title: String,
+    val channel: BadgeChannel,
     val icon: ImageVector,
     val remark: String,
     val onClick: () -> Unit
@@ -93,10 +101,6 @@ fun DrawerMenu(
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
-                // 【关键】限制最大高度。
-                // 如果内容少，高度自适应；如果内容多，最大只有 400dp，超出可滚动。
-                // 你可以根据需要调整 400.dp 这个数值
-//                .heightIn(max = 400.dp)
         ) {
             // 使用 items() 函数来批量加载数据
             items(items) { item ->
@@ -109,48 +113,90 @@ fun DrawerMenu(
 // 3. 单个菜单项组件 (替代 XML 中的 <item>)
 @Composable
 fun DrawerMenuItemRow(item: DrawerMenuItem) {
-    Row(
+    // 用于监听按压状态
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
+    // 根据按压状态计算缩放比例 (按下缩小到 0.95，松开回弹到 1.0)
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.95f else 1f,
+        label = "scaleAnimation"
+    )
+
+    Surface(
+        onClick = item.onClick,
+        // 将 interactionSource 传给 Surface 以便捕获按压状态
+        interactionSource = interactionSource,
+        // 设置圆角，使其看起来像药丸或圆角矩形
+        shape = MaterialTheme.shapes.medium,
+        // 使用 TonalElevation 自动生成与背景区分的颜色 (Material3 风格)
+        tonalElevation = if (isPressed) 2.dp else 0.dp, // 按下时稍微加深颜色反馈
+        // 设置默认背景色，使用 SurfaceVariant 让其比纯背景稍亮/暗，突出显示
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         modifier = Modifier
+            // 外部间距：让每个 Item 之间分开
+            .padding(horizontal = 12.dp, vertical = 6.dp)
             .fillMaxWidth()
-            .background(Color.Transparent)
-            .clickable(onClick = item.onClick) // 处理点击事件
-            .padding(horizontal = 16.dp, vertical = 2.dp),
-        verticalAlignment = Alignment.CenterVertically
+            // 应用缩放动画
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
     ) {
-        // 图标
-        Icon(
-            imageVector = item.icon,
-            contentDescription = item.title,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(24.dp)
-        )
 
-        Spacer(modifier = Modifier.width(16.dp)) // 图标和文字的间距
-
-
-        // 2. 右侧文字区域 (使用 Column 将 Title 和 Remark 上下排列)
-        Column(
-            modifier = Modifier.weight(1f) // 占据剩余宽度，防止文字挤压图标
+        // 内部内容布局
+        Row(
+            modifier = Modifier
+                // 内部间距：让文字和图标不贴边
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            // 标题 (加粗或稍微大一点)
-            Text(
-                text = item.title,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            Column(
+                modifier = Modifier.weight(1f) // 占据剩余宽度，防止文字挤压图标
+            ) {
+                // 标题 (加粗或稍微大一点)
+                Row() {
+                    Text(
+                        text = item.title,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Surface(
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        shape = MaterialTheme.shapes.extraSmall, // 胶囊圆角
+                    ) {
+                        Text(
+                            text = item.channel.label,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
 
-            // 备注/描述 (字体小一点，颜色淡一点)
-            if (item.remark.isNotEmpty()) {
-                Spacer(modifier = Modifier.size(2.dp)) // 标题和备注的微小间距
-                Text(
-                    text = item.remark,
-                    style = MaterialTheme.typography.bodySmall, // 使用更小的字号
-                    color = MaterialTheme.colorScheme.onSurfaceVariant, // 使用次级颜色
-                    maxLines = 2, // 限制行数，防止太长 (可选)
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis // 超出显示省略号
-                )
+                // 备注/描述 (字体小一点，颜色淡一点)
+                if (item.remark.isNotEmpty()) {
+                    Spacer(modifier = Modifier.size(2.dp)) // 标题和备注的微小间距
+                    Text(
+                        text = item.remark,
+                        style = MaterialTheme.typography.bodySmall, // 使用更小的字号
+                        color = MaterialTheme.colorScheme.onSurfaceVariant, // 使用次级颜色
+                        maxLines = 2, // 限制行数，防止太长 (可选)
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis // 超出显示省略号
+                    )
+                } else {
+                    // 关键修改：当没有备注时，渲染一个不可见的占位符，保持高度一致
+                    Spacer(modifier = Modifier.size(2.dp))
+                    Text(
+                        text = " ", // 一个空格占位
+                        style = MaterialTheme.typography.bodySmall,
+                        // 也可以直接用 Modifier.alpha(0f) 隐藏
+                    )
+                }
             }
         }
+
     }
 }
 
@@ -159,9 +205,27 @@ fun DrawerMenuItemRow(item: DrawerMenuItem) {
 fun DrawerMenuPreview() {
     // 模拟数据
     val sampleItems = listOf(
-        DrawerMenuItem("home", "主页", Icons.Default.Home, "矮小爱哭爱玩闹") {},
-        DrawerMenuItem("settings", "设置", Icons.Default.Settings,"矮小爱哭爱玩闹") {},
-        DrawerMenuItem("logout", "退出", Icons.Default.Close,"矮小爱哭爱玩闹") {}
+        DrawerMenuItem(
+            "home",
+            "主页",
+            BadgeChannel.HUAWEI,
+            Icons.Default.Home,
+            "矮小爱哭爱玩闹"
+        ) {},
+        DrawerMenuItem(
+            "settings",
+            "设置",
+            BadgeChannel.HUAWEI,
+            Icons.Default.Settings,
+            "矮小爱哭爱玩闹"
+        ) {},
+        DrawerMenuItem(
+            "logout",
+            "退出",
+            BadgeChannel.HUAWEI,
+            Icons.Default.Close,
+            "矮小爱哭爱玩闹"
+        ) {}
     )
 
     DrawerMenu(items = sampleItems, onGoHomeClick = {}, onCloseClick = {})

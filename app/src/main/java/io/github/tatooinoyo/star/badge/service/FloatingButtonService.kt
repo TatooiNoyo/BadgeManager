@@ -131,6 +131,7 @@ class FloatingButtonService : Service() {
                         id = badge.id,
                         title = badge.title,
                         icon = Icons.Default.Star,
+                        channel = badge.channel,
                         remark = badge.remark
                     ) {
                         Toast.makeText(context, "选中: ${badge.title}", Toast.LENGTH_SHORT).show()
@@ -139,7 +140,7 @@ class FloatingButtonService : Service() {
                 }
 
                 Surface(
-                    modifier = Modifier.width(160.dp),
+                    modifier = Modifier.width(200.dp),
                     color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
                 ) {
