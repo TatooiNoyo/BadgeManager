@@ -34,6 +34,7 @@ import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,42 +44,53 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import io.tatooinoyo.star.badge.data.Badge
 import io.tatooinoyo.star.badge.data.BadgeChannel
-import io.tatooinoyo.star.badge.data.BadgeRepository
 
 @Composable
 fun BadgeManagerScreen(
     nfcPayload: String? = null,
-    onNfcDataConsumed: () -> Unit = {}
+    onNfcDataConsumed: () -> Unit = {},
+    // 使用 viewModel() 函数获取 ViewModel 实例
+    viewModel: BadgeManagerViewModel = viewModel()
 ) {
-    // 页面状态：当前正在编辑的徽章。如果是 null，则显示列表；否则显示详情页
-    var editingBadge by remember { mutableStateOf<Badge?>(null) }
+    // 监听 ViewModel 中的 UI 状态
+    val uiState by viewModel.uiState.collectAsState()
 
     // 监听 NFC 数据变化
-    // 当 nfcPayload 变成非空字符串时，我们判断当前是在哪里
-    androidx.compose.runtime.LaunchedEffect(nfcPayload) {
+    LaunchedEffect(nfcPayload) {
         if (!nfcPayload.isNullOrEmpty()) {
-            // 如果还没打开详情页，我们无法填充到详情页，
-            // 这里假设默认行为：如果有 NFC 数据进来，且当前处于列表页，
-            // 我们可能只更新列表页的 "添加区域" 的 linkInput 状态。
-            // 具体逻辑在下面传递给 BadgeListContent 或 BadgeDetailContent 处理
+            viewModel.onNfcPayloadReceived(nfcPayload)
+            onNfcDataConsumed()
         }
     }
 
     // 根据状态切换视图
-    if (editingBadge == null) {
+    if (uiState.editingBadge == null) {
         BadgeListContent(
-            onItemClick = { badge -> editingBadge = badge },
-            nfcPayload = nfcPayload, // 传下去
-            onNfcDataConsumed = onNfcDataConsumed
+            uiState = uiState,
+            onInputTitleChange = { viewModel.updateAddInput(title = it) },
+            onInputRemarkChange = { viewModel.updateAddInput(remark = it) },
+            onInputLinkChange = { viewModel.updateAddInput(link = it) },
+            onInputChannelChange = { viewModel.updateAddInput(channel = it) },
+            onAddClick = { viewModel.addBadge() },
+            onItemClick = { badge -> viewModel.selectBadge(badge) }
         )
     } else {
         BadgeDetailContent(
-            badge = editingBadge!!,
-            onExit = { editingBadge = null },
-            nfcPayload = nfcPayload, // 传下去
-            onNfcDataConsumed = onNfcDataConsumed
+            badge = uiState.editingBadge!!,
+            title = uiState.detailTitle,
+            remark = uiState.detailRemark,
+            link = uiState.detailLink,
+            channel = uiState.detailChannel,
+            onTitleChange = { viewModel.updateDetailInput(title = it) },
+            onRemarkChange = { viewModel.updateDetailInput(remark = it) },
+            onLinkChange = { viewModel.updateDetailInput(link = it) },
+            onChannelChange = { viewModel.updateDetailInput(channel = it) },
+            onSaveClick = { viewModel.saveBadgeUpdate() },
+            onDeleteClick = { viewModel.deleteBadge() },
+            onExitClick = { viewModel.exitEditMode() }
         )
     }
 }
@@ -86,54 +98,31 @@ fun BadgeManagerScreen(
 // === 视图 1: 列表与添加页面 (主页) ===
 @Composable
 fun BadgeListContent(
-    onItemClick: (Badge) -> Unit,
-    nfcPayload: String?,
-    onNfcDataConsumed: () -> Unit
+    uiState: BadgeUiState,
+    onInputTitleChange: (String) -> Unit,
+    onInputRemarkChange: (String) -> Unit,
+    onInputLinkChange: (String) -> Unit,
+    onInputChannelChange: (BadgeChannel) -> Unit,
+    onAddClick: () -> Unit,
+    onItemClick: (Badge) -> Unit
 ) {
-    // 监听数据
-    val badgeList by BadgeRepository.badges.collectAsState()
-
-    // 添加模式下的输入状态
-    var titleInput by remember { mutableStateOf("") }
-    var remarkInput by remember { mutableStateOf("") }
-    var linkInput by remember { mutableStateOf("") }
-    var selectedChannel by remember { mutableStateOf(BadgeChannel.HUAWEI) }
-
-
-    // 监听 NFC 数据并填充
-    androidx.compose.runtime.LaunchedEffect(nfcPayload) {
-        if (!nfcPayload.isNullOrEmpty()) {
-            linkInput = nfcPayload // 自动填充到 Link 框
-            onNfcDataConsumed()    // 通知上层清空数据，防止重组时再次覆盖用户的手动修改
-        }
-    }
-
     Column(modifier = Modifier.padding(16.dp)) {
         Text("徽章管理", style = MaterialTheme.typography.headlineMedium)
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // === 添加区域 (复用之前的逻辑) ===
+        // === 添加区域 ===
         BadgeInputForm(
-            title = titleInput, onTitleChange = { titleInput = it },
-            remark = remarkInput, onRemarkChange = { remarkInput = it },
-            link = linkInput, onLinkChange = { linkInput = it },
-            channel = selectedChannel, onChannelChange = { selectedChannel = it }
+            title = uiState.addTitle, onTitleChange = onInputTitleChange,
+            remark = uiState.addRemark, onRemarkChange = onInputRemarkChange,
+            link = uiState.addLink, onLinkChange = onInputLinkChange,
+            channel = uiState.addChannel, onChannelChange = onInputChannelChange
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Button(
-            onClick = {
-                if (titleInput.isNotBlank()) {
-                    BadgeRepository.addBadge(titleInput, remarkInput, linkInput, selectedChannel)
-                    // 清空输入
-                    titleInput = ""
-                    remarkInput = ""
-                    linkInput = ""
-                    selectedChannel = BadgeChannel.HUAWEI
-                }
-            },
+            onClick = onAddClick,
             modifier = Modifier.align(Alignment.End)
         ) {
             Icon(Icons.Default.Add, contentDescription = null)
@@ -150,7 +139,7 @@ fun BadgeListContent(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(vertical = 8.dp)
         ) {
-            items(badgeList) { badge ->
+            items(uiState.badges) { badge ->
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -191,7 +180,6 @@ fun BadgeListContent(
                                 )
                             }
                         }
-                        // 注意：这里移除了删除按钮
                     }
                 }
             }
@@ -201,25 +189,22 @@ fun BadgeListContent(
 
 // === 视图 2: 详情编辑页面 ===
 @Composable
-fun BadgeDetailContent(badge: Badge,
-                       onExit: () -> Unit,
-                       nfcPayload: String?,
-                       onNfcDataConsumed: () -> Unit) {
-    // 编辑状态，初始化为传入的徽章数据
-    var title by remember { mutableStateOf(badge.title) }
-    var remark by remember { mutableStateOf(badge.remark) }
-    var link by remember { mutableStateOf(badge.link) }
-    var channel by remember { mutableStateOf(badge.channel) }
-
-    // 如果在编辑模式下触碰 NFC，更新当前编辑的链接
-    androidx.compose.runtime.LaunchedEffect(nfcPayload) {
-        if (!nfcPayload.isNullOrEmpty()) {
-            link = nfcPayload
-            onNfcDataConsumed()
-        }
-    }
-
-    // 弹窗控制状态
+fun BadgeDetailContent(
+    badge: Badge,
+    title: String,
+    remark: String,
+    link: String,
+    channel: BadgeChannel,
+    onTitleChange: (String) -> Unit,
+    onRemarkChange: (String) -> Unit,
+    onLinkChange: (String) -> Unit,
+    onChannelChange: (BadgeChannel) -> Unit,
+    onSaveClick: () -> Unit,
+    onDeleteClick: () -> Unit,
+    onExitClick: () -> Unit
+) {
+    // 弹窗控制状态 (这些属于纯 UI 交互状态，可以保留在 Composable 内部，或者也移到 VM)
+    // 这里为了方便，暂时保留在 UI 层
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var showUpdateConfirm by remember { mutableStateOf(false) }
 
@@ -229,10 +214,10 @@ fun BadgeDetailContent(badge: Badge,
 
         // 复用输入表单
         BadgeInputForm(
-            title = title, onTitleChange = { title = it },
-            remark = remark, onRemarkChange = { remark = it },
-            link = link, onLinkChange = { link = it },
-            channel = channel, onChannelChange = { channel = it }
+            title = title, onTitleChange = onTitleChange,
+            remark = remark, onRemarkChange = onRemarkChange,
+            link = link, onLinkChange = onLinkChange,
+            channel = channel, onChannelChange = onChannelChange
         )
 
         Spacer(modifier = Modifier.weight(1f)) // 占位，把按钮推到底部
@@ -243,7 +228,7 @@ fun BadgeDetailContent(badge: Badge,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             // 退出按钮
-            OutlinedButton(onClick = onExit) {
+            OutlinedButton(onClick = onExitClick) {
                 Text("退出")
             }
 
@@ -275,9 +260,8 @@ fun BadgeDetailContent(badge: Badge,
             confirmButton = {
                 TextButton(
                     onClick = {
-                        BadgeRepository.removeBadge(badge.id)
                         showDeleteConfirm = false
-                        onExit() // 删除后退出详情页
+                        onDeleteClick()
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
@@ -300,11 +284,8 @@ fun BadgeDetailContent(badge: Badge,
             text = { Text("确定要保存对“${badge.title}”的修改吗？") },
             confirmButton = {
                 TextButton(onClick = {
-                    // 调用 Repository 的更新方法
-                    BadgeRepository.updateBadge(badge.id, title, remark, link, channel)
-
                     showUpdateConfirm = false
-                    onExit()
+                    onSaveClick()
                 }) {
                     Text("确认保存")
                 }
@@ -359,35 +340,37 @@ fun BadgeInputForm(
             Spacer(modifier = Modifier.width(8.dp))
 
             Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
-                OutlinedTextField(
-                    value = channel.label,
-                    onValueChange = {},
-                    readOnly = true,
-                    trailingIcon = { Icon(Icons.Default.ArrowDropDown, contentDescription = null) },
-                    modifier = Modifier
-                        .width(150.dp)
-                        .clickable { channelMenuExpanded = true },
-                    enabled = false,
-                    colors = androidx.compose.material3.TextFieldDefaults.colors(
-                        disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                        disabledContainerColor = Color.Transparent,
-                        disabledIndicatorColor = MaterialTheme.colorScheme.outline
-                    )
-                )
+                // 使用 Box 和一个不可编辑的 TextField 来模拟下拉框触发器
+                // 注意：这里我们覆盖在 TextField 上加了一个点击区域
                 Box(
                     modifier = Modifier
-                        .matchParentSize()
                         .clickable { channelMenuExpanded = true }
-                )
+                ) {
+                    OutlinedTextField(
+                        value = channel.label,
+                        onValueChange = {},
+                        readOnly = true,
+                        trailingIcon = { Icon(Icons.Default.ArrowDropDown, contentDescription = null) },
+                        modifier = Modifier.width(150.dp),
+                        enabled = false, // 禁用自带输入，完全靠点击触发
+                        colors = androidx.compose.material3.TextFieldDefaults.colors(
+                            disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                            disabledContainerColor = Color.Transparent,
+                            disabledIndicatorColor = MaterialTheme.colorScheme.outline,
+                            disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+                }
+
                 DropdownMenu(
                     expanded = channelMenuExpanded,
                     onDismissRequest = { channelMenuExpanded = false }
                 ) {
-                    BadgeChannel.values().forEach { c ->
+                    BadgeChannel.values().forEach { option ->
                         DropdownMenuItem(
-                            text = { Text(c.label) },
+                            text = { Text(option.label) },
                             onClick = {
-                                onChannelChange(c)
+                                onChannelChange(option)
                                 channelMenuExpanded = false
                             }
                         )
