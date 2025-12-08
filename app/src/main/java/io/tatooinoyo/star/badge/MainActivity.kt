@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import io.tatooinoyo.star.badge.data.BadgeRepository
 import io.tatooinoyo.star.badge.service.FloatingButtonService
 import io.tatooinoyo.star.badge.ui.screen.BadgeManagerScreen
+import java.nio.charset.StandardCharsets
 
 class MainActivity : ComponentActivity() {
     // 创建一个全局状态来持有读取到的 NFC 数据
@@ -91,6 +92,7 @@ class MainActivity : ComponentActivity() {
             PendingIntent.FLAG_MUTABLE or 0 // Android 12+ 需要 FLAG_MUTABLE
         )
 
+        // 添加 TAG_DISCOVERED 和 TECH_DISCOVERED 作为兜底，确保能捕获所有类型的 NFC 标签
         val nfcFilters = arrayOf(
             IntentFilter(NfcAdapter.ACTION_NDEF_DISCOVERED).apply {
                 try {
@@ -98,7 +100,9 @@ class MainActivity : ComponentActivity() {
                 } catch (e: IntentFilter.MalformedMimeTypeException) {
                     throw RuntimeException("fail", e)
                 }
-            }
+            },
+            IntentFilter(NfcAdapter.ACTION_TAG_DISCOVERED),
+            IntentFilter(NfcAdapter.ACTION_TECH_DISCOVERED)
         )
 
         nfcAdapter?.enableForegroundDispatch(this, pendingIntent, nfcFilters, null)
@@ -112,7 +116,12 @@ class MainActivity : ComponentActivity() {
     // 处理新的 Intent (当在 Activity 处于前台时触碰 NFC)
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        if (isNfcSupported && NfcAdapter.ACTION_NDEF_DISCOVERED == intent.action) {
+        // 扩展判断条件，处理 TAG_DISCOVERED 和 TECH_DISCOVERED
+        if (isNfcSupported && (
+                    NfcAdapter.ACTION_NDEF_DISCOVERED == intent.action ||
+                    NfcAdapter.ACTION_TAG_DISCOVERED == intent.action ||
+                    NfcAdapter.ACTION_TECH_DISCOVERED == intent.action
+                    )) {
             handleNfcIntent(intent)
         }
     }
@@ -137,31 +146,87 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+        } else {
+            // 如果不是 NDEF 数据（例如未格式化的卡片），依然提示用户
+            // 这里可以扩展去读取卡片 ID: intent.getByteArrayExtra(NfcAdapter.EXTRA_ID)
+            val id = intent.getByteArrayExtra(NfcAdapter.EXTRA_ID)
+            val idHex = id?.joinToString("") { "%02x".format(it) } ?: "Unknown"
+            scannedNfcData = "Card ID: $idHex (Raw Tag)"
+            Toast.makeText(this, "检测到NFC卡片 ID: $idHex", Toast.LENGTH_SHORT).show()
         }
     }
 
     // 简单的 Payload 解析器 (支持 Text 和 URI)
     private fun parsePayload(record: NdefRecord): String {
-        try {
+        return try {
             val payload = record.payload
-
-            // 简单判断是否是 URI 记录 (0x00 = 没有任何前缀, 0x01 = http://www., etc.)
-            // 这里为了简化，直接按照字符串读取，实际生产环境建议使用专门的 NDEF 解析库
-            // 或者处理 TextRecord 的编码位
-
-            // 尝试直接转字符串，去除可能存在的语言编码前缀 (通常 Text Record 前几个字节是编码信息)
-            val textEncoding = if ((payload[0].toInt() and 128) == 0) "UTF-8" else "UTF-16"
-            val languageCodeLength = payload[0].toInt() and 63
-
-            return String(
-                payload,
-                languageCodeLength + 1,
-                payload.size - languageCodeLength - 1,
-                java.nio.charset.Charset.forName(textEncoding)
-            )
+            
+            // 检查是否是 URI 记录 (TNF_WELL_KNOWN + RTD_URI)
+            if (record.tnf == NdefRecord.TNF_WELL_KNOWN && java.util.Arrays.equals(record.type, NdefRecord.RTD_URI)) {
+                // URI 记录的第一个字节是前缀代码
+                val prefixCode = payload[0].toInt()
+                val prefix = when (prefixCode) {
+                    0x00 -> ""
+                    0x01 -> "http://www."
+                    0x02 -> "https://www."
+                    0x03 -> "http://"
+                    0x04 -> "https://"
+                    0x05 -> "tel:"
+                    0x06 -> "mailto:"
+                    0x07 -> "ftp://anonymous:anonymous@"
+                    0x08 -> "ftp://ftp."
+                    0x09 -> "ftps://"
+                    0x0A -> "sftp://"
+                    0x0B -> "smb://"
+                    0x0C -> "nfs://"
+                    0x0D -> "ftp://"
+                    0x0E -> "dav://"
+                    0x0F -> "news:"
+                    0x10 -> "telnet://"
+                    0x11 -> "imap:"
+                    0x12 -> "rtsp://"
+                    0x13 -> "urn:"
+                    0x14 -> "pop:"
+                    0x15 -> "sip:"
+                    0x16 -> "sips:"
+                    0x17 -> "tftp:"
+                    0x18 -> "btspp://"
+                    0x19 -> "btl2cap://"
+                    0x1A -> "btgoep://"
+                    0x1B -> "tcpobex://"
+                    0x1C -> "irdaobex://"
+                    0x1D -> "file://"
+                    0x1E -> "urn:epc:id:"
+                    0x1F -> "urn:epc:tag:"
+                    0x20 -> "urn:epc:pat:"
+                    0x21 -> "urn:epc:raw:"
+                    0x22 -> "urn:epc:"
+                    0x23 -> "urn:nfc:"
+                    else -> ""
+                }
+                // 剩余部分是实际的 URI 内容
+                val uriContent = String(payload, 1, payload.size - 1, StandardCharsets.UTF_8)
+                return prefix + uriContent
+            } 
+            // 检查是否是 Text 记录 (TNF_WELL_KNOWN + RTD_TEXT)
+            else if (record.tnf == NdefRecord.TNF_WELL_KNOWN && java.util.Arrays.equals(record.type, NdefRecord.RTD_TEXT)) {
+                // Text 记录解析
+                val textEncoding = if ((payload[0].toInt() and 128) == 0) "UTF-8" else "UTF-16"
+                val languageCodeLength = payload[0].toInt() and 63
+                return String(
+                    payload,
+                    languageCodeLength + 1,
+                    payload.size - languageCodeLength - 1,
+                    java.nio.charset.Charset.forName(textEncoding)
+                )
+            } else {
+                // 其他类型尝试直接转 String
+                String(record.payload)
+            }
         } catch (e: Exception) {
+            e.printStackTrace()
             // 如果解析失败，尝试直接转 String
-            return String(record.payload)
+            String(record.payload)
         }
     }
 
