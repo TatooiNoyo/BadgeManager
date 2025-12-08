@@ -1,5 +1,7 @@
 # 光遇徽章管理器 (Badge Manager)
 
+[English Version](README_EN.md)
+
 Badge Manager 是一个 Android 应用程序，帮助用户管理和快速启动“光遇star徽章”。它支持 NFC 读取功能，通过触碰 NFC 标签快速填充链接，并提供悬浮球功能以便快速访问。
 
 ## ✨ 主要功能
