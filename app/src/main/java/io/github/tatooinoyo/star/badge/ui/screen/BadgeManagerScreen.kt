@@ -1,5 +1,6 @@
 package io.github.tatooinoyo.star.badge.ui.screen
 
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,6 +45,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.tatooinoyo.star.badge.data.Badge
@@ -59,6 +63,8 @@ fun BadgeManagerScreen(
     // 监听 ViewModel 中的 UI 状态
     val uiState by viewModel.uiState.collectAsState()
 
+    val clipboardManager = LocalClipboardManager.current
+    val context = LocalContext.current // 1. 获取 Context 用于显示 Toast
     // 监听 NFC 数据变化
     LaunchedEffect(nfcPayload) {
         if (!nfcPayload.isNullOrEmpty()) {
@@ -76,7 +82,8 @@ fun BadgeManagerScreen(
             onInputLinkChange = { viewModel.updateAddInput(link = it) },
             onInputChannelChange = { viewModel.updateAddInput(channel = it) },
             onAddClick = { viewModel.addBadge() },
-            onItemClick = { badge -> viewModel.selectBadge(badge) }
+            onItemClick = { badge -> viewModel.selectBadge(badge) },
+            onExtractSkClick = { link -> viewModel.extractSkFromLink(link) }
         )
     } else {
         BadgeDetailContent(
@@ -94,7 +101,39 @@ fun BadgeManagerScreen(
             onCancelWriteNfcClick = { viewModel.cancelWritingNfc() },
             onSaveClick = { viewModel.saveBadgeUpdate() },
             onDeleteClick = { viewModel.deleteBadge() },
-            onExitClick = { viewModel.exitEditMode() }
+            onExitClick = { viewModel.exitEditMode() },
+            onExtractSkClick = { link -> viewModel.extractSkFromLink(link) }
+        )
+    }
+
+    // SK 提取结果显示弹窗
+    uiState.extractedSk?.let { sk ->
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissSkDialog() },
+            title = { Text("提取到的 SK 编码") },
+            text = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(sk, modifier = Modifier.weight(1f))
+                    TextButton(onClick = {
+                        clipboardManager.setText(AnnotatedString(sk))
+                        Toast.makeText(context, "已复制到剪切板", Toast.LENGTH_SHORT).show()
+                    }) {
+                        Text("复制")
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.dismissSkDialog()
+                }) {
+                    Text("确定")
+                }
+            }
+
         )
     }
 }
@@ -108,7 +147,8 @@ fun BadgeListContent(
     onInputLinkChange: (String) -> Unit,
     onInputChannelChange: (BadgeChannel) -> Unit,
     onAddClick: () -> Unit,
-    onItemClick: (Badge) -> Unit
+    onItemClick: (Badge) -> Unit,
+    onExtractSkClick: (String) -> Unit
 ) {
     Column(modifier = Modifier.padding(16.dp)) {
         Text("徽章管理", style = MaterialTheme.typography.headlineMedium)
@@ -120,7 +160,8 @@ fun BadgeListContent(
             title = uiState.addTitle, onTitleChange = onInputTitleChange,
             remark = uiState.addRemark, onRemarkChange = onInputRemarkChange,
             link = uiState.addLink, onLinkChange = onInputLinkChange,
-            channel = uiState.addChannel, onChannelChange = onInputChannelChange
+            channel = uiState.addChannel, onChannelChange = onInputChannelChange,
+            onExtractSkClick = onExtractSkClick
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -208,7 +249,8 @@ fun BadgeDetailContent(
     onCancelWriteNfcClick: () -> Unit,
     onSaveClick: () -> Unit,
     onDeleteClick: () -> Unit,
-    onExitClick: () -> Unit
+    onExitClick: () -> Unit,
+    onExtractSkClick: (String) -> Unit
 ) {
     // 弹窗控制状态 (这些属于纯 UI 交互状态，可以保留在 Composable 内部，或者也移到 VM)
     // 这里为了方便，暂时保留在 UI 层
@@ -224,7 +266,8 @@ fun BadgeDetailContent(
             title = title, onTitleChange = onTitleChange,
             remark = remark, onRemarkChange = onRemarkChange,
             link = link, onLinkChange = onLinkChange,
-            channel = channel, onChannelChange = onChannelChange
+            channel = channel, onChannelChange = onChannelChange,
+            onExtractSkClick = onExtractSkClick
         )
 
         Spacer(modifier = Modifier.weight(1f)) // 占位，把按钮推到底部
@@ -339,7 +382,8 @@ fun BadgeInputForm(
     title: String, onTitleChange: (String) -> Unit,
     remark: String, onRemarkChange: (String) -> Unit,
     link: String, onLinkChange: (String) -> Unit,
-    channel: BadgeChannel, onChannelChange: (BadgeChannel) -> Unit
+    channel: BadgeChannel, onChannelChange: (BadgeChannel) -> Unit,
+    onExtractSkClick: (String) -> Unit // 新增回调
 ) {
     var channelMenuExpanded by remember { mutableStateOf(false) }
 
@@ -362,7 +406,12 @@ fun BadgeInputForm(
             value = link, onValueChange = onLinkChange,
             label = { Text("链接 (如: https://...)") },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            singleLine = true,
+            trailingIcon = {
+                TextButton(onClick = { onExtractSkClick(link) }) {
+                    Text("SK")
+                }
+            }
         )
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -384,7 +433,12 @@ fun BadgeInputForm(
                         value = channel.label,
                         onValueChange = {},
                         readOnly = true,
-                        trailingIcon = { Icon(Icons.Default.ArrowDropDown, contentDescription = null) },
+                        trailingIcon = {
+                            Icon(
+                                Icons.Default.ArrowDropDown,
+                                contentDescription = null
+                            )
+                        },
                         modifier = Modifier.width(150.dp),
                         enabled = false, // 禁用自带输入，完全靠点击触发
                         colors = TextFieldDefaults.colors(

@@ -18,6 +18,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.io.IOException
 import java.nio.charset.Charset
+import android.util.Base64 // Import Base64
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 
 // 定义 UI 状态
 data class BadgeUiState(
@@ -33,7 +36,8 @@ data class BadgeUiState(
     val detailRemark: String = "",
     val detailLink: String = "",
     val detailChannel: BadgeChannel = BadgeChannel.HUAWEI,
-    val isWritingNfc: Boolean = false // 是否正在等待写入 NFC
+    val isWritingNfc: Boolean = false, // 是否正在等待写入 NFC
+    val extractedSk: String? = null // 提取出的 SK 编码
 )
 
 class BadgeManagerViewModel : ViewModel() {
@@ -130,7 +134,7 @@ class BadgeManagerViewModel : ViewModel() {
     }
 
     fun exitEditMode() {
-        _uiState.value = _uiState.value.copy(editingBadge = null, isWritingNfc = false)
+        _uiState.value = _uiState.value.copy(editingBadge = null, isWritingNfc = false, extractedSk = null)
     }
 
     // === NFC 处理逻辑 ===
@@ -214,4 +218,35 @@ class BadgeManagerViewModel : ViewModel() {
             }
         }
     }
+
+    // === SK 提取逻辑 ===
+    fun extractSkFromLink(link: String) {
+        viewModelScope.launch {
+            val decodedSk = try {
+                val uri = android.net.Uri.parse(link)
+                val sParam = uri.getQueryParameter("s")
+
+                if (sParam.isNullOrBlank()) {
+                    "链接中未找到 's' 参数。"
+                } else {
+                    // Base64 解码
+                    val decodedBytes = Base64.decode(sParam, Base64.URL_SAFE) // Sky 的链接通常是 URL_SAFE
+                    val decodedString = String(decodedBytes, Charset.forName("UTF-8"))
+
+                    // 从解码后的字符串中提取 sk 参数
+                    val decodedUri = android.net.Uri.parse("dummy://host?" + decodedString)
+                    decodedUri.getQueryParameter("sk") ?: "解码后未找到 'sk' 参数。"
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                "提取失败: ${e.message}"
+            }
+            _uiState.value = _uiState.value.copy(extractedSk = decodedSk)
+        }
+    }
+
+    fun dismissSkDialog() {
+        _uiState.value = _uiState.value.copy(extractedSk = null)
+    }
+
 }
