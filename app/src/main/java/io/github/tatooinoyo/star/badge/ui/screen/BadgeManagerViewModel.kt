@@ -97,7 +97,6 @@ class BadgeManagerViewModel : ViewModel() {
                 addTitle = "",
                 addRemark = "",
                 addLink = "",
-                addChannel = BadgeChannel.HUAWEI
             )
         }
     }
