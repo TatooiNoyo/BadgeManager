@@ -53,6 +53,13 @@ class BadgeManagerViewModel : ViewModel() {
     }
 
     // === 列表/添加页面的操作 ===
+    private fun normalizeLink(link: String): String {
+        return if (link.isNotBlank() && !link.startsWith("http://") && !link.startsWith("https://")) {
+            "https://$link"
+        } else {
+            link
+        }
+    }
 
     fun updateAddInput(
         title: String = _uiState.value.addTitle,
@@ -76,10 +83,13 @@ class BadgeManagerViewModel : ViewModel() {
     fun addBadge() {
         val state = _uiState.value
         if (state.addTitle.isNotBlank()) {
+            // 兼容没有协议的链接
+            val finalLink = normalizeLink(state.addLink)
+
             BadgeRepository.addBadge(
                 state.addTitle,
                 state.addRemark,
-                state.addLink,
+                finalLink,
                 state.addChannel
             )
             // 重置输入
@@ -127,11 +137,12 @@ class BadgeManagerViewModel : ViewModel() {
     fun saveBadgeUpdate() {
         val state = _uiState.value
         state.editingBadge?.let { originalBadge ->
+            val finalLink = normalizeLink(state.detailLink)
             BadgeRepository.updateBadge(
                 originalBadge.id,
                 state.detailTitle,
                 state.detailRemark,
-                state.detailLink,
+                finalLink,
                 state.detailChannel,
                 originalBadge.orderIndex
             )
