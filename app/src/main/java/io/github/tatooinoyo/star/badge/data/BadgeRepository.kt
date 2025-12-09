@@ -22,6 +22,9 @@ val PRESET_BADGES_MAP = mapOf(
     "SKY-PN-ST-SUM-SP" to TitleAndRemark("云野传说","15s cooling."),
     "SKY-KC-ST-COB-AI" to TitleAndRemark("光之爱钥匙扣","3m cooling, 3m duration."),
     "SKY-BK-ST-PRO-ART" to TitleAndRemark("光遇设定集","15m cooling, 20m duration."),
+    "SKY-KC-ST-LPP-TF" to TitleAndRemark("狐狸毛绒钥匙扣","获得10分钟的狐狸毛绒玩具，冷却时间15分钟。"),
+    "SKY-KC-ST-COB-MM" to TitleAndRemark("姆明玩偶钥匙扣","获得10分钟的姆明毛绒玩偶，冷却15分钟。"),
+    "SKY-UM-ST-PRO-LU" to TitleAndRemark("追光者雨伞","获得10分钟的大伞背饰，冷却15分钟。"),
 )
 
 // 定义预设的渠道
