@@ -3,6 +3,7 @@ package io.github.tatooinoyo.star.badge
 import android.app.PendingIntent
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.Uri
 import android.nfc.NdefMessage
 import android.nfc.NdefRecord
 import android.nfc.NfcAdapter
@@ -10,10 +11,10 @@ import android.nfc.Tag
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import android.net.Uri
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -34,14 +35,14 @@ class MainActivity : ComponentActivity() {
     // 使用 mutableStateOf 让 Compose 可以感知变化
     private var scannedNfcData by mutableStateOf<String?>(null)
     private var nfcAdapter: NfcAdapter? = null
-    
+
     // 全局 ViewModel，方便 Activity 直接调用写入逻辑
     // 注意：在正式架构中可能需要更好的方式（例如依赖注入），这里为了简单直接在 Compose 内部和 Activity 之间共享
     // 但为了确保 BadgeManagerScreen 能获取到同一个 ViewModel 实例，最简单的是让 Compose 自己创建，
     // 或者我们在这里创建传进去。
     // 为了支持 "Activity 接收到 Tag -> ViewModel.writeNfcTag"，我们需要能访问到 ViewModel。
     // 这里我们依然让 Compose 拥有 ViewModel，但我们可以通过回调或者共享对象来传递 Tag。
-    
+
     // 实际上，ViewModel 是依附于 Activity 的 ViewModelStore 的。
     // 我们可以在 onNewIntent 中获取 ViewModel 实例（如果在 Activity 中获取）。
     // 或者更简单的，我们定义一个全局的回调，当 Tag 被发现时，如果正处于写入模式，则调用。
@@ -49,7 +50,7 @@ class MainActivity : ComponentActivity() {
     // 增加一个辅助属性，方便判断是否支持 NFC
     private val isNfcSupported: Boolean
         get() = nfcAdapter != null
-        
+
     // 临时的 Tag 变量
     private var currentTag: Tag? = null
 
@@ -66,6 +67,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         // 初始化数据库
         BadgeRepository.initialize(applicationContext)
         // 初始化 NFC Adapter
@@ -76,11 +78,11 @@ class MainActivity : ComponentActivity() {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     // 获取 ViewModel 实例，它会自动从 Activity 的 ViewModelStore 中获取
                     val viewModel: BadgeManagerViewModel = viewModel()
-                    
+
                     // 当发现新的 Tag 时，尝试写入
                     // 注意：这里是一个副作用，当 currentTag 更新时触发
                     // 但更合理的做法是让 ViewModel 处理业务，Activity 只负责传递事件
-                    
+
                     BadgeManagerScreen(
                         nfcPayload = scannedNfcData,
                         onNfcDataConsumed = { scannedNfcData = null },
@@ -144,9 +146,10 @@ class MainActivity : ComponentActivity() {
         // 扩展判断条件，处理 TAG_DISCOVERED 和 TECH_DISCOVERED
         if (isNfcSupported && (
                     NfcAdapter.ACTION_NDEF_DISCOVERED == intent.action ||
-                    NfcAdapter.ACTION_TAG_DISCOVERED == intent.action ||
-                    NfcAdapter.ACTION_TECH_DISCOVERED == intent.action
-                    )) {
+                            NfcAdapter.ACTION_TAG_DISCOVERED == intent.action ||
+                            NfcAdapter.ACTION_TECH_DISCOVERED == intent.action
+                    )
+        ) {
             handleNfcIntent(intent)
         }
     }
@@ -154,20 +157,21 @@ class MainActivity : ComponentActivity() {
     // 解析 NFC 数据的方法
     private fun handleNfcIntent(intent: Intent) {
         val tag: Tag? = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG)
-        
+
         // 尝试获取 Activity 作用域的 ViewModel
         // 注意：这需要在 UI 线程中执行
         if (tag != null) {
-             // 简单的办法：通过 ViewModelProvider 获取 Activity 的 ViewModel 实例
+            // 简单的办法：通过 ViewModelProvider 获取 Activity 的 ViewModel 实例
             // 但在 Activity 中直接这样写比较 hacky，通常是在 Fragment 或 Compose 中获取。
             // 这里我们使用一个简单的技巧：我们假设 MainActivity 是 SingleTop 的，
             // 且 Compose 已经初始化。
-            
+
             // 为了将 Tag 传递给 ViewModel，我们可以使用一个更稳健的方法。
             // 由于 Compose 树中的 viewModel() 也是获取 Activity 范围的（默认情况），
             // 我们可以直接再次获取它。
             try {
-                val viewModel = androidx.lifecycle.ViewModelProvider(this)[BadgeManagerViewModel::class.java]
+                val viewModel =
+                    androidx.lifecycle.ViewModelProvider(this)[BadgeManagerViewModel::class.java]
                 if (viewModel.uiState.value.isWritingNfc) {
                     val success = viewModel.writeNfcTag(tag, this)
                     if (success) {
@@ -212,9 +216,13 @@ class MainActivity : ComponentActivity() {
     private fun parsePayload(record: NdefRecord): String {
         return try {
             val payload = record.payload
-            
+
             // 检查是否是 URI 记录 (TNF_WELL_KNOWN + RTD_URI)
-            if (record.tnf == NdefRecord.TNF_WELL_KNOWN && java.util.Arrays.equals(record.type, NdefRecord.RTD_URI)) {
+            if (record.tnf == NdefRecord.TNF_WELL_KNOWN && java.util.Arrays.equals(
+                    record.type,
+                    NdefRecord.RTD_URI
+                )
+            ) {
                 // URI 记录的第一个字节是前缀代码
                 val prefixCode = payload[0].toInt()
                 val prefix = when (prefixCode) {
@@ -259,9 +267,13 @@ class MainActivity : ComponentActivity() {
                 // 剩余部分是实际的 URI 内容
                 val uriContent = String(payload, 1, payload.size - 1, StandardCharsets.UTF_8)
                 return prefix + uriContent
-            } 
+            }
             // 检查是否是 Text 记录 (TNF_WELL_KNOWN + RTD_TEXT)
-            else if (record.tnf == NdefRecord.TNF_WELL_KNOWN && java.util.Arrays.equals(record.type, NdefRecord.RTD_TEXT)) {
+            else if (record.tnf == NdefRecord.TNF_WELL_KNOWN && java.util.Arrays.equals(
+                    record.type,
+                    NdefRecord.RTD_TEXT
+                )
+            ) {
                 // Text 记录解析
                 val textEncoding = if ((payload[0].toInt() and 128) == 0) "UTF-8" else "UTF-16"
                 val languageCodeLength = payload[0].toInt() and 63

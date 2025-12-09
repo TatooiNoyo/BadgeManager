@@ -2,6 +2,7 @@ package io.github.tatooinoyo.star.badge.ui.screen
 
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,14 +10,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -61,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.tatooinoyo.star.badge.data.Badge
 import io.github.tatooinoyo.star.badge.data.BadgeChannel
+import io.github.tatooinoyo.star.badge.ui.theme.PeachTheme
 import org.burnoutcrew.reorderable.ReorderableItem
 import org.burnoutcrew.reorderable.detectReorder
 import org.burnoutcrew.reorderable.rememberReorderableLazyListState
@@ -166,9 +166,10 @@ fun BadgeListContent(
 
     Column(
         modifier = Modifier
-            .padding(16.dp)
             .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.statusBars)
+            .background(PeachTheme)
+            .padding(16.dp)
+            .safeDrawingPadding()
     ) {
 
         // 使用 AnimatedVisibility 包裹添加表单
@@ -177,7 +178,11 @@ fun BadgeListContent(
             var selectedTabIndex by remember { mutableIntStateOf(0) }
             val tabs = listOf("徽章录入", "备份还原")
 
-            TabRow(selectedTabIndex = selectedTabIndex) {
+            TabRow(
+                selectedTabIndex = selectedTabIndex,
+                containerColor = Color.Transparent,
+                contentColor = MaterialTheme.colorScheme.onSurface // 确保文字颜色正常
+            ) {
                 tabs.forEachIndexed { index, title ->
                     Tab(
                         selected = selectedTabIndex == index,
@@ -350,9 +355,10 @@ fun BadgeDetailContent(
 
     Column(
         modifier = Modifier
-            .padding(16.dp)
             .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.statusBars)
+            .background(PeachTheme)
+            .padding(16.dp)
+            .safeDrawingPadding()
     ) {
         Text("编辑徽章详情", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(24.dp))

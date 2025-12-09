@@ -1,6 +1,5 @@
 package io.github.tatooinoyo.star.badge.ui.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -9,6 +8,7 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
@@ -31,6 +31,13 @@ private val LightColorScheme = lightColorScheme(
     onBackground = Color(0xFF1C1B1F),
     onSurface = Color(0xFF1C1B1F),
     */
+)
+
+val PeachTheme = Brush.linearGradient(
+    colors = listOf(
+        PeachStart, // 起始颜色：浅橙色 (Orange 200)
+        PeachEnd,  // 结束颜色：极浅橙色/米色 (Orange 50)
+    )
 )
 
 @Composable
