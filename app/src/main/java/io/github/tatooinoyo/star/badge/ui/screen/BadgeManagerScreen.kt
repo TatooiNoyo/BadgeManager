@@ -19,13 +19,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Menu
@@ -38,6 +41,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -61,7 +65,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.tatooinoyo.star.badge.data.Badge
@@ -178,6 +184,16 @@ fun BadgeListContent(
     )
     var isAddAreaExpanded by remember { mutableStateOf(true) }
 
+    // 1. 新增：帮助弹窗的状态和 URI 处理器
+    val clipboardManager = LocalClipboardManager.current
+    val context = LocalContext.current
+    var showHelpDialog by remember { mutableStateOf(false) }
+    val uriHandler = LocalUriHandler.current
+    val projectUrl = "https://github.com/tatooinoyo/BadgeManager"
+    val issuesUrl = "$projectUrl/issues"
+    val pollUrl = "https://f.wps.cn/g/RQq78MAA"
+    val contactMail = "tatooi.noyo@outlook.com"
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -191,17 +207,37 @@ fun BadgeListContent(
 
             var selectedTabIndex by remember { mutableIntStateOf(0) }
             val tabs = listOf("徽章录入", "备份还原")
-
-            TabRow(
-                selectedTabIndex = selectedTabIndex,
-                containerColor = Color.Transparent,
-                contentColor = MaterialTheme.colorScheme.onSurface // 确保文字颜色正常
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                tabs.forEachIndexed { index, title ->
-                    Tab(
-                        selected = selectedTabIndex == index,
-                        onClick = { selectedTabIndex = index },
-                        text = { Text(title) }
+                Box(modifier = Modifier.weight(1f)) {
+                    TabRow(
+                        selectedTabIndex = selectedTabIndex,
+                        containerColor = Color.Transparent,
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                        divider = {} // 可选：移除底部分隔线使其更像按钮
+                    ) {
+                        tabs.forEachIndexed { index, title ->
+                            Tab(
+                                selected = selectedTabIndex == index,
+                                onClick = { selectedTabIndex = index },
+                                text = { Text(title) }
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                // 2. 帮助按钮
+                androidx.compose.material3.IconButton(
+                    onClick = { showHelpDialog = true }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Info, // 或者 Icons.AutoMirrored.Filled.Help
+                        contentDescription = "帮助与关于",
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
             }
@@ -429,6 +465,94 @@ fun BadgeListContent(
                 }
             }
         }
+    }
+
+    // === 新增：帮助弹窗 UI ===
+    if (showHelpDialog) {
+        AlertDialog(
+            onDismissRequest = { showHelpDialog = false },
+            icon = { Icon(Icons.Default.Info, contentDescription = null) },
+            title = { Text("关于 BadgeManager") },
+            text = {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text("这是一个开源的光遇徽章管理工具。")
+
+                    HorizontalDivider()
+
+                    // 仓库链接
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { uriHandler.openUri(projectUrl) }, // 点击跳转
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "📦 项目仓库 (GitHub)",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                color = MaterialTheme.colorScheme.primary,
+                                textDecoration = TextDecoration.Underline
+                            ),
+                        )
+                    }
+
+                    // 建议链接
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { uriHandler.openUri(issuesUrl) },
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "💡 提供建议 / 反馈 Bug",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                color = MaterialTheme.colorScheme.primary,
+                                textDecoration = TextDecoration.Underline
+                            )
+                        )
+                    }
+
+                    // 徽章信息采集
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { uriHandler.openUri(pollUrl) },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            "📝 未录入徽章采集",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                color = MaterialTheme.colorScheme.primary,
+                                textDecoration = TextDecoration.Underline
+                            ),
+                        )
+                    }
+                    Text("填入链接,标题未自动填充: 该徽章未录入! \n点击👆上方链接帮助完善该项目. \n \uD83D\uDCA1 SK码在 徽章录入页 链接右侧.")
+
+
+                    // 联系作者
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            "📧 联系作者",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                color = MaterialTheme.colorScheme.primary,
+                            ),
+                        )
+                    }
+                    SelectionContainer() { Text(contactMail) }
+
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showHelpDialog = false }) {
+                    Text("关闭")
+                }
+            }
+        )
     }
 }
 
