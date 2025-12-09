@@ -168,22 +168,6 @@ fun BadgeListContent(
             .fillMaxSize()
             .windowInsetsPadding(WindowInsets.statusBars)
     ) {
-        // 可点击的标题栏，用于折叠/展开
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { isAddAreaExpanded = !isAddAreaExpanded }
-                .padding(vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text("徽章管理", style = MaterialTheme.typography.headlineMedium)
-            Icon(
-                imageVector = if (isAddAreaExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                contentDescription = if (isAddAreaExpanded) "收起" else "展开",
-                tint = MaterialTheme.colorScheme.primary
-            )
-        }
 
         // 使用 AnimatedVisibility 包裹添加表单
         AnimatedVisibility(visible = isAddAreaExpanded) {
@@ -210,7 +194,21 @@ fun BadgeListContent(
             }
         }
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+        // 可点击的折叠栏，用于折叠/展开
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { isAddAreaExpanded = !isAddAreaExpanded }
+                .padding(vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = if (isAddAreaExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                contentDescription = if (isAddAreaExpanded) "收起" else "展开",
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
 
         Text("点击卡片查看详情,拖拽卡片右侧排序:", style = MaterialTheme.typography.titleMedium)
 
