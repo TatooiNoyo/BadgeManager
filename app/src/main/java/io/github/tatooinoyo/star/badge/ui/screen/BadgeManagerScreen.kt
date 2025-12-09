@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
@@ -66,10 +65,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import io.github.tatooinoyo.star.badge.R
 import io.github.tatooinoyo.star.badge.data.Badge
 import io.github.tatooinoyo.star.badge.data.BadgeChannel
 import io.github.tatooinoyo.star.badge.ui.theme.PeachTheme
@@ -138,7 +139,7 @@ fun BadgeManagerScreen(
     uiState.extractedSk?.let { sk ->
         AlertDialog(
             onDismissRequest = { viewModel.dismissSkDialog() },
-            title = { Text("提取到的 SK 编码") },
+            title = { Text(stringResource(R.string.dialog_sk_title)) },
             text = {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -148,15 +149,19 @@ fun BadgeManagerScreen(
                     Text(sk, modifier = Modifier.weight(1f))
                     TextButton(onClick = {
                         clipboardManager.setText(AnnotatedString(sk))
-                        Toast.makeText(context, "已复制到剪切板", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.msg_copy_success),
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }) {
-                        Text("复制")
+                        Text(stringResource(R.string.btn_copy))
                     }
                 }
             },
             confirmButton = {
                 TextButton(onClick = { viewModel.dismissSkDialog() }) {
-                    Text("确定")
+                    Text(stringResource(R.string.btn_confirm))
                 }
             }
         )
@@ -184,9 +189,7 @@ fun BadgeListContent(
     )
     var isAddAreaExpanded by remember { mutableStateOf(true) }
 
-    // 1. 新增：帮助弹窗的状态和 URI 处理器
-    val clipboardManager = LocalClipboardManager.current
-    val context = LocalContext.current
+    // 帮助弹窗的状态和 URI 处理器
     var showHelpDialog by remember { mutableStateOf(false) }
     val uriHandler = LocalUriHandler.current
     val projectUrl = "https://github.com/tatooinoyo/BadgeManager"
@@ -206,7 +209,8 @@ fun BadgeListContent(
         Column {
 
             var selectedTabIndex by remember { mutableIntStateOf(0) }
-            val tabs = listOf("徽章录入", "备份还原")
+            val tabs =
+                listOf(stringResource(R.string.tab_input), stringResource(R.string.tab_backup))
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
@@ -272,7 +276,7 @@ fun BadgeListContent(
                                 ) {
                                     Icon(Icons.Default.Add, contentDescription = null)
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text("添加徽章")
+                                    Text(stringResource(R.string.btn_add_badge))
                                 }
                             }
                         }
@@ -300,13 +304,13 @@ fun BadgeListContent(
                                                 if (success) {
                                                     Toast.makeText(
                                                         context,
-                                                        "备份文件已保存",
+                                                        context.getString(R.string.toast_export_success),
                                                         Toast.LENGTH_SHORT
                                                     ).show()
                                                 } else {
                                                     Toast.makeText(
                                                         context,
-                                                        "导出失败",
+                                                        context.getString(R.string.toast_export_fail),
                                                         Toast.LENGTH_SHORT
                                                     ).show()
                                                 }
@@ -325,13 +329,13 @@ fun BadgeListContent(
                                                 if (success) {
                                                     Toast.makeText(
                                                         context,
-                                                        "数据还原成功",
+                                                        context.getString(R.string.toast_import_success),
                                                         Toast.LENGTH_SHORT
                                                     ).show()
                                                 } else {
                                                     Toast.makeText(
                                                         context,
-                                                        "导入失败，文件格式可能错误",
+                                                        context.getString(R.string.toast_import_fail),
                                                         Toast.LENGTH_SHORT
                                                     ).show()
                                                 }
@@ -353,7 +357,7 @@ fun BadgeListContent(
                                 ) {
                                     Icon(Icons.Default.Share, contentDescription = null)
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text("导出为 JSON 文件")
+                                    Text(stringResource(R.string.btn_export_json))
                                 }
 
                                 Spacer(modifier = Modifier.height(24.dp))
@@ -371,12 +375,12 @@ fun BadgeListContent(
                                 ) {
                                     Icon(Icons.Default.Refresh, contentDescription = null)
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text("从 JSON 文件还原")
+                                    Text(stringResource(R.string.btn_import_json))
                                 }
 
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
-                                    text = "注意：还原将覆盖当前所有数据",
+                                    text = stringResource(R.string.warn_restore),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.error
                                 )
@@ -472,7 +476,7 @@ fun BadgeListContent(
         AlertDialog(
             onDismissRequest = { showHelpDialog = false },
             icon = { Icon(Icons.Default.Info, contentDescription = null) },
-            title = { Text("关于 BadgeManager") },
+            title = { Text(stringResource(R.string.help_title)) },
             text = {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -489,7 +493,7 @@ fun BadgeListContent(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            "📦 项目仓库 (GitHub)",
+                            stringResource(R.string.help_repo),
                             style = MaterialTheme.typography.titleMedium.copy(
                                 color = MaterialTheme.colorScheme.primary,
                                 textDecoration = TextDecoration.Underline
@@ -505,7 +509,7 @@ fun BadgeListContent(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            "💡 提供建议 / 反馈 Bug",
+                            stringResource(R.string.help_feedback),
                             style = MaterialTheme.typography.titleMedium.copy(
                                 color = MaterialTheme.colorScheme.primary,
                                 textDecoration = TextDecoration.Underline
@@ -521,7 +525,7 @@ fun BadgeListContent(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            "📝 未录入徽章采集",
+                            stringResource(R.string.help_poll),
                             style = MaterialTheme.typography.titleMedium.copy(
                                 color = MaterialTheme.colorScheme.primary,
                                 textDecoration = TextDecoration.Underline
@@ -537,7 +541,7 @@ fun BadgeListContent(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            "📧 联系作者",
+                            stringResource(R.string.contact_me),
                             style = MaterialTheme.typography.titleMedium.copy(
                                 color = MaterialTheme.colorScheme.primary,
                             ),

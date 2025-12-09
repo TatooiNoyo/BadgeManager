@@ -1,11 +1,22 @@
 <resources>
     <string name="app_name">BadgeManager</string>
-    <string name="action_go">Go</string>
-    <string name="baking_title">Baking with Gemini</string>
-    <string name="label_prompt">Prompt</string>
-    <string name="prompt_placeholder">Provide a recipe for the baked goods in the image</string>
-    <string name="image1_description">Cupcake</string>
-    <string name="image2_description">Cookies</string>
-    <string name="image3_description">Cake</string>
-    <string name="results_placeholder">(Results will appear here)</string>
+    <string name="tab_input">Badge Entry</string>
+    <string name="tab_backup">Backup &amp; Restore</string>
+    <string name="btn_add_badge">Add Badge</string>
+    <string name="msg_copy_success">Copied to clipboard</string>
+    <string name="btn_export_json">Export to JSON</string>
+    <string name="btn_import_json">Import from JSON</string>
+    <string name="toast_export_success">Backup file saved</string>
+    <string name="toast_export_fail">Export failed</string>
+    <string name="toast_import_success">Data restored successfully</string>
+    <string name="toast_import_fail">Import failed</string>
+    <string name="warn_restore">Note: Restore will overwrite current data</string>
+    <string name="dialog_sk_title">Extracted SK Code</string>
+    <string name="btn_copy">Copy</string>
+    <string name="btn_confirm">OK</string>
+    <string name="help_title">About BadgeManager</string>
+    <string name="help_repo">📦 Project Repo (GitHub)</string>
+    <string name="help_feedback">💡 Feedback / Bug Report</string>
+    <string name="help_poll">📝 Badge Data Collection</string>
+    <string name="contact_me">📧 Contact Me</string>
 </resources>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">徽章管理器</string>
+    <string name="tab_input">徽章录入</string>
+    <string name="tab_backup">备份还原</string>
+    <string name="btn_add_badge">添加徽章</string>
+    <string name="msg_copy_success">已复制到剪贴板</string>
+    <string name="btn_confirm">确定</string>
+    <string name="help_title">关于 BadgeManager</string>
+    <string name="btn_export_json">导出为 JSON 文件</string>
+    <string name="warn_restore">注意：还原将覆盖当前所有数据</string>
+    <string name="dialog_sk_title">提取到的 SK 编码</string>
+    <string name="btn_copy">复制</string>
+    <string name="help_repo">📦 项目仓库 (GitHub)</string>
+    <string name="help_feedback">💡 提供建议 / 反馈 Bug</string>
+    <string name="help_poll">📝 未录入徽章采集</string>
+    <string name="contact_me">📧 联系作者</string>
+    <string name="btn_import_json">从 JSON 文件还原</string>
+    <string name="toast_export_success">备份文件已保存</string>
+    <string name="toast_export_fail">导出失败</string>
+    <string name="toast_import_success">数据还原成功</string>
+    <string name="toast_import_fail">导入失败，文件格式可能错误</string>
+</resources>
