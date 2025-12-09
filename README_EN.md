@@ -15,6 +15,8 @@ Badge Manager is an Android application designed to help users manage and quickl
     *   Allows users to quickly access badge functions over other applications (requires overlay permission).
 *   **Data Persistence**:
     *   Uses **Room Database** for local data storage, ensuring data is not lost upon restart.
+*   **Backup and Restore**:
+    *   Support exporting all badge data as JSON files or restoring from files.
 *   **Modern UI**:
     *   Built entirely with **Jetpack Compose**, following Material Design 3 specifications.
 
@@ -52,7 +54,9 @@ Badge Manager is an Android application designed to help users manage and quickl
 2.  **Edit/Delete**: Click on a list item to enter the details page. Click "Save Update" after modifying content, or click "Delete" to remove the badge.
 3.  **NFC Input**: On any screen where you input a link, tapping an NFC tag will overwrite the current link input field content.
 4.  **Use Badge**: Click the floating button to open the badge menu, then click to use. Supports devices without NFC functionality.
-
+5.  **Management list**: Click on the list item to enter the detail page for editing. Long press the list item and drag to adjust the order of the badges.
+6.  **Data synchronization**: Switch to the "Backup and Restore" TAB, and you can:
+    *   Export/Import JSON backup files.
 ### Permissions
 
 When running the app for the first time, the following permissions need to be granted:
