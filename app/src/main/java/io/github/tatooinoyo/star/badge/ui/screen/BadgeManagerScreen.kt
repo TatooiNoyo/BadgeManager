@@ -3,6 +3,7 @@ package io.github.tatooinoyo.star.badge.ui.screen
 import android.content.Context
 import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -583,6 +584,12 @@ fun BadgeDetailContent(
     // 弹窗控制状态
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var showUpdateConfirm by remember { mutableStateOf(false) }
+
+    // 拦截系统返回手势/按键
+    // 当此 Composable 显示时，按返回键会触发 onExitClick，而不是直接退出 App
+    BackHandler {
+        onExitClick()
+    }
 
     Column(
         modifier = Modifier
