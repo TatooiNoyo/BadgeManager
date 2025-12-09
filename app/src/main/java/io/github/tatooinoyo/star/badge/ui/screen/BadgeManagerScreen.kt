@@ -33,12 +33,13 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
@@ -46,6 +47,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -170,29 +172,77 @@ fun BadgeListContent(
     ) {
 
         // 使用 AnimatedVisibility 包裹添加表单
-        AnimatedVisibility(visible = isAddAreaExpanded) {
-            Column {
-                Spacer(modifier = Modifier.height(8.dp))
-                BadgeInputForm(
-                    title = uiState.addTitle, onTitleChange = onInputTitleChange,
-                    remark = uiState.addRemark, onRemarkChange = onInputRemarkChange,
-                    link = uiState.addLink, onLinkChange = onInputLinkChange,
-                    channel = uiState.addChannel, onChannelChange = onInputChannelChange,
-                    onExtractSkClick = onExtractSkClick
-                )
+        Column {
 
-                Spacer(modifier = Modifier.height(8.dp))
+            var selectedTabIndex by remember { mutableIntStateOf(0) }
+            val tabs = listOf("徽章录入", "备份还原")
 
-                Button(
-                    onClick = onAddClick,
-                    modifier = Modifier.align(Alignment.End)
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = null)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("添加徽章")
+            TabRow(selectedTabIndex = selectedTabIndex) {
+                tabs.forEachIndexed { index, title ->
+                    Tab(
+                        selected = selectedTabIndex == index,
+                        onClick = { selectedTabIndex = index },
+                        text = { Text(title) }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            AnimatedVisibility(visible = isAddAreaExpanded) {
+
+                //  根据选中的 Tab 显示不同内容
+                Box(modifier = Modifier.height(350.dp)) {
+                    when (selectedTabIndex) {
+                        0 -> {
+                            // === Tab 0: 原有的 BadgeInputForm ===
+                            Column {
+                                BadgeInputForm(
+                                    title = uiState.addTitle,
+                                    onTitleChange = onInputTitleChange,
+                                    remark = uiState.addRemark,
+                                    onRemarkChange = onInputRemarkChange,
+                                    link = uiState.addLink,
+                                    onLinkChange = onInputLinkChange,
+                                    channel = uiState.addChannel,
+                                    onChannelChange = onInputChannelChange,
+                                    onExtractSkClick = onExtractSkClick
+                                )
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                Button(
+                                    onClick = onAddClick,
+                                    modifier = Modifier.align(Alignment.End)
+                                ) {
+                                    Icon(Icons.Default.Add, contentDescription = null)
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("添加徽章")
+                                }
+                            }
+                        }
+
+                        1 -> {
+                            // === Tab 1: 新组件的占位符 ===
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(200.dp), // 给定一个临时高度以便查看效果
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "新组件将放在这里",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                // 将来在这里放入新 Composable
+                            }
+                        }
+                    }
                 }
             }
         }
+
 
         // 可点击的折叠栏，用于折叠/展开
         Row(
