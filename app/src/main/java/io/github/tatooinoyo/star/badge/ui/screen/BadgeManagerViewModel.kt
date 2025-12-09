@@ -295,4 +295,96 @@ class BadgeManagerViewModel : ViewModel() {
     fun dismissSkDialog() {
         _uiState.value = _uiState.value.copy(extractedSk = null)
     }
+
+    // === 备份与还原 ===
+
+    /**
+     * 导出数据到指定的文件 URI
+     */
+    fun exportBadgesToUri(
+        context: android.content.Context,
+        uri: android.net.Uri,
+        onResult: (Boolean) -> Unit
+    ) {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                // 1. 获取数据快照
+                val badges = BadgeRepository.getAllBadgesSnapshot()
+                val gson =
+                    com.google.gson.GsonBuilder().setPrettyPrinting().create() // 使用格式化输出，方便阅读
+                val jsonString = gson.toJson(badges)
+
+                // 2. 写入文件
+                context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+                    outputStream.write(jsonString.toByteArray())
+                }
+
+                // 切回主线程通知结果
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    onResult(true)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    onResult(false)
+                }
+            }
+        }
+    }
+
+    /**
+     * 从指定的文件 URI 导入数据
+     */
+    fun importBadgesFromUri(
+        context: android.content.Context,
+        uri: android.net.Uri,
+        onResult: (Boolean) -> Unit
+    ) {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                // 1. 读取文件内容
+                val stringBuilder = StringBuilder()
+                context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                    java.io.BufferedReader(java.io.InputStreamReader(inputStream)).use { reader ->
+                        var line: String? = reader.readLine()
+                        while (line != null) {
+                            stringBuilder.append(line)
+                            line = reader.readLine()
+                        }
+                    }
+                }
+                val jsonString = stringBuilder.toString()
+
+                if (jsonString.isBlank()) {
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        onResult(false)
+                    }
+                    return@launch
+                }
+
+                // 2. 解析 JSON
+                val gson = com.google.gson.Gson()
+                val type = object : com.google.gson.reflect.TypeToken<List<Badge>>() {}.type
+                val badges: List<Badge> = gson.fromJson(jsonString, type)
+
+                // 3. 写入数据库
+                if (badges.isNotEmpty()) {
+                    BadgeRepository.restoreBadges(badges)
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        onResult(true)
+                    }
+                } else {
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        onResult(false)
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    onResult(false)
+                }
+            }
+        }
+    }
+
 }

@@ -1,6 +1,10 @@
 package io.github.tatooinoyo.star.badge.ui.screen
 
+import android.content.Context
+import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,6 +29,8 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -94,7 +100,13 @@ fun BadgeManagerScreen(
             onItemClick = { badge -> viewModel.selectBadge(badge) },
             onExtractSkClick = { link -> viewModel.extractSkFromLink(link) },
             onMove = { from, to -> viewModel.moveBadge(from, to) },
-            onSaveOrder = { viewModel.saveOrder() }
+            onSaveOrder = { viewModel.saveOrder() },
+            onImport = { ctx, uri, onResult ->
+                viewModel.importBadgesFromUri(ctx, uri, onResult)
+            },
+            onExport = { ctx, uri, onResult ->
+                viewModel.exportBadgesToUri(ctx, uri, onResult)
+            }
         )
     } else {
         BadgeDetailContent(
@@ -156,7 +168,9 @@ fun BadgeListContent(
     onItemClick: (Badge) -> Unit,
     onExtractSkClick: (String) -> Unit,
     onMove: (Int, Int) -> Unit,
-    onSaveOrder: () -> Unit
+    onSaveOrder: () -> Unit,
+    onImport: (Context, Uri, (Boolean) -> Unit) -> Unit,
+    onExport: (Context, Uri, (Boolean) -> Unit) -> Unit,
 ) {
     val reorderableState = rememberReorderableLazyListState(
         onMove = { from, to -> onMove(from.index, to.index) },
@@ -228,19 +242,108 @@ fun BadgeListContent(
                         }
 
                         1 -> {
-                            // === Tab 1: 新组件的占位符 ===
-                            Box(
+                            // === 备份还原 ===
+                            Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(200.dp), // 给定一个临时高度以便查看效果
-                                contentAlignment = Alignment.Center
+                                    .height(320.dp) // 保持你之前设置的高度
+                                    .padding(top = 16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
                             ) {
+                                val context = LocalContext.current
+
+                                // --- 1. 创建导出文件的 Launcher ---
+                                val exportLauncher =
+                                    rememberLauncherForActivityResult(
+                                        contract = ActivityResultContracts.CreateDocument("application/json")
+                                    ) { uri ->
+                                        // uri 是用户选择保存文件的路径
+                                        if (uri != null) {
+                                            onExport(context, uri) { success ->
+                                                if (success) {
+                                                    Toast.makeText(
+                                                        context,
+                                                        "备份文件已保存",
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+                                                } else {
+                                                    Toast.makeText(
+                                                        context,
+                                                        "导出失败",
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                // --- 2. 创建导入文件的 Launcher ---
+                                val importLauncher =
+                                    rememberLauncherForActivityResult(
+                                        contract = ActivityResultContracts.OpenDocument()
+                                    ) { uri ->
+                                        // uri 是用户选择要读取的文件
+                                        if (uri != null) {
+                                            onImport(context, uri) { success ->
+                                                if (success) {
+                                                    Toast.makeText(
+                                                        context,
+                                                        "数据还原成功",
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+                                                } else {
+                                                    Toast.makeText(
+                                                        context,
+                                                        "导入失败，文件格式可能错误",
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                // --- UI 按钮 ---
+
+                                // 导出按钮
+                                Button(
+                                    onClick = {
+                                        // 建议文件名包含日期，如 backup_20231027.json
+                                        val fileName =
+                                            "badges_backup_${System.currentTimeMillis()}.json"
+                                        exportLauncher.launch(fileName)
+                                    },
+                                    modifier = Modifier.fillMaxWidth(0.8f)
+                                ) {
+                                    Icon(Icons.Default.Share, contentDescription = null)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("导出为 JSON 文件")
+                                }
+
+                                Spacer(modifier = Modifier.height(24.dp))
+
+                                // 导入按钮
+                                Button(
+                                    onClick = {
+                                        // 限制只能选择 json 文件
+                                        importLauncher.launch(arrayOf("application/json"))
+                                    },
+                                    modifier = Modifier.fillMaxWidth(0.8f),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.secondary
+                                    )
+                                ) {
+                                    Icon(Icons.Default.Refresh, contentDescription = null)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("从 JSON 文件还原")
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
                                 Text(
-                                    text = "新组件将放在这里",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    text = "注意：还原将覆盖当前所有数据",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.error
                                 )
-                                // 将来在这里放入新 Composable
                             }
                         }
                     }

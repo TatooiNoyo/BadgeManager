@@ -16,15 +16,19 @@ import kotlinx.coroutines.launch
 import java.util.UUID
 
 
-data class TitleAndRemark(val title:String,val remark:String)
+data class TitleAndRemark(val title: String, val remark: String)
+
 // 内置的SK,title,remark关系
 val PRESET_BADGES_MAP = mapOf(
-    "SKY-PN-ST-SUM-SP" to TitleAndRemark("云野传说","15s cooling."),
-    "SKY-KC-ST-COB-AI" to TitleAndRemark("光之爱钥匙扣","3m cooling, 3m duration."),
-    "SKY-BK-ST-PRO-ART" to TitleAndRemark("光遇设定集","15m cooling, 20m duration."),
-    "SKY-KC-ST-LPP-TF" to TitleAndRemark("狐狸毛绒钥匙扣","获得10分钟的狐狸毛绒玩具，冷却时间15分钟。"),
-    "SKY-KC-ST-COB-MM" to TitleAndRemark("姆明玩偶钥匙扣","获得10分钟的姆明毛绒玩偶，冷却15分钟。"),
-    "SKY-UM-ST-PRO-LU" to TitleAndRemark("追光者雨伞","获得10分钟的大伞背饰，冷却15分钟。"),
+    "SKY-PN-ST-SUM-SP" to TitleAndRemark("云野传说", "15s cooling."),
+    "SKY-KC-ST-COB-AI" to TitleAndRemark("光之爱钥匙扣", "3m cooling, 3m duration."),
+    "SKY-BK-ST-PRO-ART" to TitleAndRemark("光遇设定集", "15m cooling, 20m duration."),
+    "SKY-KC-ST-LPP-TF" to TitleAndRemark(
+        "狐狸毛绒钥匙扣",
+        "获得10分钟的狐狸毛绒玩具，冷却时间15分钟。"
+    ),
+    "SKY-KC-ST-COB-MM" to TitleAndRemark("姆明玩偶钥匙扣", "获得10分钟的姆明毛绒玩偶，冷却15分钟。"),
+    "SKY-UM-ST-PRO-LU" to TitleAndRemark("追光者雨伞", "获得10分钟的大伞背饰，冷却15分钟。"),
 )
 
 // 定义预设的渠道
@@ -151,6 +155,18 @@ object BadgeRepository {
         }
     }
 
+    // 获取当前所有徽章的一次性快照（非 Flow），用于导出
+    fun getAllBadgesSnapshot(): List<Badge> {
+        return badgeDao?.getAllBadges4export() ?: emptyList()
+    }
+
+    // 还原数据：清空旧数据并插入新数据
+    suspend fun restoreBadges(badges: List<Badge>) {
+        // 这一步取决于你的策略：是“覆盖”还是“追加”？
+        // 策略 A: 覆盖 (先清空再插入) - 推荐用于完整备份还原
+        badgeDao?.deleteAll()
+        badgeDao?.insertAll(badges)
+    }
 }
 
 class Converters {

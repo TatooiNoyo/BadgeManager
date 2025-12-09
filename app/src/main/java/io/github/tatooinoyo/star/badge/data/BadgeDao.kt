@@ -13,6 +13,9 @@ interface BadgeDao {
     @Query("SELECT * FROM badges order by orderIndex asc")
     fun getAllBadges(): Flow<List<Badge>>
 
+    @Query("SELECT * FROM badges")
+    fun getAllBadges4export(): List<Badge>
+
     // 插入或替换
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertBadge(badge: Badge)
@@ -27,9 +30,26 @@ interface BadgeDao {
 
     // 根据 ID 更新
     @Query("UPDATE badges SET title = :title, remark = :remark, link = :link,channel = :channelName WHERE id = :id")
-    suspend fun updateBadgeContent(id: String, title: String, remark: String, link: String, channelName: String)
+    suspend fun updateBadgeContent(
+        id: String,
+        title: String,
+        remark: String,
+        link: String,
+        channelName: String
+    )
 
     // 根据 ID 删除
     @Query("DELETE FROM badges WHERE id = :id")
     suspend fun deleteBadgeById(id: String)
+
+    // 清除所有数据
+    @Query("DELETE FROM badges")
+    suspend fun deleteAll()
+
+    // 批量插入
+    suspend fun insertAll(badges: List<Badge>) {
+        badges.forEach { badge ->
+            insertBadge(badge)
+        }
+    }
 }
