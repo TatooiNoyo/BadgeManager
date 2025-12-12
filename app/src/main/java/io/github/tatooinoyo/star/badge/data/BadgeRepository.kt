@@ -20,24 +20,24 @@ data class TitleAndRemark(val title: String, val remark: String)
 
 // 内置的SK,title,remark关系
 val PRESET_BADGES_MAP = mapOf(
-    "SKY-PN-ST-SUM-SP" to TitleAndRemark("云野传说", "15s cooling."),
-    "SKY-KC-ST-COB-AI" to TitleAndRemark("光之爱钥匙扣", "3m cooling, 3m duration."),
-    "SKY-BK-ST-PRO-ART" to TitleAndRemark("光遇设定集", "15m cooling, 20m duration."),
-    "SKY-KC-ST-LPP-TF" to TitleAndRemark(
-        "狐狸毛绒钥匙扣",
-        "获得10分钟的狐狸毛绒玩具，冷却时间15分钟。"
-    ),
-    "SKY-KC-ST-COB-MM" to TitleAndRemark("姆明玩偶钥匙扣", "获得10分钟的姆明毛绒玩偶，冷却15分钟。"),
-    "SKY-UM-ST-PRO-LU" to TitleAndRemark("追光者雨伞", "获得10分钟的大伞背饰，冷却15分钟。"),
-    "SKY-PN-ST-PRO-LT" to TitleAndRemark("灯笼徽章", "获得30分钟的灯笼，10分钟冷却"),
-    "SKY-KC-ST-COB-AU" to TitleAndRemark("欧若拉钥匙扣", "获得3分钟特殊叫声，3分钟冷却"),
-    "SKY-PN-ST-MAS-CB" to TitleAndRemark("矮人徽章", "10分钟的矮人效果，15分钟冷却"),
-    "SKY-PN-ST-BL-TS" to TitleAndRemark("小不点", "20分钟的小不点状态，15分钟冷却"),
-    "SKY-FG-ST-PRO-FG-SF1" to TitleAndRemark("三周年小蓝", "传送到禁阁秘密地点与小蓝玩耍，冷却15秒"),
-    "SKY-PN-ST-POR-CP" to TitleAndRemark("预言山谷", "15秒CD"),
-    "SKY-PN-ST-BL-HS" to TitleAndRemark("大只佬", "15分钟CD，持续20分钟"),
-    "SKY-KC-ST-BL-GR" to TitleAndRemark("长大成人", "15分钟CD，20分钟效果"),
-    "SKY-PN-ST-CAP-MB" to TitleAndRemark("鬼蝙蝠斗篷", "20分钟CD，15分钟效果"),
+    "SKY-PN-ST-POR-CP" to TitleAndRemark("预言山谷", "15s CD"),
+    "SKY-PN-ST-SUM-SP" to TitleAndRemark("云野传说", "15s CD"),
+    "SKY-KC-ST-COB-AI" to TitleAndRemark("光之爱钥匙扣", "3min CD, 3min Dur"),
+    "SKY-KC-ST-COB-AU" to TitleAndRemark("欧若拉钥匙扣", "3min CD, 3min Dur"),
+    "SKY-BK-ST-PRO-ART" to TitleAndRemark("光遇设定集", "15min CD, 20min Dur"),
+    "SKY-KC-ST-LPP-TF" to TitleAndRemark("狐狸毛绒钥匙扣", "15min CD, 10min Dur"),
+    "SKY-KC-ST-COB-MM" to TitleAndRemark("姆明玩偶钥匙扣", "15min CD, 10min Dur"),
+    "SKY-UM-ST-PRO-LU" to TitleAndRemark("追光者雨伞", "15min CD, 10min Dur"),
+    "SKY-PN-ST-PRO-LT" to TitleAndRemark("灯笼徽章", "10min CD, 30min Dur"),
+    "SKY-FG-ST-PRO-FG-SF1" to TitleAndRemark("三周年小蓝", "15s CD"),
+    "SKY-PN-ST-BL-TS" to TitleAndRemark("小不点", "15min CD, 20min Dur"),
+    "SKY-PN-ST-BL-HS" to TitleAndRemark("大只佬", "15min CD, 20min Dur"),
+    "SKY-PN-ST-MAS-CB" to TitleAndRemark("矮人徽章", "15min CD, 10min Dur"),
+    "SKY-KC-ST-BL-GR" to TitleAndRemark("长大成人", "15min CD, 20min Dur"),
+    "SKY-PN-ST-CAP-MB" to TitleAndRemark("鬼蝙蝠斗篷", "20min CD, 15min Dur"),
+    "SKY-PN-ST-CNT-YIR" to TitleAndRemark("你我成双徽章(麻花款)", "15s CD"),
+    "SKY-PN-ST-CNT-YIL" to TitleAndRemark("你我成双徽章(竖琴款)", "15s CD"),
+    "SKY-PN-ST-PL-HC" to TitleAndRemark("叠叠蟹", "15min CD, 10min Dur"),
 )
 
 // 定义预设的渠道
