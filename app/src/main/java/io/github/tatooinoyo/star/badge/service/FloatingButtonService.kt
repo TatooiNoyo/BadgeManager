@@ -17,6 +17,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.unit.dp
+import androidx.core.view.doOnLayout
+
 import io.github.tatooinoyo.star.badge.MainActivity
 import io.github.tatooinoyo.star.badge.data.BadgeRepository
 import io.github.tatooinoyo.star.badge.service.manager.FloatingWindowManager
@@ -57,6 +59,14 @@ class FloatingButtonService : Service() {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent { 
                 FloatingWidget(onClick = { toggleMenu() }) 
+            }
+
+            // 确保该视图布局完成后，告诉系统不要拦截这里的触摸事件
+            doOnLayout { view ->
+                val exclusionRects = listOf(
+                    android.graphics.Rect(0, 0, view.width, view.height)
+                )
+                view.systemGestureExclusionRects = exclusionRects
             }
         }
         // 委托给 Helper 添加 View
