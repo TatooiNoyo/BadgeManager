@@ -1,9 +1,10 @@
-package io.github.tatooinoyo.star.badge.ui.component
+package io.github.tatooinoyo.star.badge.service.component
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,7 +18,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -29,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import io.github.tatooinoyo.star.badge.data.BadgeChannel
@@ -66,10 +70,10 @@ fun DrawerMenu(
                 .padding(horizontal = 8.dp, vertical = 4.dp), // 稍微紧凑一点
             verticalAlignment = Alignment.CenterVertically,
             // 使用 SpaceBetween 让两个按钮分列左右两端
-            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
             // 左边的主页按钮
-            androidx.compose.material3.IconButton(
+            IconButton(
                 onClick = onGoHomeClick,
                 modifier = Modifier.size(32.dp) // 控制按钮大小
             ) {
@@ -81,7 +85,7 @@ fun DrawerMenu(
             }
 
             // 右边的关闭按钮
-            androidx.compose.material3.IconButton(
+            IconButton(
                 onClick = onCloseClick,
                 modifier = Modifier.size(32.dp) // 控制按钮大小
             ) {
@@ -94,7 +98,7 @@ fun DrawerMenu(
         }
 
         // 分割线 (可选，增加层次感)
-        androidx.compose.material3.HorizontalDivider(
+        HorizontalDivider(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
         )
@@ -183,7 +187,7 @@ fun DrawerMenuItemRow(item: DrawerMenuItem) {
                         style = MaterialTheme.typography.bodySmall, // 使用更小的字号
                         color = MaterialTheme.colorScheme.onSurfaceVariant, // 使用次级颜色
                         maxLines = 2, // 限制行数，防止太长 (可选)
-                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis // 超出显示省略号
+                        overflow = TextOverflow.Ellipsis // 超出显示省略号
                     )
                 } else {
                     // 关键修改：当没有备注时，渲染一个不可见的占位符，保持高度一致

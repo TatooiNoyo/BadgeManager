@@ -21,9 +21,9 @@ import io.github.tatooinoyo.star.badge.MainActivity
 import io.github.tatooinoyo.star.badge.data.BadgeRepository
 import io.github.tatooinoyo.star.badge.service.manager.FloatingWindowManager
 import io.github.tatooinoyo.star.badge.service.utils.ServiceLifecycleOwner
-import io.github.tatooinoyo.star.badge.ui.component.DrawerMenu
-import io.github.tatooinoyo.star.badge.ui.component.DrawerMenuItem
-import io.github.tatooinoyo.star.badge.ui.component.FloatingWidget
+import io.github.tatooinoyo.star.badge.service.component.DrawerMenu
+import io.github.tatooinoyo.star.badge.service.component.DrawerMenuItem
+import io.github.tatooinoyo.star.badge.service.component.FloatingWidget
 
 class FloatingButtonService : Service() {
 

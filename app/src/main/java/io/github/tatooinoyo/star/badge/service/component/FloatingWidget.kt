@@ -1,4 +1,4 @@
-package io.github.tatooinoyo.star.badge.ui.component
+package io.github.tatooinoyo.star.badge.service.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -14,6 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -40,7 +41,7 @@ fun FloatingWidget(onClick: () -> Unit) {
                         Color(0xFF64B5F6), // 浅蓝色中心
                         Color(0xFF2196F3)  // 深蓝色边缘
                     ),
-                    center = androidx.compose.ui.geometry.Offset(30f, 30f), // 高光偏移
+                    center = Offset(30f, 30f), // 高光偏移
                     radius = 100f
                 ),
                 shape = CircleShape
