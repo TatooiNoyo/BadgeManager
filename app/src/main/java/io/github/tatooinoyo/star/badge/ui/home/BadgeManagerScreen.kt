@@ -1,4 +1,4 @@
-package io.github.tatooinoyo.star.badge.ui.screen
+package io.github.tatooinoyo.star.badge.ui.home
 
 import android.content.Context
 import android.net.Uri
@@ -74,7 +74,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.tatooinoyo.star.badge.R
 import io.github.tatooinoyo.star.badge.data.Badge
 import io.github.tatooinoyo.star.badge.data.BadgeChannel
-import io.github.tatooinoyo.star.badge.ui.screen.component.SyncTabContent
+import io.github.tatooinoyo.star.badge.ui.home.component.SyncTabContent
 import io.github.tatooinoyo.star.badge.ui.state.SyncState
 import io.github.tatooinoyo.star.badge.ui.theme.PeachTheme
 import org.burnoutcrew.reorderable.ReorderableItem

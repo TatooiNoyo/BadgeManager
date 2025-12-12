@@ -26,8 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.tatooinoyo.star.badge.data.BadgeRepository
 import io.github.tatooinoyo.star.badge.service.FloatingButtonService
-import io.github.tatooinoyo.star.badge.ui.screen.BadgeManagerScreen
-import io.github.tatooinoyo.star.badge.ui.screen.BadgeManagerViewModel
+import io.github.tatooinoyo.star.badge.ui.home.BadgeManagerScreen
+import io.github.tatooinoyo.star.badge.ui.home.BadgeManagerViewModel
 import java.nio.charset.StandardCharsets
 
 class MainActivity : ComponentActivity() {

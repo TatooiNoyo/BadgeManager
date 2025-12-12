@@ -1,4 +1,4 @@
-package io.github.tatooinoyo.star.badge.ui.screen
+package io.github.tatooinoyo.star.badge.ui.home
 
 import android.util.Log
 import androidx.lifecycle.ViewModel

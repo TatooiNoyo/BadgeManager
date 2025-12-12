@@ -1,4 +1,4 @@
-package io.github.tatooinoyo.star.badge.ui.screen.component
+package io.github.tatooinoyo.star.badge.ui.home.component
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
