@@ -77,7 +77,11 @@ fun SyncTabContent(
                     onClick = onStopSender,
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("停止分享")
+                    if (syncState is SyncState.Sender.Success) {
+                        Text("完成")
+                    } else {
+                        Text("停止分享")
+                    }
                 }
             }
 
