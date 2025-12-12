@@ -74,6 +74,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.tatooinoyo.star.badge.R
 import io.github.tatooinoyo.star.badge.data.Badge
 import io.github.tatooinoyo.star.badge.data.BadgeChannel
+import io.github.tatooinoyo.star.badge.ui.screen.component.SyncTabContent
+import io.github.tatooinoyo.star.badge.ui.state.SyncState
 import io.github.tatooinoyo.star.badge.ui.theme.PeachTheme
 import org.burnoutcrew.reorderable.ReorderableItem
 import org.burnoutcrew.reorderable.detectReorder
@@ -84,9 +86,11 @@ import org.burnoutcrew.reorderable.reorderable
 fun BadgeManagerScreen(
     nfcPayload: String? = null,
     onNfcDataConsumed: () -> Unit = {},
-    viewModel: BadgeManagerViewModel = viewModel()
+    viewModel: BadgeManagerViewModel = viewModel(),
+    badgeSyncViewModel: BadgeSyncViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val syncState by badgeSyncViewModel.syncState.collectAsState()
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
 
@@ -109,6 +113,12 @@ fun BadgeManagerScreen(
             onExtractSkClick = { link -> viewModel.extractSkFromLink(link) },
             onMove = { from, to -> viewModel.moveBadge(from, to) },
             onSaveOrder = { viewModel.saveOrder() },
+            // === 传递同步参数 ===
+            syncState = syncState,
+            onStartSender = { badgeSyncViewModel.startSenderMode() },
+            onStopSender = { badgeSyncViewModel.stopSenderMode() },
+            onStartReceiver = { code -> badgeSyncViewModel.startReceiverMode(code) },
+            onStopReceiver = { badgeSyncViewModel.stopReceiverMode() },
             onImport = { ctx, uri, onResult ->
                 viewModel.importBadgesFromUri(ctx, uri, onResult)
             },
@@ -181,6 +191,12 @@ fun BadgeListContent(
     onExtractSkClick: (String) -> Unit,
     onMove: (Int, Int) -> Unit,
     onSaveOrder: () -> Unit,
+    // 同步相关参数 ===
+    syncState: SyncState,
+    onStartSender: () -> Unit,
+    onStopSender: () -> Unit,
+    onStartReceiver: (String) -> Unit,
+    onStopReceiver: () -> Unit,
     onImport: (Context, Uri, (Boolean) -> Unit) -> Unit,
     onExport: (Context, Uri, (Boolean) -> Unit) -> Unit,
 ) {
@@ -211,7 +227,11 @@ fun BadgeListContent(
 
             var selectedTabIndex by remember { mutableIntStateOf(0) }
             val tabs =
-                listOf(stringResource(R.string.tab_input), stringResource(R.string.tab_backup))
+                listOf(
+                    stringResource(R.string.tab_input),
+                    stringResource(R.string.tab_backup),
+                    "同网互传"
+                )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
@@ -387,6 +407,17 @@ fun BadgeListContent(
                                 )
                             }
                         }
+                        // 局域网数据同步
+                        2 -> {
+                            SyncTabContent(
+                                syncState = syncState,
+                                onStartSender = onStartSender,
+                                onStopSender = onStopSender,
+                                onStartReceiver = onStartReceiver,
+                                onStopReceiver = onStopReceiver,
+                            )
+                        }
+
                     }
                 }
             }
