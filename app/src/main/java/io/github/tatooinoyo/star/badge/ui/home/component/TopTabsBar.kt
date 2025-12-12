@@ -1,5 +1,11 @@
 package io.github.tatooinoyo.star.badge.ui.home.component
 
+import android.content.Context
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -9,7 +15,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Warning
@@ -33,16 +41,172 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.github.tatooinoyo.star.badge.R
+import io.github.tatooinoyo.star.badge.data.BadgeChannel
+import io.github.tatooinoyo.star.badge.ui.home.BadgeInputForm
+import io.github.tatooinoyo.star.badge.ui.home.BadgeUiState
 
 import io.github.tatooinoyo.star.badge.ui.state.SyncState // 确保导入正确的包
 
 @Composable
-fun SyncTabContent(
+fun TopControl(){}
+
+@Composable
+fun BadgeInputPanel(
+    uiState: BadgeUiState,
+    onInputTitleChange: (String) -> Unit,
+    onInputRemarkChange: (String) -> Unit,
+    onInputLinkChange: (String) -> Unit,
+    onInputChannelChange: (BadgeChannel) -> Unit,
+    onAddClick: () -> Unit,
+    onExtractSkClick: (String) -> Unit,
+){
+    Column {
+        BadgeInputForm(
+            title = uiState.addTitle,
+            onTitleChange = onInputTitleChange,
+            remark = uiState.addRemark,
+            onRemarkChange = onInputRemarkChange,
+            link = uiState.addLink,
+            onLinkChange = onInputLinkChange,
+            channel = uiState.addChannel,
+            onChannelChange = onInputChannelChange,
+            onExtractSkClick = onExtractSkClick
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Button(
+            onClick = onAddClick,
+            modifier = Modifier.align(Alignment.End)
+        ) {
+            Icon(Icons.Default.Add, contentDescription = null)
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(stringResource(R.string.btn_add_badge))
+        }
+    }
+}
+
+@Composable
+fun BackupRestorePanel(
+    onImport: (Context, Uri, (Boolean) -> Unit) -> Unit,
+    onExport: (Context, Uri, (Boolean) -> Unit) -> Unit,
+) {
+
+    // === 备份还原 ===
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(320.dp) // 保持你之前设置的高度
+            .padding(top = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        val context = LocalContext.current
+
+        // --- 1. 创建导出文件的 Launcher ---
+        val exportLauncher =
+            rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.CreateDocument("application/json")
+            ) { uri ->
+                // uri 是用户选择保存文件的路径
+                if (uri != null) {
+                    onExport(context, uri) { success ->
+                        if (success) {
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.toast_export_success),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        } else {
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.toast_export_fail),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                }
+            }
+
+        // --- 2. 创建导入文件的 Launcher ---
+        val importLauncher =
+            rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.OpenDocument()
+            ) { uri ->
+                // uri 是用户选择要读取的文件
+                if (uri != null) {
+                    onImport(context, uri) { success ->
+                        if (success) {
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.toast_import_success),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        } else {
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.toast_import_fail),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                }
+            }
+
+        // --- UI 按钮 ---
+
+        // 导出按钮
+        Button(
+            onClick = {
+                // 建议文件名包含日期，如 backup_20231027.json
+                val fileName =
+                    "badges_backup_${System.currentTimeMillis()}.json"
+                exportLauncher.launch(fileName)
+            },
+            modifier = Modifier.fillMaxWidth(0.8f)
+        ) {
+            Icon(Icons.Default.Share, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(stringResource(R.string.btn_export_json))
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // 导入按钮
+        Button(
+            onClick = {
+                // 限制只能选择 json 文件
+                importLauncher.launch(arrayOf("application/json"))
+            },
+            modifier = Modifier.fillMaxWidth(0.8f),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.secondary
+            )
+        ) {
+            Icon(Icons.Default.Refresh, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(stringResource(R.string.btn_import_json))
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = stringResource(R.string.warn_restore),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error
+        )
+    }
+}
+
+@Composable
+fun SyncDataPanel(
     syncState: SyncState,
     onStartSender: () -> Unit,
     onStopSender: () -> Unit,
