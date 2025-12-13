@@ -2,6 +2,7 @@ package io.github.tatooinoyo.star.badge.service.component
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -32,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -56,10 +58,19 @@ fun DrawerMenu(
     onCloseClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+
     Column(
         modifier = modifier
             .fillMaxWidth()
             .background(Color.Transparent)
+            .pointerInput(Unit) {
+                detectHorizontalDragGestures { change, dragAmount ->
+                    change.consume()
+                    if (dragAmount < 5) {
+                        onCloseClick()
+                    }
+                }
+            }
             .padding(vertical = 8.dp)
     ) {
         // === 新增：顶部关闭栏 ===
@@ -163,7 +174,9 @@ fun DrawerMenuItemRow(item: DrawerMenuItem) {
                     Text(
                         text = item.title,
                         style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1, // 限制行数，防止太长 (可选)
+                        overflow = TextOverflow.Ellipsis // 超出显示省略号
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Surface(
@@ -186,7 +199,7 @@ fun DrawerMenuItemRow(item: DrawerMenuItem) {
                         text = item.remark,
                         style = MaterialTheme.typography.bodySmall, // 使用更小的字号
                         color = MaterialTheme.colorScheme.onSurfaceVariant, // 使用次级颜色
-                        maxLines = 2, // 限制行数，防止太长 (可选)
+                        maxLines = 1, // 限制行数，防止太长 (可选)
                         overflow = TextOverflow.Ellipsis // 超出显示省略号
                     )
                 } else {

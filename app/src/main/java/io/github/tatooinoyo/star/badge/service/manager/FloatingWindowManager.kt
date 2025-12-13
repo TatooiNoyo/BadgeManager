@@ -2,9 +2,12 @@ package io.github.tatooinoyo.star.badge.service.manager
 
 import android.content.Context
 import android.graphics.PixelFormat
+import android.graphics.Rect
 import android.os.Build
 import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.view.WindowManager
 
 class FloatingWindowManager(private val context: Context) {
@@ -14,11 +17,27 @@ class FloatingWindowManager(private val context: Context) {
     // 添加悬浮球
     fun addFloatingButton(view: View) {
         val params = createParams().apply {
-            gravity = Gravity.TOP or Gravity.END
+            gravity = Gravity.CENTER_VERTICAL or Gravity.END
             x = 0
-            y = 200
+            y = 0
             width = WindowManager.LayoutParams.WRAP_CONTENT
-            height = WindowManager.LayoutParams.WRAP_CONTENT
+            height = WindowManager.LayoutParams.MATCH_PARENT
+            // FLAG_LAYOUT_NO_LIMITS: 允许延伸到状态栏/导航栏区域
+            // FLAG_NOT_FOCUSABLE: 不抢键盘焦点
+            // FLAG_WATCH_OUTSIDE_TOUCH: 允许监听外部点击（可选）
+            flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
+                    WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            view.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
+                override fun onGlobalLayout() {
+                    // 获取视图实际占据的矩形区域
+                    val rect = Rect(0, 0,  view.width, view.height)
+                    // 告诉系统：在这个区域内，屏蔽系统的侧滑返回手势，优先给 App 处理
+                    view.systemGestureExclusionRects = listOf(rect)
+                }
+            })
         }
         windowManager.addView(view, params)
     }
@@ -49,6 +68,14 @@ class FloatingWindowManager(private val context: Context) {
             } catch (e: IllegalArgumentException) {
                 // Ignore if not attached
             }
+        }
+    }
+
+    fun updateViewLayout(view: View, params: ViewGroup.LayoutParams) {
+        try {
+            windowManager.updateViewLayout(view, params)
+        } catch (e: IllegalArgumentException) {
+            // Ignore
         }
     }
 

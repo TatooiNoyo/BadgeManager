@@ -58,7 +58,7 @@ class FloatingButtonService : Service() {
             lifecycleOwner.attachToView(this)
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent { 
-                FloatingWidget(onClick = { toggleMenu() }) 
+                FloatingWidget(onClick = { toggleMenu() }, isMenuOpen = isMenuOpen)
             }
 
             // 确保该视图布局完成后，告诉系统不要拦截这里的触摸事件
