@@ -38,6 +38,12 @@ val PRESET_BADGES_MAP = mapOf(
     "SKY-PN-ST-CNT-YIR" to TitleAndRemark("你我成双徽章(麻花款)", "15s CD"),
     "SKY-PN-ST-CNT-YIL" to TitleAndRemark("你我成双徽章(竖琴款)", "15s CD"),
     "SKY-PN-ST-PL-HC" to TitleAndRemark("叠叠蟹", "15min CD, 10min Dur"),
+    "SKY-PL-ST-ANC-BHHS" to TitleAndRemark("雪人头部", "15min CD, 10min Dur"),
+    "SKY-PN-ST-CRE-NT" to TitleAndRemark("海龟", "15s CD"),
+    "SKY-PN-ST-SUM-NF" to TitleAndRemark("新年烟花", "15s CD"),
+    "SKY-PN-ST-SUM-CC" to TitleAndRemark("公主抱", "15s CD"),
+    "SKY-PL-ST-COB-AU1" to TitleAndRemark("欧若拉之翼", "15min CD, 10min Dur"),
+    "SKY-PN-ST-PRO-LS" to TitleAndRemark("爱之跷跷板", "15min CD, 10min Dur"),
 )
 
 // 定义预设的渠道
