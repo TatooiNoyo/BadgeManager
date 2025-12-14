@@ -8,6 +8,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,13 +31,12 @@ import io.github.tatooinoyo.star.badge.R
 @Composable
 fun FloatingWidget(
     isMenuOpen: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     // 获取当前配置以判断屏幕方向
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     val screenHeight = configuration.screenHeightDp.dp
-
     // 只有当 (内部认为可见) 且 (外部菜单没打开) 时，才真正显示
     val shouldShow = !isMenuOpen && !isLandscape
     // 透明度动画：显示时 1.0f，隐藏时 0.05f (保留一点点不透明度以确保容易调试位置，或者设为 0.01f)
@@ -48,38 +48,28 @@ fun FloatingWidget(
 
 
     // 动态计算根容器高度：横屏时铺满(或者很大)，竖屏时保持原有触摸区域大小
-    val rootHeight = if (isLandscape) screenHeight else 200.dp
+    val rootHeight = if (isLandscape) screenHeight else 80.dp
 
     // 动态计算视觉条高度：横屏时填满根容器，竖屏时变短
-    val barHeight = if (isLandscape) screenHeight else 80.dp // 竖屏改短为 140dp
+    val barHeight = if (isLandscape) screenHeight else 80.dp
+
 
     Box(
-        contentAlignment = Alignment.Center,
+        contentAlignment = Alignment.CenterEnd,
         modifier = Modifier
-            .width(12.dp)
+            .width(24.dp)
             .height(rootHeight)
             .background(Color.Transparent)
-            // 处理手势：点击显示/执行操作
-            .pointerInput(isLandscape) {
-                detectTapGestures(
-                    onTap = {
-                        if (!isLandscape) {
-                            // 如果已经是显示的，点击则触发业务逻辑
-                            onClick()
-                        }
-                    }
-                )
-            }
+            .offset(y = if (isLandscape) 0.dp else (-200).dp)
             .pointerInput(isLandscape) {
                 // 处理滑动
-                detectHorizontalDragGestures { change, dragAmount ->
-                    if (isLandscape) {
+                if (isLandscape) {
+                    detectHorizontalDragGestures { change, dragAmount ->
                         change.consume()
 
                         // dragAmount > 0 向右滑, < 0 向左滑
                         if (dragAmount < 5) {
                             // 触发你的菜单展开逻辑
-                            // 这里可能需要一个新的回调，例如 onSwipeOpen()
                             onClick() // 暂时复用点击逻辑
                         }
                     }
@@ -87,14 +77,16 @@ fun FloatingWidget(
             }
     ) {
         Box(
+            contentAlignment = Alignment.CenterEnd,
             modifier = Modifier
+                .width(24.dp)
                 .alpha(baseAlpha) // 当它为0时，只是里面的画看不见了
-                .offset(y = if (isLandscape) 0.dp else (-200).dp)
         ) {
             // 胶囊条主体
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
+                    .padding(end = 4.dp)
                     .width(6.dp) // 视觉上很细，像 Android 原生侧边条
                     .height(barHeight) // 稍微短一点，显得更精致
                     .shadow(
@@ -111,6 +103,17 @@ fun FloatingWidget(
                         ),
                         shape = RoundedCornerShape(50)
                     )
+                    // 处理手势：点击显示/执行操作
+                    .pointerInput(isLandscape) {
+                        detectTapGestures(
+                            onTap = {
+                                if (!isLandscape) {
+                                    // 如果已经是显示的，点击则触发业务逻辑
+                                    onClick()
+                                }
+                            }
+                        )
+                    }
             ) {
                 // 如果需要显示图标
                 if (shouldShow) {

@@ -17,23 +17,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.unit.dp
-import androidx.core.view.doOnLayout
-
 import io.github.tatooinoyo.star.badge.MainActivity
 import io.github.tatooinoyo.star.badge.data.BadgeRepository
-import io.github.tatooinoyo.star.badge.service.manager.FloatingWindowManager
-import io.github.tatooinoyo.star.badge.service.utils.ServiceLifecycleOwner
 import io.github.tatooinoyo.star.badge.service.component.DrawerMenu
 import io.github.tatooinoyo.star.badge.service.component.DrawerMenuItem
 import io.github.tatooinoyo.star.badge.service.component.FloatingWidget
+import io.github.tatooinoyo.star.badge.service.manager.FloatingWindowManager
+import io.github.tatooinoyo.star.badge.service.utils.ServiceLifecycleOwner
 
 class FloatingButtonService : Service() {
 
     // 1. 使用封装好的 LifecycleOwner
     private val lifecycleOwner = ServiceLifecycleOwner()
+
     // 2. 使用封装好的 WindowManager
     private lateinit var windowManagerHelper: FloatingWindowManager
-    
+
     // UI 变量
     private lateinit var floatingButtonView: View
     private var menuView: View? = null
@@ -48,7 +47,7 @@ class FloatingButtonService : Service() {
         lifecycleOwner.onResume()
 
         windowManagerHelper = FloatingWindowManager(this)
-        
+
         setupFloatingButton()
     }
 
@@ -57,20 +56,45 @@ class FloatingButtonService : Service() {
             // 一行代码绑定生命周期
             lifecycleOwner.attachToView(this)
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-            setContent { 
-                FloatingWidget(onClick = { toggleMenu() }, isMenuOpen = isMenuOpen)
+            setContent {
+                // 1. 获取当前配置
+                val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+                val isLandscape = configuration.screenWidthDp > configuration.screenHeightDp
+                // 2. 根据横竖屏状态，直接在这里更新排他区域
+                // 利用 SideEffect 或 LaunchedEffect 确保 View 构建完成后执行
+                val view = androidx.compose.ui.platform.LocalView.current
+                androidx.compose.runtime.LaunchedEffect(isLandscape) {
+                    updateExclusionRect(view, isLandscape)
+                }
+
+                FloatingWidget(
+                    onClick = { toggleMenu() },
+                    isMenuOpen = isMenuOpen
+                )
             }
 
-            // 确保该视图布局完成后，告诉系统不要拦截这里的触摸事件
-            doOnLayout { view ->
-                val exclusionRects = listOf(
-                    android.graphics.Rect(0, 0, view.width, view.height)
-                )
-                view.systemGestureExclusionRects = exclusionRects
-            }
         }
         // 委托给 Helper 添加 View
         windowManagerHelper.addFloatingButton(floatingButtonView)
+    }
+
+    // 新增辅助方法
+    private fun updateExclusionRect(view: View, isLandscape: Boolean) {
+        view.post {
+            if (isLandscape) {
+                // 【横屏策略】
+                // 设置一个覆盖整个 View 右边缘（或左边缘）的矩形。
+                // 简单起见，直接覆盖整个 View 区域，确保滑动一定能被捕获。
+                val rect = android.graphics.Rect(0, 0, view.width, view.height)
+                view.systemGestureExclusionRects = listOf(rect)
+            } else {
+                // 【竖屏策略】
+                // 清空排他区域。
+                // 这样手指在蓝条上滑动时，触发的是系统返回，而不是 App 的滑动。
+                // 点击事件不受影响。
+                view.systemGestureExclusionRects = emptyList()
+            }
+        }
     }
 
     private fun toggleMenu() {

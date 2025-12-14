@@ -2,12 +2,10 @@ package io.github.tatooinoyo.star.badge.service.manager
 
 import android.content.Context
 import android.graphics.PixelFormat
-import android.graphics.Rect
 import android.os.Build
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
-import android.view.ViewTreeObserver
 import android.view.WindowManager
 
 class FloatingWindowManager(private val context: Context) {
@@ -28,16 +26,6 @@ class FloatingWindowManager(private val context: Context) {
             flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
                     WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            view.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
-                override fun onGlobalLayout() {
-                    // 获取视图实际占据的矩形区域
-                    val rect = Rect(0, 0,  view.width, view.height)
-                    // 告诉系统：在这个区域内，屏蔽系统的侧滑返回手势，优先给 App 处理
-                    view.systemGestureExclusionRects = listOf(rect)
-                }
-            })
         }
         windowManager.addView(view, params)
     }
