@@ -14,10 +14,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
@@ -30,6 +34,8 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.InputChip
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -54,8 +60,7 @@ import io.github.tatooinoyo.star.badge.R
 import io.github.tatooinoyo.star.badge.data.BadgeChannel
 import io.github.tatooinoyo.star.badge.ui.home.BadgeInputForm
 import io.github.tatooinoyo.star.badge.ui.home.BadgeUiState
-
-import io.github.tatooinoyo.star.badge.ui.state.SyncState // 确保导入正确的包
+import io.github.tatooinoyo.star.badge.ui.state.SyncState
 
 @Composable
 fun TopControl() {
@@ -71,7 +76,20 @@ fun BadgeInputPanel(
     onFastModeChange: (Boolean) -> Unit,
     onAddClick: () -> Unit,
     onExtractSkClick: (String) -> Unit,
+    onTagsChange: (List<String>) -> Unit
 ) {
+    var showTagDialog by remember { mutableStateOf(false) }
+    // 弹窗组件
+    if (showTagDialog) {
+        TagManageDialog(
+            allTags = uiState.allTags, // 需确保 UiState 中有此字段
+            selectedTags = uiState.addTags, // 需确保 UiState 中有此字段
+            onDismiss = { showTagDialog = false },
+            onConfirm = { newTags ->
+                onTagsChange(newTags)
+            }
+        )
+    }
     Column {
         BadgeInputForm(
             title = uiState.addTitle,
@@ -85,6 +103,59 @@ fun BadgeInputPanel(
             onExtractSkClick = onExtractSkClick,
             isFastMode = uiState.isFastMode
         )
+
+        // [新增] 标签展示与管理行
+        // 放在表单下方，Spacer 上方
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // 1. 标签管理按钮
+            IconButton(onClick = { showTagDialog = true }) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.Label,
+                    contentDescription = "Manage Tags",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            // 2. 显示已选中的标签 (横向滚动)
+            if (uiState.addTags.isEmpty()) {
+                Text(
+                    text = "添加标签...",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    modifier = Modifier.padding(start = 4.dp)
+                )
+            } else {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.padding(start = 4.dp)
+                ) {
+                    items(uiState.addTags) { tag ->
+                        InputChip(
+                            selected = true,
+                            onClick = { showTagDialog = true }, // 点击标签也打开管理弹窗
+                            label = { Text(tag) },
+                            trailingIcon = {
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = "Remove",
+                                    modifier = Modifier.size(16.dp),
+                                    // 这里使用 InputChip 的 trailingIcon 点击事件不太好处理，
+                                    // 通常建议在管理弹窗里统一删除，或者这里只做展示。
+                                    // 如果要直接删除：
+                                    // androidx.compose.foundation.clickable { onTagsChange(uiState.addTags - tag) }
+                                )
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
 
         Spacer(modifier = Modifier.height(8.dp))
 

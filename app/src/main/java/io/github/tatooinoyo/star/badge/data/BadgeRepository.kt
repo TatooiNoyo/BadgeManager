@@ -63,7 +63,9 @@ data class Badge(
     val remark: String,
     val link: String = "",
     val channel: BadgeChannel = BadgeChannel.NETEASE,
-    val orderIndex: Int
+    val orderIndex: Int,
+    // 新增：标签列表
+    val tags: List<String> = emptyList()
 ) {
     fun usage(context: Context) {
         try {
@@ -127,13 +129,14 @@ object BadgeRepository {
 
     // 添加徽章
     // 修改方法签名，增加 link 和 channel
-    fun addBadge(title: String, remark: String, link: String, channel: BadgeChannel) {
+    fun addBadge(title: String, remark: String, link: String, channel: BadgeChannel, tags: List<String> = emptyList()) {
         val currentMaxOrder = _badges.value.maxOfOrNull { it.orderIndex } ?: 0
         val newBadge = Badge(
             title = title,
             remark = remark,
             link = link,
             channel = channel,
+            tags = tags,
             orderIndex = currentMaxOrder + 1
         )
         CoroutineScope(Dispatchers.IO).launch {
@@ -148,11 +151,12 @@ object BadgeRepository {
         remark: String,
         link: String,
         channel: BadgeChannel,
-        orderIndex: Int // 保持 orderIndex 不变
+        orderIndex: Int, // 保持 orderIndex 不变
+        tags: List<String>
     ) {
         CoroutineScope(Dispatchers.IO).launch {
             // 这里应该调用 updateBadgeContent，但它没有 orderIndex，所以我们直接更新整个对象
-            val badge = Badge(id, title, remark, link, channel, orderIndex)
+            val badge = Badge(id, title, remark, link, channel, orderIndex, tags)
             badgeDao?.updateBadge(badge)
         }
     }
@@ -197,5 +201,16 @@ class Converters {
         } catch (e: Exception) {
             BadgeChannel.NETEASE // 默认值，防止枚举改名后崩溃
         }
+    }
+
+    @TypeConverter
+    fun fromTagsList(tags: List<String>): String {
+        return tags.joinToString(",")
+    }
+
+    @TypeConverter
+    fun toTagsList(data: String): List<String> {
+        if (data.isBlank()) return emptyList()
+        return data.split(",").map { it.trim() }
     }
 }

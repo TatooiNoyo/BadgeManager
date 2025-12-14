@@ -16,16 +16,23 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.InputChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -55,6 +62,8 @@ import io.github.tatooinoyo.star.badge.data.BadgeChannel
 import io.github.tatooinoyo.star.badge.ui.home.component.BadgeFunctionArea
 import io.github.tatooinoyo.star.badge.ui.home.component.BadgeReorderList
 import io.github.tatooinoyo.star.badge.ui.home.component.HelpInfoDialog
+import io.github.tatooinoyo.star.badge.ui.home.component.TagFilterBar
+import io.github.tatooinoyo.star.badge.ui.home.component.TagManageDialog
 import io.github.tatooinoyo.star.badge.ui.state.SyncState
 import io.github.tatooinoyo.star.badge.ui.theme.PeachTheme
 import kotlinx.coroutines.flow.collectLatest
@@ -100,6 +109,8 @@ fun BadgeManagerScreen(
             onAddClick = { viewModel.addBadge() },
             onItemClick = { badge -> viewModel.selectBadge(badge) },
             onExtractSkClick = { link -> viewModel.extractSkFromLink(link) },
+            onTagsChange = { viewModel.updateAddInput(tags = it) },
+            onTagSelected = { tag -> viewModel.selectTag(tag) },
             onMove = { from, to -> viewModel.moveBadge(from, to) },
             onSaveOrder = { viewModel.saveOrder() },
             // === 传递同步参数 ===
@@ -122,6 +133,9 @@ fun BadgeManagerScreen(
             remark = uiState.detailRemark,
             link = uiState.detailLink,
             channel = uiState.detailChannel,
+            tags = uiState.detailTags,
+            allTags = uiState.allTags,
+            onTagsChange = { viewModel.updateDetailInput(tags = it) },
             isWritingNfc = uiState.isWritingNfc,
             onTitleChange = { viewModel.updateDetailInput(title = it) },
             onRemarkChange = { viewModel.updateDetailInput(remark = it) },
@@ -179,6 +193,8 @@ fun BadgeListContent(
     onAddClick: () -> Unit,
     onItemClick: (Badge) -> Unit,
     onExtractSkClick: (String) -> Unit,
+    onTagsChange: (List<String>) -> Unit,
+    onTagSelected: (String?) -> Unit = {},
     onMove: (Int, Int) -> Unit,
     onSaveOrder: () -> Unit,
     // 同步相关参数 ===
@@ -198,7 +214,7 @@ fun BadgeListContent(
         modifier = Modifier
             .fillMaxSize()
             .background(PeachTheme)
-            .padding(16.dp)
+//            .padding(16.dp)
             .safeDrawingPadding()
     ) {
         // 1. 顶部功能区 (录入、备份、同步)
@@ -212,6 +228,7 @@ fun BadgeListContent(
             onFastModeChange = onFastModeChange,
             onAddClick = onAddClick,
             onExtractSkClick = onExtractSkClick,
+            onTagsChange = onTagsChange,
             onStartSender = onStartSender,
             onStopSender = onStopSender,
             onStartReceiver = onStartReceiver,
@@ -221,6 +238,13 @@ fun BadgeListContent(
             onHelpClick = { showHelpDialog = true }
         )
 
+        // 标签筛选栏
+        // 放在列表上方
+        TagFilterBar(
+            allTags = uiState.allTags,
+            selectedTag = uiState.selectedTag,
+            onTagSelected = onTagSelected
+        )
 
         // 2. 列表区域
         BadgeReorderList(
@@ -246,6 +270,9 @@ fun BadgeDetailContent(
     remark: String,
     link: String,
     channel: BadgeChannel,
+    tags: List<String>,
+    allTags: List<String>,
+    onTagsChange: (List<String>) -> Unit,
     isWritingNfc: Boolean,
     onTitleChange: (String) -> Unit,
     onRemarkChange: (String) -> Unit,
@@ -261,6 +288,20 @@ fun BadgeDetailContent(
     // 弹窗控制状态
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var showUpdateConfirm by remember { mutableStateOf(false) }
+    // 标签弹窗状态
+    var showTagDialog by remember { mutableStateOf(false) }
+
+    // 标签管理弹窗
+    if (showTagDialog) {
+        TagManageDialog(
+            allTags = allTags,
+            selectedTags = tags,
+            onDismiss = { showTagDialog = false },
+            onConfirm = { newTags ->
+                onTagsChange(newTags)
+            }
+        )
+    }
 
     // 拦截系统返回手势/按键
     // 当此 Composable 显示时，按返回键会触发 onExitClick，而不是直接退出 App
@@ -287,6 +328,52 @@ fun BadgeDetailContent(
             onExtractSkClick = onExtractSkClick
         )
 
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // 1. 管理按钮
+            IconButton(onClick = { showTagDialog = true }) {
+                Icon(
+                    // 如果没有 Icons.Default.Label，请使用 Icons.Default.Sell 或导入扩展库
+                    imageVector = Icons.AutoMirrored.Default.Label,
+                    contentDescription = "Manage Tags",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            // 2. 显示标签
+            if (tags.isEmpty()) {
+                Text(
+                    text = "添加标签...",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    modifier = Modifier.padding(start = 4.dp)
+                )
+            } else {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.padding(start = 4.dp)
+                ) {
+                    items(tags) { tag ->
+                        InputChip(
+                            selected = true,
+                            onClick = { showTagDialog = true },
+                            label = { Text(tag) },
+                            trailingIcon = {
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = "Remove",
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        )
+                    }
+                }
+            }
+        }
         Spacer(modifier = Modifier.weight(1f))
 
         // 新增：写入 NFC 按钮

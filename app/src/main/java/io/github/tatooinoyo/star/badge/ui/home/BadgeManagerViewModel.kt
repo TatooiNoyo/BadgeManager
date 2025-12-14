@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.IOException
@@ -39,8 +40,12 @@ data class BadgeUiState(
     val detailRemark: String = "",
     val detailLink: String = "",
     val detailChannel: BadgeChannel = BadgeChannel.HUAWEI,
+    val detailTags: List<String> = emptyList(),
     val isWritingNfc: Boolean = false, // 是否正在等待写入 NFC
-    val extractedSk: String? = null // 提取出的 SK 编码
+    val extractedSk: String? = null, // 提取出的 SK 编码
+    val selectedTag: String? = null,
+    val addTags: List<String> = emptyList(), // 当前新增徽章的标签
+    val allTags: List<String> = emptyList()
 )
 
 // 定义一次性 UI 事件
@@ -57,16 +62,47 @@ class BadgeManagerViewModel : ViewModel() {
     private val _uiEvent = MutableSharedFlow<BadgeUiEvent>()
     val uiEvent: SharedFlow<BadgeUiEvent> = _uiEvent.asSharedFlow()
 
+    private val _selectedTag = MutableStateFlow<String?>(null) // null 代表显示全部
+
     init {
-        // 收集 Repository 的 Flow 并更新 UI 状态
+        // 收集 Repository 的 Flow 和 选中的标签 Flow，合并计算后更新 UI 状态
         viewModelScope.launch {
-            BadgeRepository.badges.collect { badgeList ->
-                _uiState.value = _uiState.value.copy(badges = badgeList)
+            combine(
+                BadgeRepository.badges,
+                _selectedTag
+            ) { allBadges, selectedTag ->
+                // 1. 计算所有标签 (基于完整列表)
+                val allTags = allBadges.flatMap { it.tags }.distinct().sorted()
+
+                // 2. 根据选中的标签过滤显示列表
+                val filteredBadges = if (selectedTag == null) {
+                    allBadges
+                } else {
+                    allBadges.filter { it.tags.contains(selectedTag) }
+                }
+
+                // 返回一个数据类或 Triple 供 collect 使用
+                Triple(filteredBadges, allTags, selectedTag)
+            }.collect { (filteredBadges, allTags, currentTag) ->
+                _uiState.update {
+                    it.copy(
+                        badges = filteredBadges, // UI 只展示过滤后的列表
+                        allTags = allTags,       // 筛选栏展示所有可用标签
+                        selectedTag = currentTag // 同步选中状态
+                    )
+                }
             }
         }
     }
 
+
     // === 列表/添加页面的操作 ===
+
+    fun selectTag(tag: String?) {
+        _selectedTag.value = tag
+    }
+
+
     private fun normalizeLink(link: String): String {
         return if (link.isNotBlank() && !link.startsWith("http://") && !link.startsWith("https://")) {
             "https://$link"
@@ -79,7 +115,8 @@ class BadgeManagerViewModel : ViewModel() {
         title: String = _uiState.value.addTitle,
         remark: String = _uiState.value.addRemark,
         link: String = _uiState.value.addLink,
-        channel: BadgeChannel = _uiState.value.addChannel
+        channel: BadgeChannel = _uiState.value.addChannel,
+        tags: List<String> = _uiState.value.addTags
     ) {
         val sk = getSkFromLink(link)
         val preset = PRESET_BADGES_MAP[sk]
@@ -90,7 +127,8 @@ class BadgeManagerViewModel : ViewModel() {
             addTitle = finalTitle,
             addRemark = finalRemark,
             addLink = link,
-            addChannel = channel
+            addChannel = channel,
+            addTags = tags // 确保更新状态
         )
         if (_uiState.value.isFastMode && link.isNotBlank() && preset != null) {
             addBadge()
@@ -115,13 +153,15 @@ class BadgeManagerViewModel : ViewModel() {
                 state.addTitle,
                 state.addRemark,
                 finalLink,
-                state.addChannel
+                state.addChannel,
+                state.addTags
             )
             // 重置输入
             _uiState.value = state.copy(
                 addTitle = "",
                 addRemark = "",
                 addLink = "",
+                addTags = emptyList()
             )
         }
     }
@@ -135,7 +175,8 @@ class BadgeManagerViewModel : ViewModel() {
             detailTitle = badge.title,
             detailRemark = badge.remark,
             detailLink = badge.link,
-            detailChannel = badge.channel
+            detailChannel = badge.channel,
+            detailTags = badge.tags
         )
     }
 
@@ -143,7 +184,8 @@ class BadgeManagerViewModel : ViewModel() {
         title: String = _uiState.value.detailTitle,
         remark: String = _uiState.value.detailRemark,
         link: String = _uiState.value.detailLink,
-        channel: BadgeChannel = _uiState.value.detailChannel
+        channel: BadgeChannel = _uiState.value.detailChannel,
+        tags: List<String> = _uiState.value.detailTags
     ) {
         val sk = getSkFromLink(link)
         val preset = PRESET_BADGES_MAP[sk]
@@ -154,7 +196,8 @@ class BadgeManagerViewModel : ViewModel() {
             detailTitle = finalTitle,
             detailRemark = finalRemark,
             detailLink = link,
-            detailChannel = channel
+            detailChannel = channel,
+            detailTags = tags
         )
     }
 
@@ -168,7 +211,8 @@ class BadgeManagerViewModel : ViewModel() {
                 state.detailRemark,
                 finalLink,
                 state.detailChannel,
-                originalBadge.orderIndex
+                originalBadge.orderIndex,
+                state.detailTags
             )
             exitEditMode()
         }

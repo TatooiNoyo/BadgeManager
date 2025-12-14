@@ -6,6 +6,7 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,7 +19,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -27,7 +34,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -37,6 +46,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+
 import io.github.tatooinoyo.star.badge.data.BadgeChannel
 
 // 1. 定义菜单项的数据模型 (替代 XML 中的 item)
@@ -54,10 +64,15 @@ data class DrawerMenuItem(
 @Composable
 fun DrawerMenu(
     items: List<DrawerMenuItem>,
+    allTags: List<String> = emptyList(),
+    selectedTag: String? = null,
+    onTagSelected: (String?) -> Unit = {},
     onGoHomeClick: () -> Unit,
     onCloseClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // 控制下拉菜单展开状态
+    var filterMenuExpanded by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -73,7 +88,6 @@ fun DrawerMenu(
             }
             .padding(vertical = 8.dp)
     ) {
-        // === 新增：顶部关闭栏 ===
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -93,6 +107,74 @@ fun DrawerMenu(
                     contentDescription = "主页",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+
+            // 中间的标签筛选框
+            if (allTags.isNotEmpty()) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.weight(1f) // 占据中间剩余空间，确保居中
+                ) {
+                    FilterChip(
+                        selected = selectedTag != null,
+                        onClick = { filterMenuExpanded = true },
+                        label = {
+                            Text(
+                                text = selectedTag ?: "全部标签",
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        },
+                        trailingIcon = {
+                            Icon(
+                                imageVector = if (filterMenuExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        },
+                        // 去掉边框，让它看起来更融入标题栏，或者保留边框增加辨识度
+                        border = null,
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = Color.Transparent, // 平时透明
+                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+                            selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        ),
+                        modifier = Modifier.padding(horizontal = 4.dp)
+                    )
+
+                    // 下拉菜单
+                    DropdownMenu(
+                        expanded = filterMenuExpanded,
+                        onDismissRequest = { filterMenuExpanded = false }
+                    ) {
+                        // 选项：全部
+                        DropdownMenuItem(
+                            text = { Text("全部标签") },
+                            onClick = {
+                                onTagSelected(null)
+                                filterMenuExpanded = false
+                            },
+                            trailingIcon = if (selectedTag == null) {
+                                { Icon(Icons.Default.Home, null, Modifier.size(16.dp)) } // 借用 Home 图标表示默认
+                            } else null
+                        )
+                        HorizontalDivider()
+                        // 选项：各个标签
+                        allTags.forEach { tag ->
+                            DropdownMenuItem(
+                                text = { Text(tag) },
+                                onClick = {
+                                    onTagSelected(tag)
+                                    filterMenuExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            } else {
+                // 如果没有标签，使用 Spacer 占位保持布局平衡
+                Spacer(modifier = Modifier.weight(1f))
             }
 
             // 右边的关闭按钮

@@ -13,6 +13,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
@@ -160,7 +163,19 @@ class FloatingButtonService : Service() {
 
             setContent {
                 val badgeList by BadgeRepository.badges.collectAsState()
-                val dynamicMenuItems = badgeList.map { badge ->
+
+                var selectedTag by remember { mutableStateOf<String?>(null) }
+                val allTags = remember(badgeList) {
+                    badgeList.flatMap { it.tags }.distinct().sorted()
+                }
+                val displayBadges = remember(badgeList, selectedTag) {
+                    if (selectedTag == null) {
+                        badgeList
+                    } else {
+                        badgeList.filter { it.tags.contains(selectedTag) }
+                    }
+                }
+                val dynamicMenuItems = displayBadges.map { badge ->
                     DrawerMenuItem(
                         id = badge.id,
                         title = badge.title,
@@ -180,6 +195,11 @@ class FloatingButtonService : Service() {
                 ) {
                     DrawerMenu(
                         items = dynamicMenuItems,
+                        allTags = allTags,
+                        selectedTag = selectedTag,
+                        onTagSelected = { tag ->
+                            selectedTag = tag
+                        },
                         onGoHomeClick = ::navigateToHome,
                         onCloseClick = ::closeMenu
                     )

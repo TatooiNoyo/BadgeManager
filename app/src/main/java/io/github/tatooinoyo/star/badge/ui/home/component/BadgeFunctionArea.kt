@@ -50,6 +50,7 @@ fun BadgeFunctionArea(
     onFastModeChange: (Boolean) -> Unit,
     onAddClick: () -> Unit,
     onExtractSkClick: (String) -> Unit,
+    onTagsChange: (List<String>) -> Unit,
     onStartSender: () -> Unit,
     onStopSender: () -> Unit,
     onStartReceiver: (String) -> Unit,
@@ -115,7 +116,8 @@ fun BadgeFunctionArea(
                         onInputChannelChange = onInputChannelChange,
                         onFastModeChange = onFastModeChange,
                         onAddClick = onAddClick,
-                        onExtractSkClick = onExtractSkClick
+                        onExtractSkClick = onExtractSkClick,
+                        onTagsChange = onTagsChange,
                     )
 
                     1 -> BackupRestorePanel(onImport = onImport, onExport = onExport)
