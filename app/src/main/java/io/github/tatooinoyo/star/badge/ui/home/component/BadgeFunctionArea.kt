@@ -47,6 +47,7 @@ fun BadgeFunctionArea(
     onInputRemarkChange: (String) -> Unit,
     onInputLinkChange: (String) -> Unit,
     onInputChannelChange: (BadgeChannel) -> Unit,
+    onFastModeChange: (Boolean) -> Unit,
     onAddClick: () -> Unit,
     onExtractSkClick: (String) -> Unit,
     onStartSender: () -> Unit,
@@ -112,6 +113,7 @@ fun BadgeFunctionArea(
                         onInputRemarkChange = onInputRemarkChange,
                         onInputLinkChange = onInputLinkChange,
                         onInputChannelChange = onInputChannelChange,
+                        onFastModeChange = onFastModeChange,
                         onAddClick = onAddClick,
                         onExtractSkClick = onExtractSkClick
                     )

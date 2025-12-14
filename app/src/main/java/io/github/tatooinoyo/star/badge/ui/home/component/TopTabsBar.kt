@@ -7,6 +7,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -25,6 +26,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -56,7 +58,8 @@ import io.github.tatooinoyo.star.badge.ui.home.BadgeUiState
 import io.github.tatooinoyo.star.badge.ui.state.SyncState // 确保导入正确的包
 
 @Composable
-fun TopControl(){}
+fun TopControl() {
+}
 
 @Composable
 fun BadgeInputPanel(
@@ -65,9 +68,10 @@ fun BadgeInputPanel(
     onInputRemarkChange: (String) -> Unit,
     onInputLinkChange: (String) -> Unit,
     onInputChannelChange: (BadgeChannel) -> Unit,
+    onFastModeChange: (Boolean) -> Unit,
     onAddClick: () -> Unit,
     onExtractSkClick: (String) -> Unit,
-){
+) {
     Column {
         BadgeInputForm(
             title = uiState.addTitle,
@@ -78,18 +82,42 @@ fun BadgeInputPanel(
             onLinkChange = onInputLinkChange,
             channel = uiState.addChannel,
             onChannelChange = onInputChannelChange,
-            onExtractSkClick = onExtractSkClick
+            onExtractSkClick = onExtractSkClick,
+            isFastMode = uiState.isFastMode
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Button(
-            onClick = onAddClick,
-            modifier = Modifier.align(Alignment.End)
+        // 修改底部操作栏：左侧放开关，右侧放添加按钮
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.Add, contentDescription = null)
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(stringResource(R.string.btn_add_badge))
+            // === 左侧：连续录入开关 ===
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(start = 8.dp) // 稍微留点边距
+            ) {
+                Checkbox(
+                    checked = uiState.isFastMode,
+                    onCheckedChange = onFastModeChange
+                )
+                Text(
+                    text = "连续录入", // 或者 "快速模式"
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(start = 4.dp)
+                )
+            }
+
+            // === 右侧：添加按钮 ===
+            Button(
+                onClick = onAddClick,
+            ) {
+                Icon(Icons.Default.Add, contentDescription = null)
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(stringResource(R.string.btn_add_badge))
+            }
         }
     }
 }

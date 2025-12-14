@@ -41,10 +41,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
@@ -57,6 +57,7 @@ import io.github.tatooinoyo.star.badge.ui.home.component.BadgeReorderList
 import io.github.tatooinoyo.star.badge.ui.home.component.HelpInfoDialog
 import io.github.tatooinoyo.star.badge.ui.state.SyncState
 import io.github.tatooinoyo.star.badge.ui.theme.PeachTheme
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun BadgeManagerScreen(
@@ -69,11 +70,22 @@ fun BadgeManagerScreen(
     val syncState by badgeSyncViewModel.syncState.collectAsState()
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
+    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
 
     LaunchedEffect(nfcPayload) {
         if (!nfcPayload.isNullOrEmpty()) {
             viewModel.onNfcPayloadReceived(nfcPayload)
             onNfcDataConsumed()
+        }
+
+        viewModel.uiEvent.collectLatest { event ->
+            when (event) {
+                is BadgeUiEvent.ShowToast -> {
+                    Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                    // 自动录入成功后，清除输入框焦点
+                    focusManager.clearFocus()
+                }
+            }
         }
     }
 
@@ -84,6 +96,7 @@ fun BadgeManagerScreen(
             onInputRemarkChange = { viewModel.updateAddInput(remark = it) },
             onInputLinkChange = { viewModel.updateAddInput(link = it) },
             onInputChannelChange = { viewModel.updateAddInput(channel = it) },
+            onFastModeChange = viewModel::toggleFastMode,
             onAddClick = { viewModel.addBadge() },
             onItemClick = { badge -> viewModel.selectBadge(badge) },
             onExtractSkClick = { link -> viewModel.extractSkFromLink(link) },
@@ -162,6 +175,7 @@ fun BadgeListContent(
     onInputRemarkChange: (String) -> Unit,
     onInputLinkChange: (String) -> Unit,
     onInputChannelChange: (BadgeChannel) -> Unit,
+    onFastModeChange: (Boolean) -> Unit,
     onAddClick: () -> Unit,
     onItemClick: (Badge) -> Unit,
     onExtractSkClick: (String) -> Unit,
@@ -195,6 +209,7 @@ fun BadgeListContent(
             onInputRemarkChange = onInputRemarkChange,
             onInputLinkChange = onInputLinkChange,
             onInputChannelChange = onInputChannelChange,
+            onFastModeChange = onFastModeChange,
             onAddClick = onAddClick,
             onExtractSkClick = onExtractSkClick,
             onStartSender = onStartSender,
@@ -385,10 +400,12 @@ fun BadgeInputForm(
     remark: String, onRemarkChange: (String) -> Unit,
     link: String, onLinkChange: (String) -> Unit,
     channel: BadgeChannel, onChannelChange: (BadgeChannel) -> Unit,
-    onExtractSkClick: (String) -> Unit // 新增回调
+    onExtractSkClick: (String) -> Unit, // 新增回调
+    isFastMode: Boolean = false
 ) {
     var channelMenuExpanded by remember { mutableStateOf(false) }
-
+    val clipboardManager = LocalClipboardManager.current
+    var lastLinkContent by remember { mutableStateOf("") }
     Column {
         OutlinedTextField(
             value = title, onValueChange = onTitleChange,
@@ -407,7 +424,27 @@ fun BadgeInputForm(
         OutlinedTextField(
             value = link, onValueChange = onLinkChange,
             label = { Text("链接 (如: https://...)") },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .onFocusChanged { focusState ->
+                    // 保持原有的逻辑：当点击获得焦点时触发
+                    if (focusState.isFocused) {
+                        // 仅在快速模式下执行
+                        if (isFastMode) {
+                            val clipboardContent = clipboardManager.getText()?.text
+                            if (!clipboardContent.isNullOrBlank() &&
+                                (clipboardContent.startsWith("http", ignoreCase = true) ||
+                                        clipboardContent.startsWith("sky", ignoreCase = true))
+                            ) {
+                                // 如果内容不同，执行粘贴
+                                if (lastLinkContent != clipboardContent) {
+                                    lastLinkContent = clipboardContent
+                                    onLinkChange(clipboardContent)
+                                }
+                            }
+                        }
+                    }
+                },
             singleLine = true,
             trailingIcon = {
                 TextButton(onClick = { onExtractSkClick(link) }) {

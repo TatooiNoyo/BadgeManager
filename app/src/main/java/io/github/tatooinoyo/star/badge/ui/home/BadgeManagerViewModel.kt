@@ -13,9 +13,13 @@ import io.github.tatooinoyo.star.badge.data.Badge
 import io.github.tatooinoyo.star.badge.data.BadgeChannel
 import io.github.tatooinoyo.star.badge.data.BadgeRepository
 import io.github.tatooinoyo.star.badge.data.PRESET_BADGES_MAP
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.IOException
 import java.nio.charset.Charset
@@ -29,6 +33,7 @@ data class BadgeUiState(
     val addRemark: String = "",
     val addLink: String = "",
     val addChannel: BadgeChannel = BadgeChannel.HUAWEI,
+    val isFastMode: Boolean = false,
     // 详情模式下的输入状态 (如果是分离的页面，也可以拆分 ViewModel，这里为了简单先放一起)
     val detailTitle: String = "",
     val detailRemark: String = "",
@@ -38,10 +43,19 @@ data class BadgeUiState(
     val extractedSk: String? = null // 提取出的 SK 编码
 )
 
+// 定义一次性 UI 事件
+sealed class BadgeUiEvent {
+    data class ShowToast(val message: String) : BadgeUiEvent()
+}
+
 class BadgeManagerViewModel : ViewModel() {
 
     private val _uiState = MutableStateFlow(BadgeUiState())
     val uiState: StateFlow<BadgeUiState> = _uiState.asStateFlow()
+
+    // 创建事件流
+    private val _uiEvent = MutableSharedFlow<BadgeUiEvent>()
+    val uiEvent: SharedFlow<BadgeUiEvent> = _uiEvent.asSharedFlow()
 
     init {
         // 收集 Repository 的 Flow 并更新 UI 状态
@@ -78,6 +92,17 @@ class BadgeManagerViewModel : ViewModel() {
             addLink = link,
             addChannel = channel
         )
+        if (_uiState.value.isFastMode && link.isNotBlank() && preset != null) {
+            addBadge()
+
+            viewModelScope.launch {
+                _uiEvent.emit(BadgeUiEvent.ShowToast("已自动添加: $finalTitle"))
+            }
+        }
+    }
+
+    fun toggleFastMode(enabled: Boolean) {
+        _uiState.update { it.copy(isFastMode = enabled) }
     }
 
     fun addBadge() {
