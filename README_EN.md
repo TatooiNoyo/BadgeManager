@@ -6,17 +6,19 @@ Badge Manager is an Android application designed to help users manage and quickl
 
 *   **Badge Management (CRUD)**:
     *   Create, Read, Update, and Delete badges.
-    *   Badge properties include: Title, Remark, Link (URL), and Channel Type.
+    *   Badge properties include: Title, Remark, Link (URL), Tags, and Channel Type.
 *   **NFC Integration**:
     *   Supports NFC reading (NDEF format).
     *   Tap an NFC tag on the home page or details page to automatically fill the "Link" input field with the tag's content.
 *   **Floating Window Service**:
-    *   Provides a global floating ball (Floating Action Button).
+    *   Provides a global floating handle (Starlight effect).
     *   Allows users to quickly access badge functions over other applications (requires overlay permission).
 *   **Data Persistence**:
     *   Uses **Room Database** for local data storage, ensuring data is not lost upon restart.
 *   **Backup and Restore**:
-    *   Support exporting all badge data as JSON files or restoring from files.
+    *   Support exporting all badge data as JSON files or restoring from local files.
+*   **Data Synchronization**:
+    *   Support instant data synchronization between devices on the same local network (LAN) using a 6-digit code.
 *   **Modern UI**:
     *   Built entirely with **Jetpack Compose**, following Material Design 3 specifications.
 
@@ -28,6 +30,7 @@ Badge Manager is an Android application designed to help users manage and quickl
 *   **Local Storage**: Android Jetpack Room (SQLite)
 *   **Hardware Interaction**: Android NFC API
 *   **Background Service**: Android Service (Floating Window)
+*   **Communication**: Socket & UDP Broadcast (for LAN Sync)
 *   **Build Tool**: Gradle (Kotlin DSL), Version Catalogs (libs.versions.toml)
 
 ## 💻 Build & Run
