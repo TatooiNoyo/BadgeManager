@@ -45,7 +45,8 @@ fun BadgeReorderList(
 
     LazyColumn(
         state = reorderableState.listState,
-        modifier = Modifier.reorderable(reorderableState),
+        modifier = Modifier.reorderable(reorderableState)
+            .padding(horizontal = 16.dp),
         contentPadding = PaddingValues(vertical = 8.dp)
     ) {
         items(badges, { it.id }) { badge ->
