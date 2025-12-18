@@ -41,6 +41,8 @@ class FloatingButtonService : Service() {
     private var menuView: View? = null
     private var isMenuOpen = false
 
+    private var selectedTag by mutableStateOf<String?>(null)
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
@@ -164,7 +166,6 @@ class FloatingButtonService : Service() {
             setContent {
                 val badgeList by BadgeRepository.badges.collectAsState()
 
-                var selectedTag by remember { mutableStateOf<String?>(null) }
                 val allTags = remember(badgeList) {
                     badgeList.flatMap { it.tags }.distinct().sorted()
                 }
