@@ -20,6 +20,7 @@ jobs:
         uses: actions/setup-java@v3
         with:
           java-version: '17' # 根据项目要求更新版本
+          distribution: 'temurin'
 
       # Step 3: Extract versionName and versionCode from build.gradle.kts
       - name: Get Version Info
