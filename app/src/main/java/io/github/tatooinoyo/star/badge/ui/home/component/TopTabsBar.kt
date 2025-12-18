@@ -78,19 +78,7 @@ fun BadgeInputPanel(
     onExtractSkClick: (String) -> Unit,
     onTagsChange: (List<String>) -> Unit
 ) {
-    var showTagDialog by remember { mutableStateOf(false) }
-    // 弹窗组件
-    if (showTagDialog) {
-        TagManageDialog(
-            allTags = uiState.allTags, // 需确保 UiState 中有此字段
-            selectedTags = uiState.addTags, // 需确保 UiState 中有此字段
-            onDismiss = { showTagDialog = false },
-            onConfirm = { newTags ->
-                onTagsChange(newTags)
-            }
-        )
-    }
-    Column {
+    Column(Modifier.padding(horizontal = 16.dp)) {
         BadgeInputForm(
             title = uiState.addTitle,
             onTitleChange = onInputTitleChange,
@@ -100,61 +88,12 @@ fun BadgeInputPanel(
             onLinkChange = onInputLinkChange,
             channel = uiState.addChannel,
             onChannelChange = onInputChannelChange,
+            allTags = uiState.allTags,
+            selectedTags =  uiState.addTags,
+            onTagsChange = onTagsChange,
             onExtractSkClick = onExtractSkClick,
             isFastMode = uiState.isFastMode
         )
-
-        // [新增] 标签展示与管理行
-        // 放在表单下方，Spacer 上方
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // 1. 标签管理按钮
-            IconButton(onClick = { showTagDialog = true }) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.Label,
-                    contentDescription = "Manage Tags",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            // 2. 显示已选中的标签 (横向滚动)
-            if (uiState.addTags.isEmpty()) {
-                Text(
-                    text = "添加标签...",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                    modifier = Modifier.padding(start = 4.dp)
-                )
-            } else {
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier = Modifier.padding(start = 4.dp)
-                ) {
-                    items(uiState.addTags) { tag ->
-                        InputChip(
-                            selected = true,
-                            onClick = { showTagDialog = true }, // 点击标签也打开管理弹窗
-                            label = { Text(tag) },
-                            trailingIcon = {
-                                Icon(
-                                    Icons.Default.Close,
-                                    contentDescription = "Remove",
-                                    modifier = Modifier.size(16.dp),
-                                    // 这里使用 InputChip 的 trailingIcon 点击事件不太好处理，
-                                    // 通常建议在管理弹窗里统一删除，或者这里只做展示。
-                                    // 如果要直接删除：
-                                    // androidx.compose.foundation.clickable { onTagsChange(uiState.addTags - tag) }
-                                )
-                            }
-                        )
-                    }
-                }
-            }
-        }
 
 
         Spacer(modifier = Modifier.height(8.dp))

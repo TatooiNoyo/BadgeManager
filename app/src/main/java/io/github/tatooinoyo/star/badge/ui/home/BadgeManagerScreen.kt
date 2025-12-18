@@ -288,20 +288,6 @@ fun BadgeDetailContent(
     // 弹窗控制状态
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var showUpdateConfirm by remember { mutableStateOf(false) }
-    // 标签弹窗状态
-    var showTagDialog by remember { mutableStateOf(false) }
-
-    // 标签管理弹窗
-    if (showTagDialog) {
-        TagManageDialog(
-            allTags = allTags,
-            selectedTags = tags,
-            onDismiss = { showTagDialog = false },
-            onConfirm = { newTags ->
-                onTagsChange(newTags)
-            }
-        )
-    }
 
     // 拦截系统返回手势/按键
     // 当此 Composable 显示时，按返回键会触发 onExitClick，而不是直接退出 App
@@ -325,55 +311,11 @@ fun BadgeDetailContent(
             remark = remark, onRemarkChange = onRemarkChange,
             link = link, onLinkChange = onLinkChange,
             channel = channel, onChannelChange = onChannelChange,
+            allTags = allTags,
+            selectedTags = tags,
+            onTagsChange = onTagsChange,
             onExtractSkClick = onExtractSkClick
         )
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // 1. 管理按钮
-            IconButton(onClick = { showTagDialog = true }) {
-                Icon(
-                    // 如果没有 Icons.Default.Label，请使用 Icons.Default.Sell 或导入扩展库
-                    imageVector = Icons.AutoMirrored.Default.Label,
-                    contentDescription = "Manage Tags",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            // 2. 显示标签
-            if (tags.isEmpty()) {
-                Text(
-                    text = "添加标签...",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                    modifier = Modifier.padding(start = 4.dp)
-                )
-            } else {
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier = Modifier.padding(start = 4.dp)
-                ) {
-                    items(tags) { tag ->
-                        InputChip(
-                            selected = true,
-                            onClick = { showTagDialog = true },
-                            label = { Text(tag) },
-                            trailingIcon = {
-                                Icon(
-                                    Icons.Default.Close,
-                                    contentDescription = "Remove",
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                        )
-                    }
-                }
-            }
-        }
         Spacer(modifier = Modifier.weight(1f))
 
         // 新增：写入 NFC 按钮
@@ -488,11 +430,27 @@ fun BadgeInputForm(
     link: String, onLinkChange: (String) -> Unit,
     channel: BadgeChannel, onChannelChange: (BadgeChannel) -> Unit,
     onExtractSkClick: (String) -> Unit, // 新增回调
+    allTags: List<String> = emptyList(),
+    selectedTags: List<String> = emptyList(),
+    onTagsChange: (List<String>) -> Unit,
     isFastMode: Boolean = false
 ) {
     var channelMenuExpanded by remember { mutableStateOf(false) }
     val clipboardManager = LocalClipboardManager.current
     var lastLinkContent by remember { mutableStateOf("") }
+    var showTagDialog by remember { mutableStateOf(false) }
+    // 弹窗组件
+    if (showTagDialog) {
+        TagManageDialog(
+            allTags = allTags, // 需确保 UiState 中有此字段
+            selectedTags = selectedTags, // 需确保 UiState 中有此字段
+            onDismiss = { showTagDialog = false },
+            onConfirm = { newTags ->
+                onTagsChange(newTags)
+            }
+        )
+    }
+
     Column {
         OutlinedTextField(
             value = title, onValueChange = onTitleChange,
@@ -545,8 +503,6 @@ fun BadgeInputForm(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("渠道类型：", style = MaterialTheme.typography.bodyLarge)
-            Spacer(modifier = Modifier.width(8.dp))
 
             Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
                 // 使用 Box 和一个不可编辑的 TextField 来模拟下拉框触发器
@@ -565,7 +521,7 @@ fun BadgeInputForm(
                                 contentDescription = null
                             )
                         },
-                        modifier = Modifier.width(150.dp),
+                        modifier = Modifier.width(120.dp),
                         enabled = false, // 禁用自带输入，完全靠点击触发
                         colors = TextFieldDefaults.colors(
                             disabledTextColor = MaterialTheme.colorScheme.onSurface,
@@ -588,6 +544,52 @@ fun BadgeInputForm(
                                 channelMenuExpanded = false
                             }
                         )
+                    }
+                }
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // 1. 管理按钮
+                IconButton(onClick = { showTagDialog = true }) {
+                    Icon(
+                        // 如果没有 Icons.Default.Label，请使用 Icons.Default.Sell 或导入扩展库
+                        imageVector = Icons.AutoMirrored.Default.Label,
+                        contentDescription = "Manage Tags",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                // 2. 显示标签
+                if (allTags.isEmpty()) {
+                    Text(
+                        text = "添加标签...",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        modifier = Modifier.padding(start = 4.dp)
+                    )
+                } else {
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.padding(start = 4.dp)
+                    ) {
+                        items(selectedTags) { tag ->
+                            InputChip(
+                                selected = true,
+                                onClick = { showTagDialog = true },
+                                label = { Text(tag) },
+                                trailingIcon = {
+                                    Icon(
+                                        Icons.Default.Close,
+                                        contentDescription = "Remove",
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            )
+                        }
                     }
                 }
             }
