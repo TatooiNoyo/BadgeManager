@@ -26,7 +26,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -50,6 +49,7 @@ fun BadgeFunctionArea(
     onFastModeChange: (Boolean) -> Unit,
     onAddClick: () -> Unit,
     onExtractSkClick: (String) -> Unit,
+    onToggleExpanded: () -> Unit, // 切换展开的回调
     onTagsChange: (List<String>) -> Unit,
     onStartSender: () -> Unit,
     onStopSender: () -> Unit,
@@ -59,7 +59,6 @@ fun BadgeFunctionArea(
     onExport: (Context, Uri, (Boolean) -> Unit) -> Unit,
     onHelpClick: () -> Unit // 新增回调：点击帮助按钮
 ) {
-    var isAddAreaExpanded by remember { mutableStateOf(true) }
     var selectedTabIndex by remember { mutableIntStateOf(0) }
 
     val tabs = listOf(
@@ -105,7 +104,7 @@ fun BadgeFunctionArea(
         Spacer(modifier = Modifier.height(16.dp))
 
         // 可折叠的功能面板区域
-        AnimatedVisibility(visible = isAddAreaExpanded) {
+        AnimatedVisibility(visible = uiState.isFunctionAreaExpanded) {
             Box(modifier = Modifier.height(350.dp)) {
                 when (selectedTabIndex) {
                     0 -> BadgeInputPanel(
@@ -136,14 +135,14 @@ fun BadgeFunctionArea(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { isAddAreaExpanded = !isAddAreaExpanded }
+                .clickable { onToggleExpanded() }
                 .padding(vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
             Icon(
-                imageVector = if (isAddAreaExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                contentDescription = if (isAddAreaExpanded) "收起" else "展开",
+                imageVector = if (uiState.isFunctionAreaExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                contentDescription = if (uiState.isFunctionAreaExpanded) "收起" else "展开",
                 tint = MaterialTheme.colorScheme.primary
             )
         }

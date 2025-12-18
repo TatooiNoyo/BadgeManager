@@ -43,6 +43,7 @@ data class BadgeUiState(
     val detailTags: List<String> = emptyList(),
     val isWritingNfc: Boolean = false, // 是否正在等待写入 NFC
     val extractedSk: String? = null, // 提取出的 SK 编码
+    val isFunctionAreaExpanded: Boolean = true, // 记录功能区是否展开
     val selectedTag: String? = null,
     val addTags: List<String> = emptyList(), // 当前新增徽章的标签
     val allTags: List<String> = emptyList()
@@ -95,6 +96,9 @@ class BadgeManagerViewModel : ViewModel() {
         }
     }
 
+    fun toggleFunctionArea() {
+        _uiState.update { it.copy(isFunctionAreaExpanded = !it.isFunctionAreaExpanded) }
+    }
 
     // === 列表/添加页面的操作 ===
 
