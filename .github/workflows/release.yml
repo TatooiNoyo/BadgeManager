@@ -1,9 +1,9 @@
-name: Publish Release with app.jks
+name: Publish Release with Dynamic APK Name
 
 on:
   push:
     tags:
-      - 'v*.*.*' # 匹配类似 v1.0.0 的版本号 tag
+      - 'v*.*.*' # 匹配类似 v1.2.0 的版本号 tag
 
 jobs:
   release:
@@ -19,45 +19,65 @@ jobs:
       - name: Setup Java
         uses: actions/setup-java@v3
         with:
-          java-version: '17' # 根据需求替换版本号
+          java-version: '17' # 根据项目要求更新版本
 
-      # Step 3: Prepare app.jks file
+      # Step 3: Extract versionName and versionCode from build.gradle.kts
+      - name: Get Version Info
+        id: version
+        run: |
+          VERSION_NAME=$(grep "versionName" app/build.gradle.kts | awk -F'"' '{print $2}')
+          VERSION_CODE=$(grep "versionCode" app/build.gradle.kts | awk '{print $2}')
+          echo "VERSION_NAME=${VERSION_NAME}" >> $GITHUB_ENV
+          echo "VERSION_CODE=${VERSION_CODE}" >> $GITHUB_ENV
+          echo "Version Name: ${VERSION_NAME}, Version Code: ${VERSION_CODE}"
+
+      # Step 4: Prepare app.jks file
       - name: Setup app.jks
         run: |
           echo "${{ secrets.APP_JKS }}" | base64 -d > app.jks
           echo "Keystore file has been restored successfully!"
 
-      # Step 4: Install dependencies
+      # Step 5: Install dependencies
       - name: Install Dependencies
         run: ./gradlew dependencies
 
-      # Step 5: Build Project
+      # Step 6: Build Project
       - name: Build APK
         run: ./gradlew assembleRelease
 
-      # Step 6: Sign APK (if not signed by build.gradle)
-      # 如果需要额外签署 APK，可以添加这一步
+      # Step 7: Rename APK with Custom Format
+      - name: Rename APK
+        run: |
+          APK_ORIGINAL=app/build/outputs/apk/release/app-release.apk # 默认构建路径
+          APK_CUSTOM=app/build/outputs/apk/release/BadgeManager_${{ env.VERSION_NAME }}_${{ env.VERSION_CODE }}_release.apk
+          mv $APK_ORIGINAL $APK_CUSTOM
+          echo "APK_CUSTOM=$APK_CUSTOM" >> $GITHUB_ENV
+
+      # Step 8: Sign APK (if not signed by build.gradle)
       - name: Sign APK
         run: |
+          APK_CUSTOM=${{ env.APK_CUSTOM }}
           jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
           -keystore app.jks \
           -storepass ${{ secrets.KEYSTORE_PASSWORD }} \
           -keypass ${{ secrets.KEY_PASSWORD }} \
-          ./app/build/outputs/apk/release/app-release-unsigned.apk releaseKeyAlias
+          $APK_CUSTOM releaseKeyAlias
 
-      # Step 7: Verify APK
+      # Step 9: Verify APK
       - name: Verify APK
         run: |
-          zipalign -v 4 ./app/build/outputs/apk/release/app-release-unsigned.apk ./app/build/outputs/apk/release/app-release-signed.apk
+          APK_CUSTOM=${{ env.APK_CUSTOM }}
+          zipalign -v 4 $APK_CUSTOM ${APK_CUSTOM%.apk}_aligned.apk
+          mv ${APK_CUSTOM%.apk}_aligned.apk $APK_CUSTOM
 
-      # Step 8: Publish GitHub Release
+      # Step 10: Publish GitHub Release
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: ./app/build/outputs/apk/release/app-release-signed.apk # 输出的签名 APK 文件路径
+          files: ${{ env.APK_CUSTOM }} # 上传自定义命名的 APK 文件
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # 使用 GitHub 提供的访问令牌
 
-      # Step 9: Clean Sensitive Files (Optional)
+      # Step 11: Clean Sensitive Files (Optional)
       - name: Clean Up
         run: rm app.jks
