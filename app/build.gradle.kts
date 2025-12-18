@@ -20,9 +20,21 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            // 建议通过环境变量或 local.properties 获取敏感信息，避免硬编码
+            // 在 GitHub Actions 环境下，这些值通常从 secrets 中获取
+            storeFile = file(project.rootProject.file("app.jks"))
+            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
+            keyAlias = "key0" // 替换为你的别名
+            keyPassword = System.getenv("KEY_PASSWORD") ?: ""
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

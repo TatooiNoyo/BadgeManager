@@ -54,6 +54,9 @@ jobs:
       # Step 6: Build Project
       - name: Build APK
         run: ./gradlew assembleRelease
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
       # Step 7: Rename APK with Custom Format
       - name: Rename APK
@@ -63,22 +66,6 @@ jobs:
           mv $APK_ORIGINAL $APK_CUSTOM
           echo "APK_CUSTOM=$APK_CUSTOM" >> $GITHUB_ENV
 
-      # Step 8: Sign APK (if not signed by build.gradle)
-      - name: Sign APK
-        run: |
-          APK_CUSTOM=${{ env.APK_CUSTOM }}
-          jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
-          -keystore app.jks \
-          -storepass ${{ secrets.KEYSTORE_PASSWORD }} \
-          -keypass ${{ secrets.KEY_PASSWORD }} \
-          $APK_CUSTOM releaseKeyAlias
-
-      # Step 9: Verify APK
-      - name: Verify APK
-        run: |
-          APK_CUSTOM=${{ env.APK_CUSTOM }}
-          zipalign -v 4 $APK_CUSTOM ${APK_CUSTOM%.apk}_aligned.apk
-          mv ${APK_CUSTOM%.apk}_aligned.apk $APK_CUSTOM
 
       # Step 10: Publish GitHub Release
       - name: Create Release
