@@ -9,6 +9,8 @@ jobs:
   release:
     name: Build and Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       # Step 1: Check out the repository
@@ -38,6 +40,12 @@ jobs:
         run: |
           echo "${{ secrets.APP_JKS }}" | base64 -d > app.jks
           echo "Keystore file has been restored successfully!"
+
+      # Step 4.1: Create local.properties with content to satisfy secrets plugin
+      - name: Create local.properties
+        run: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
+          echo "MAPS_API_KEY=unused" >> local.properties
 
       # Step 5: Install dependencies
       - name: Install Dependencies
@@ -74,7 +82,7 @@ jobs:
 
       # Step 10: Publish GitHub Release
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: ${{ env.APK_CUSTOM }} # 上传自定义命名的 APK 文件
         env:
