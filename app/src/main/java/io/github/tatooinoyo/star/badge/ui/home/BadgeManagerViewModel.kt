@@ -7,6 +7,7 @@ import android.nfc.NdefRecord
 import android.nfc.Tag
 import android.nfc.tech.Ndef
 import android.util.Base64
+import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -124,8 +125,10 @@ class BadgeManagerViewModel(application: Application) : AndroidViewModel(applica
         tags: List<String> = _uiState.value.addTags
     ) {
         val sk = getSkFromLink(link)
-        val finalTitle = if (sk != null) PresetBadges.getTitle(getApplication<Application>(), sk) else title
-        val finalRemark = if (sk != null) PresetBadges.getRemark(getApplication<Application>(), sk) else remark
+        val finalTitle =
+            if (sk != null) PresetBadges.getTitle(getApplication<Application>(), sk) else title
+        val finalRemark =
+            if (sk != null) PresetBadges.getRemark(getApplication<Application>(), sk) else remark
         _uiState.value = _uiState.value.copy(
             addTitle = finalTitle,
             addRemark = finalRemark,
@@ -191,8 +194,10 @@ class BadgeManagerViewModel(application: Application) : AndroidViewModel(applica
         tags: List<String> = _uiState.value.detailTags
     ) {
         val sk = getSkFromLink(link)
-        val finalTitle = if (sk != null) PresetBadges.getTitle(getApplication<Application>(), sk) else title
-        val finalRemark = if (sk != null) PresetBadges.getRemark(getApplication<Application>(), sk) else remark
+        val finalTitle =
+            if (sk != null) PresetBadges.getTitle(getApplication<Application>(), sk) else title
+        val finalRemark =
+            if (sk != null) PresetBadges.getRemark(getApplication<Application>(), sk) else remark
         _uiState.value = _uiState.value.copy(
             detailTitle = finalTitle,
             detailRemark = finalRemark,
@@ -381,12 +386,15 @@ class BadgeManagerViewModel(application: Application) : AndroidViewModel(applica
                 // 1. 获取数据快照
                 val badges = BadgeRepository.getAllBadgesSnapshot()
                 val gson =
-                    com.google.gson.GsonBuilder().setPrettyPrinting().create() // 使用格式化输出，方便阅读
+                    com.google.gson.GsonBuilder()
+                        .setPrettyPrinting()
+                        .disableHtmlEscaping() // 允许非 ASCII 字符以原文形式保存
+                        .create() // 使用格式化输出，方便阅读
                 val jsonString = gson.toJson(badges)
 
                 // 2. 写入文件
                 context.contentResolver.openOutputStream(uri)?.use { outputStream ->
-                    outputStream.write(jsonString.toByteArray())
+                    outputStream.write(jsonString.toByteArray(Charsets.UTF_8))
                 }
 
                 // 切回主线程通知结果
@@ -415,7 +423,12 @@ class BadgeManagerViewModel(application: Application) : AndroidViewModel(applica
                 // 1. 读取文件内容
                 val stringBuilder = StringBuilder()
                 context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                    java.io.BufferedReader(java.io.InputStreamReader(inputStream)).use { reader ->
+                    java.io.BufferedReader(
+                        java.io.InputStreamReader(
+                            inputStream,
+                            Charsets.UTF_8
+                        )
+                    ).use { reader ->
                         var line: String? = reader.readLine()
                         while (line != null) {
                             stringBuilder.append(line)
@@ -449,7 +462,7 @@ class BadgeManagerViewModel(application: Application) : AndroidViewModel(applica
                     }
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e("BadgeManagerViewModel", "Error importing badges", e)
                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                     onResult(false)
                 }
