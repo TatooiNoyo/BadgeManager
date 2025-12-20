@@ -1,6 +1,7 @@
 package io.github.tatooinoyo.star.badge.service.component
 
 import android.content.res.Configuration
+import android.util.Log
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -64,15 +65,23 @@ fun FloatingWidget(
             .pointerInput(isLandscape) {
                 // 处理滑动
                 if (isLandscape) {
-                    detectHorizontalDragGestures { change, dragAmount ->
-                        change.consume()
+                    var totalDrag = 0f
+                    val threshold = 20.dp.toPx()
+                    detectHorizontalDragGestures(
+                        onDragStart = { totalDrag = 0f },
+                        onHorizontalDrag = { change, dragAmount ->
+                            change.consume()
+                            totalDrag += dragAmount
+                            Log.d("FloatingWidget", "onHorizontalDrag: $dragAmount")
 
-                        // dragAmount > 0 向右滑, < 0 向左滑
-                        if (dragAmount < 5) {
-                            // 触发你的菜单展开逻辑
-                            onClick() // 暂时复用点击逻辑
+                            // dragAmount > 0 向右滑, < 0 向左滑
+                            if (totalDrag < -threshold) {
+                                // 触发你的菜单展开逻辑
+                                onClick() // 暂时复用点击逻辑
+                                totalDrag = 0f
+                            }
                         }
-                    }
+                    )
                 }
             }
     ) {

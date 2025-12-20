@@ -1,5 +1,6 @@
 package io.github.tatooinoyo.star.badge.service.component
 
+import android.util.Log
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -80,12 +81,20 @@ fun DrawerMenu(
             .fillMaxWidth()
             .background(Color.Transparent)
             .pointerInput(Unit) {
-                detectHorizontalDragGestures { change, dragAmount ->
-                    change.consume()
-                    if (dragAmount < 5) {
-                        onCloseClick()
+                var totalDrag = 0f // 记录累计位移
+                val threshold = 20.dp.toPx() // 将判定距离统一为 dp
+                detectHorizontalDragGestures(
+                    onDragStart = { totalDrag = 0f },
+                    onHorizontalDrag = { change, dragAmount ->
+                        Log.d("DrawerMenu", "onHorizontalDrag: $dragAmount")
+                        change.consume()
+                        totalDrag += dragAmount
+                        if (totalDrag < -threshold) {
+                            onCloseClick()
+                            totalDrag = 0f
+                        }
                     }
-                }
+                )
             }
             .padding(vertical = 8.dp)
     ) {
