@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
@@ -48,7 +47,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-
 import io.github.tatooinoyo.star.badge.data.BadgeChannel
 
 // 1. 定义菜单项的数据模型 (替代 XML 中的 item)
@@ -140,7 +138,9 @@ fun DrawerMenu(
                         colors = FilterChipDefaults.filterChipColors(
                             containerColor = Color.Transparent, // 平时透明
                             labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+                            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer.copy(
+                                alpha = 0.5f
+                            ),
                             selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
                         ),
                         modifier = Modifier.padding(horizontal = 4.dp)
@@ -159,7 +159,13 @@ fun DrawerMenu(
                                 filterMenuExpanded = false
                             },
                             trailingIcon = if (selectedTag == null) {
-                                { Icon(Icons.Default.Home, null, Modifier.size(16.dp)) } // 借用 Home 图标表示默认
+                                {
+                                    Icon(
+                                        Icons.Default.Home,
+                                        null,
+                                        Modifier.size(16.dp)
+                                    )
+                                } // 借用 Home 图标表示默认
                             } else null
                         )
                         HorizontalDivider()
@@ -255,28 +261,25 @@ fun DrawerMenuItemRow(item: DrawerMenuItem) {
             Column(
                 modifier = Modifier.weight(1f) // 占据剩余宽度，防止文字挤压图标
             ) {
-                // 标题 (加粗或稍微大一点)
-                Row() {
+                Surface(
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = MaterialTheme.shapes.extraSmall, // 胶囊圆角
+                ) {
                     Text(
-                        text = item.title,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1, // 限制行数，防止太长 (可选)
-                        overflow = TextOverflow.Ellipsis // 超出显示省略号
+                        text = item.channel.label,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Surface(
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        shape = MaterialTheme.shapes.extraSmall, // 胶囊圆角
-                    ) {
-                        Text(
-                            text = item.channel.label,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                        )
-                    }
                 }
+                // 标题 (加粗或稍微大一点)
+                Text(
+                    text = item.title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1, // 限制行数，防止太长 (可选)
+                    overflow = TextOverflow.Ellipsis // 超出显示省略号
+                )
 
                 // 备注/描述 (字体小一点，颜色淡一点)
                 if (item.remark.isNotEmpty()) {
