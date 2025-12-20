@@ -22,6 +22,8 @@ NFC 标签快速填充链接，并提供悬浮球功能以便快速访问。
     * 支持将所有徽章数据导出为 JSON 文件，或从文件恢复。
 * **数据同步**:
     * 支持在同网环境下, 将数据同步给其他设备。
+* **国际化支持**:
+    * 支持多种语言界面：简体中文、繁体中文（台湾）、英文。
 * **现代化 UI**:
     * 完全使用 **Jetpack Compose** 构建，遵循 Material Design 3 规范。
 
@@ -33,7 +35,10 @@ NFC 标签快速填充链接，并提供悬浮球功能以便快速访问。
 * **本地存储**: Android Jetpack Room (SQLite)
 * **硬件交互**: Android NFC API
 * **后台服务**: Android Service (Floating Window)
+* **网络通信**: Socket & UDP 广播（用于局域网同步）
 * **构建工具**: Gradle (Kotlin DSL), Version Catalogs (libs.versions.toml)
+* **版本控制**: Git
+* **CI/CD**: GitHub Actions
 
 ## 💻 开发构建 (Build & Run)
 
@@ -46,13 +51,25 @@ NFC 标签快速填充链接，并提供悬浮球功能以便快速访问。
 ### 编译步骤
 
 1. **克隆仓库**:
-   `bash git clone https://github.com/TatooiNoyo/BadgeManager.git`
+   ```bash
+   git clone https://github.com/TatooiNoyo/BadgeManager.git
+   ```
 2. **打开项目**:
    启动 Android Studio，选择 "Open"，然后导航到克隆的目录。
 3. **同步 Gradle**:
    等待 Android Studio 下载依赖并同步项目。
 4. **运行应用**:
    连接 Android 设备并点击 "Run" 按钮。
+
+### 构建发布版本
+
+要构建发布版本的 APK 文件，可以使用以下命令：
+
+```bash
+./gradlew assembleRelease
+```
+
+构建好的 APK 文件将位于 `app/build/outputs/apk/release/` 目录下，文件名格式为 `BadgeManager_{版本号}_{版本代码}_release.apk`。
 
 ## 📝 使用指南
 
@@ -64,6 +81,11 @@ NFC 标签快速填充链接，并提供悬浮球功能以便快速访问。
 5. **管理列表**: 点击列表项进入详情页编辑；**长按列表项并拖动**可调整徽章顺序。
 6. **数据同步**: 切换至“备份还原”标签页，您可以：
     * 导出/导入 JSON 备份文件。
+    * 使用局域网同步功能：
+        * 点击“同网互传”标签页
+        * 选择“我是发送方”生成6位分享码，或将分享码提供给接收方
+        * 接收方选择“我是接收方”并输入分享码
+        * 数据将通过局域网安全传输，无需互联网连接
 
 ### 权限说明
 
@@ -71,6 +93,16 @@ NFC 标签快速填充链接，并提供悬浮球功能以便快速访问。
 
 1. **悬浮窗权限**: 用于显示全局悬浮球。应用启动时会自动检测并跳转至设置页面请求。
 2. **NFC 权限**: 系统会自动处理。
+
+## 🌍 国际化
+
+本应用支持多种语言界面：
+
+* 简体中文 (默认)
+* 繁体中文 (台湾)
+* 英语
+
+您可以在应用内的设置界面中切换语言。
 
 ## 🤝 贡献
 

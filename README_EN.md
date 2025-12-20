@@ -19,6 +19,8 @@ Badge Manager is an Android application designed to help users manage and quickl
     *   Support exporting all badge data as JSON files or restoring from local files.
 *   **Data Synchronization**:
     *   Support instant data synchronization between devices on the same local network (LAN) using a 6-digit code.
+*   **Internationalization**:
+    *   Supports multiple languages: Simplified Chinese, Traditional Chinese (Taiwan), and English.
 *   **Modern UI**:
     *   Built entirely with **Jetpack Compose**, following Material Design 3 specifications.
 
@@ -32,6 +34,8 @@ Badge Manager is an Android application designed to help users manage and quickl
 *   **Background Service**: Android Service (Floating Window)
 *   **Communication**: Socket & UDP Broadcast (for LAN Sync)
 *   **Build Tool**: Gradle (Kotlin DSL), Version Catalogs (libs.versions.toml)
+*   **Version Control**: Git
+*   **CI/CD**: GitHub Actions
 
 ## 💻 Build & Run
 
@@ -43,13 +47,25 @@ Badge Manager is an Android application designed to help users manage and quickl
 ### Build Steps
 
 1.  **Clone the Repository**:
-    `bash git clone https://github.com/TatooiNoyo/BadgeManager.git`
+    ```bash
+    git clone https://github.com/TatooiNoyo/BadgeManager.git
+    ```
 2.  **Open Project**:
     Launch Android Studio, select "Open", and navigate to the cloned directory.
 3.  **Sync Gradle**:
     Wait for Android Studio to download dependencies and sync the project.
 4.  **Run Application**:
     Connect an Android device and click the "Run" button.
+
+### Building Release Version
+
+To build a release version APK file, you can use the following command:
+
+```bash
+./gradlew assembleRelease
+```
+
+The built APK file will be located in the `app/build/outputs/apk/release/` directory, with the filename format `BadgeManager_{version}_{version_code}_release.apk`.
 
 ## 📝 User Guide
 
@@ -60,11 +76,24 @@ Badge Manager is an Android application designed to help users manage and quickl
 5.  **Management list**: Click on the list item to enter the detail page for editing. Long press the list item and drag to adjust the order of the badges.
 6.  **Data synchronization**: Switch to the "Backup and Restore" TAB, and you can:
     *   Export/Import JSON backup files.
+    *   Use LAN synchronization:
+        *   Click on the "Nearby Share" tab
+        *   Select "I am Sender" to generate a 6-digit share code, or provide the code to the receiver
+        *   The receiver selects "I am Receiver" and enters the share code
+        *   Data will be securely transmitted over the local network without internet connection
 ### Permissions
 
 When running the app for the first time, the following permissions need to be granted:
 1.  **Overlay Permission**: Used to display the global floating ball. The app will automatically detect and redirect to the settings page to request this upon startup.
 2.  **NFC Permission**: Handled automatically by the system.
+
+
+## 🔄 Continuous Integration and Deployment
+
+This project uses GitHub Actions for continuous integration and deployment:
+
+* **Build Checks**: Automatically run build checks each time code is pushed to the repository.
+* **Automatic Releases**: When pushing commits with version tags (e.g., `v1.2.0`), automatically build the release version and create a GitHub Release.
 
 ## 🤝 Contribution
 
