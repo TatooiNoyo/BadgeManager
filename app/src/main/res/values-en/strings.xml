@@ -63,4 +63,26 @@
     <string name="channel_vivo">VIVO</string>
     <string name="channel_netease">NetEase</string>
     <string name="channel_sky">International</string>
+    <string name="edit_badge_details">Edit Badge Details</string>
+    <string name="write_link_to_nfc_card">Write Link to NFC Card</string>
+    <string name="exit">Exit</string>
+    <string name="delete">Delete</string>
+    <string name="save_update">Save Update</string>
+    <string name="confirm_delete">Confirm Delete</string>
+    <string name="confirm_delete_message">Are you sure you want to delete the badge "%1$s"? This action cannot be undone.</string>
+    <string name="confirm_update">Confirm Update</string>
+    <string name="confirm_update_message">Are you sure you want to save changes to "%1$s"?</string>
+    <string name="prepare_write_nfc">Prepare to Write NFC</string>
+    <string name="prepare_write_nfc_message">Please place the NFC card against the back of your phone to write data.\nTarget link: %1$s</string>
+    <string name="cancel">Cancel</string>
+    <string name="title">Title</string>
+    <string name="title_placeholder">Title (e.g. Little One)</string>
+    <string name="remark">Remark</string>
+    <string name="remark_placeholder">Remark (e.g. 15-minute cooldown, lasting 20 minutes)</string>
+    <string name="link">Link</string>
+    <string name="link_placeholder">Link (e.g. https://...)</string>
+    <string name="add_tags">Add Tags...</string>
+    <string name="manage_tags">Manage Tags</string>
+    <string name="remove">Remove</string>
+    <string name="confirm_save">Confirm Save</string>
 </resources>

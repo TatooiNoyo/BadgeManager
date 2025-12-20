@@ -63,4 +63,26 @@
     <string name="channel_vivo">VIVO</string>
     <string name="channel_netease">网易</string>
     <string name="channel_sky">国际服</string>
+    <string name="edit_badge_details">编辑徽章详情</string>
+    <string name="write_link_to_nfc_card">写入链接到 NFC 卡片</string>
+    <string name="exit">退出</string>
+    <string name="delete">删除</string>
+    <string name="save_update">保存更新</string>
+    <string name="confirm_delete">确认删除</string>
+    <string name="confirm_delete_message">确定要删除徽章“%1$s”吗？此操作无法撤销。</string>
+    <string name="confirm_update">确认更新</string>
+    <string name="confirm_update_message">确定要保存对“%1$s”的修改吗？</string>
+    <string name="prepare_write_nfc">准备写入 NFC</string>
+    <string name="prepare_write_nfc_message">请将 NFC 卡片紧贴手机背面以写入数据。\n目标链接: %1$s</string>
+    <string name="cancel">取消</string>
+    <string name="title">标题</string>
+    <string name="title_placeholder">标题 (如: 小不点)</string>
+    <string name="remark">备注</string>
+    <string name="remark_placeholder">备注 (如: 15分钟冷却，持续20分钟)</string>
+    <string name="link">链接</string>
+    <string name="link_placeholder">链接 (如: https://...)</string>
+    <string name="add_tags">添加标签...</string>
+    <string name="manage_tags">管理标签</string>
+    <string name="remove">移除</string>
+    <string name="confirm_save">确认保存</string>
 </resources>

@@ -311,7 +311,7 @@ fun BadgeDetailContent(
             .padding(16.dp)
             .safeDrawingPadding()
     ) {
-        Text("编辑徽章详情", style = MaterialTheme.typography.headlineMedium)
+        Text(stringResource(R.string.edit_badge_details), style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(24.dp))
 
         // 复用输入表单
@@ -335,7 +335,7 @@ fun BadgeDetailContent(
                 containerColor = MaterialTheme.colorScheme.tertiary
             )
         ) {
-            Text("写入链接到 NFC 卡片")
+            Text(stringResource(R.string.write_link_to_nfc_card))
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -347,7 +347,7 @@ fun BadgeDetailContent(
         ) {
             // 退出按钮
             OutlinedButton(onClick = onExitClick) {
-                Text("退出")
+                Text(stringResource(R.string.exit))
             }
 
             Row {
@@ -356,14 +356,14 @@ fun BadgeDetailContent(
                     onClick = { showDeleteConfirm = true },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("删除")
+                    Text(stringResource(R.string.delete))
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 // 更新按钮
                 Button(
                     onClick = { showUpdateConfirm = true }
                 ) {
-                    Text("保存更新")
+                    Text(stringResource(R.string.save_update))
                 }
             }
         }
@@ -373,8 +373,8 @@ fun BadgeDetailContent(
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("确认删除") },
-            text = { Text("确定要删除徽章“${badge.title}”吗？此操作无法撤销。") },
+            title = { Text(stringResource(R.string.confirm_delete)) },
+            text = { Text(stringResource(R.string.confirm_delete_message, badge.title)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -383,12 +383,12 @@ fun BadgeDetailContent(
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("确认删除")
+                    Text(stringResource(R.string.confirm_delete))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirm = false }) {
-                    Text("取消")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -398,19 +398,19 @@ fun BadgeDetailContent(
     if (showUpdateConfirm) {
         AlertDialog(
             onDismissRequest = { showUpdateConfirm = false },
-            title = { Text("确认更新") },
-            text = { Text("确定要保存对“${badge.title}”的修改吗？") },
+            title = { Text(stringResource(R.string.confirm_update)) },
+            text = { Text(stringResource(R.string.confirm_update_message, badge.title)) },
             confirmButton = {
                 TextButton(onClick = {
                     showUpdateConfirm = false
                     onSaveClick()
                 }) {
-                    Text("确认保存")
+                    Text(stringResource(R.string.confirm_save))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showUpdateConfirm = false }) {
-                    Text("取消")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -420,11 +420,11 @@ fun BadgeDetailContent(
     if (isWritingNfc) {
         AlertDialog(
             onDismissRequest = onCancelWriteNfcClick,
-            title = { Text("准备写入 NFC") },
-            text = { Text("请将 NFC 卡片紧贴手机背面以写入数据。\n目标链接: $link") },
+            title = { Text(stringResource(R.string.prepare_write_nfc)) },
+            text = { Text(stringResource(R.string.prepare_write_nfc_message, link)) },
             confirmButton = {
                 TextButton(onClick = onCancelWriteNfcClick) {
-                    Text("取消")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -463,21 +463,21 @@ fun BadgeInputForm(
     Column {
         OutlinedTextField(
             value = title, onValueChange = onTitleChange,
-            label = { Text("标题 (如: 小不点)") },
+            label = { Text(stringResource(R.string.title_placeholder)) },
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
             value = remark, onValueChange = onRemarkChange,
-            label = { Text("备注 (如: 15分钟冷却，持续20分钟)") },
+            label = { Text(stringResource(R.string.remark_placeholder)) },
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
             value = link, onValueChange = onLinkChange,
-            label = { Text("链接 (如: https://...)") },
+            label = { Text(stringResource(R.string.link_placeholder)) },
             modifier = Modifier
                 .fillMaxWidth()
                 .onFocusChanged { focusState ->
@@ -567,7 +567,7 @@ fun BadgeInputForm(
                     Icon(
                         // 如果没有 Icons.Default.Label，请使用 Icons.Default.Sell 或导入扩展库
                         imageVector = Icons.AutoMirrored.Default.Label,
-                        contentDescription = "Manage Tags",
+                        contentDescription = stringResource(R.string.manage_tags),
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
@@ -593,7 +593,7 @@ fun BadgeInputForm(
                                 trailingIcon = {
                                     Icon(
                                         Icons.Default.Close,
-                                        contentDescription = "Remove",
+                                        contentDescription = stringResource(R.string.remove),
                                         modifier = Modifier.size(16.dp)
                                     )
                                 }
