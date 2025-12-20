@@ -12,7 +12,7 @@ import androidx.lifecycle.viewModelScope
 import io.github.tatooinoyo.star.badge.data.Badge
 import io.github.tatooinoyo.star.badge.data.BadgeChannel
 import io.github.tatooinoyo.star.badge.data.BadgeRepository
-import io.github.tatooinoyo.star.badge.data.PRESET_BADGES_MAP
+import io.github.tatooinoyo.star.badge.data.PresetBadges.PRESET_BADGES_MAP
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
