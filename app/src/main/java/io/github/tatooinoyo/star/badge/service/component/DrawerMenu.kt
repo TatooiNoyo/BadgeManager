@@ -89,10 +89,12 @@ fun DrawerMenu(
                         Log.d("DrawerMenu", "onHorizontalDrag: $dragAmount")
                         change.consume()
                         totalDrag += dragAmount
+                    },
+                    onDragEnd = {
                         if (totalDrag < -threshold) {
                             onCloseClick()
-                            totalDrag = 0f
                         }
+                        totalDrag = 0f
                     }
                 )
             }

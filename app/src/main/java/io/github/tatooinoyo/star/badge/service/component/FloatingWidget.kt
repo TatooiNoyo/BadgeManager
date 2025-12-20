@@ -73,13 +73,12 @@ fun FloatingWidget(
                             change.consume()
                             totalDrag += dragAmount
                             Log.d("FloatingWidget", "onHorizontalDrag: $dragAmount")
-
-                            // dragAmount > 0 向右滑, < 0 向左滑
+                        },
+                        onDragEnd = {
                             if (totalDrag < -threshold) {
-                                // 触发你的菜单展开逻辑
-                                onClick() // 暂时复用点击逻辑
-                                totalDrag = 0f
+                                onClick()
                             }
+                            totalDrag = 0f
                         }
                     )
                 }
