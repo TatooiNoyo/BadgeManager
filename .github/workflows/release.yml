@@ -27,16 +27,6 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
-      # Step 3: Extract versionName and versionCode from build.gradle.kts
-      - name: Get Version Info
-        id: version
-        run: |
-          VERSION_NAME=$(grep "versionName" app/build.gradle.kts | awk -F'"' '{print $2}')
-          VERSION_CODE=$(grep "versionCode" app/build.gradle.kts | awk '{print $2}')
-          echo "VERSION_NAME=${VERSION_NAME}" >> $GITHUB_ENV
-          echo "VERSION_CODE=${VERSION_CODE}" >> $GITHUB_ENV
-          echo "Version Name: ${VERSION_NAME}, Version Code: ${VERSION_CODE}"
-
       # Step 4: Prepare app.jks file
       - name: Setup app.jks
         run: |
