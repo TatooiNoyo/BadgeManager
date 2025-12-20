@@ -1,4 +1,5 @@
 {
+  "fetchViaCommits": true,
   "categories": [
     {
       "title": "🚀 Features",
@@ -26,13 +27,47 @@
     }
   ],
   "ignore_labels": ["ignore"],
-  "template": "${{CHANGELOG}}\n\n<details>\n<summary><b>Full Commit History</b></summary>\n${{COMMITS}}\n</details>",
+  "sort": "ASC",
+  "template": "${{CHANGELOG}}",
   "pr_template": "- ${{TITLE}} @${{AUTHOR}}",
   "empty_template": "No significant changes in this release.",
   "label_extractor": [
     {
-      "pattern": "^(feat|feature|fix|test|build|ci|docs|refactor)(\\(.+\\))?:",
-      "target": "$1"
+      "pattern": "^feat.+",
+      "target": "feat",
+      "flag": "i"
+    },
+    {
+      "pattern": "^fix.+",
+      "target": "fix",
+      "flag": "i"
+    },
+    {
+      "pattern": "^test.+",
+      "target": "test",
+      "flag": "i"
+    },
+    {
+      "pattern": "^build.+",
+      "target": "build",
+      "flag": "i"
+    },
+    {
+      "pattern": "^ci.+",
+      "target": "ci",
+      "flag": "i"
+    },
+    {
+      "pattern": "^docs.+",
+      "target": "docs",
+      "flag": "i"
+    },
+    {
+      "pattern": "^refactor.+",
+      "target": "refactor",
+      "flag": "i"
     }
-  ]
+  ],
+  "max_pull_requests": 1000,
+  "max_back_track_time_days": 1000
 }
