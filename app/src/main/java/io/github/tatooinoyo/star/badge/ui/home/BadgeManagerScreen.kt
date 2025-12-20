@@ -19,8 +19,10 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -80,6 +82,7 @@ fun BadgeManagerScreen(
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
     val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
+    val listState = rememberLazyListState()
 
     LaunchedEffect(nfcPayload) {
         if (!nfcPayload.isNullOrEmpty()) {
@@ -101,6 +104,7 @@ fun BadgeManagerScreen(
     if (uiState.editingBadge == null) {
         BadgeListContent(
             uiState = uiState,
+            listState = listState,
             onInputTitleChange = { viewModel.updateAddInput(title = it) },
             onInputRemarkChange = { viewModel.updateAddInput(remark = it) },
             onInputLinkChange = { viewModel.updateAddInput(link = it) },
@@ -186,6 +190,7 @@ fun BadgeManagerScreen(
 @Composable
 fun BadgeListContent(
     uiState: BadgeUiState,
+    listState: LazyListState,
     onInputTitleChange: (String) -> Unit,
     onInputRemarkChange: (String) -> Unit,
     onInputLinkChange: (String) -> Unit,
@@ -255,6 +260,7 @@ fun BadgeListContent(
             onItemClick = onItemClick,
             onMove = onMove,
             onSaveOrder = onSaveOrder,
+            listState = listState,
 //            modifier = Modifier.weight(1f) // 占据剩余空间
         )
 

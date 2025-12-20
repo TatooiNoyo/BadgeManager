@@ -11,7 +11,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Card
@@ -36,16 +38,19 @@ fun BadgeReorderList(
     onItemClick: (Badge) -> Unit,
     onMove: (Int, Int) -> Unit,
     onSaveOrder: () -> Unit,
+    listState: LazyListState = rememberLazyListState(),
 ) {
 
     val reorderableState = rememberReorderableLazyListState(
         onMove = { from, to -> onMove(from.index, to.index) },
-        onDragEnd = { _, _ -> onSaveOrder() }
+        onDragEnd = { _, _ -> onSaveOrder() },
+        listState = listState
     )
 
     LazyColumn(
         state = reorderableState.listState,
-        modifier = Modifier.reorderable(reorderableState)
+        modifier = Modifier
+            .reorderable(reorderableState)
             .padding(horizontal = 16.dp),
         contentPadding = PaddingValues(vertical = 8.dp)
     ) {
