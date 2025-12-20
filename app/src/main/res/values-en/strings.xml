@@ -1,5 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">BadgeManager</string>
+    <string name="app_name">Badge Manager</string>
     <string name="tab_input">Badge Entry</string>
     <string name="tab_backup">Backup &amp; Restore</string>
     <string name="btn_add_badge">Add Badge</string>

@@ -521,7 +521,7 @@ fun BadgeInputForm(
                         .clickable { channelMenuExpanded = true }
                 ) {
                     OutlinedTextField(
-                        value = channel.label,
+                        value = channel.getLabel(LocalContext.current),
                         onValueChange = {},
                         readOnly = true,
                         trailingIcon = {
@@ -547,7 +547,7 @@ fun BadgeInputForm(
                 ) {
                     BadgeChannel.values().forEach { option ->
                         DropdownMenuItem(
-                            text = { Text(option.label) },
+                            text = { Text(option.getLabel(LocalContext.current)) },
                             onClick = {
                                 onChannelChange(option)
                                 channelMenuExpanded = false

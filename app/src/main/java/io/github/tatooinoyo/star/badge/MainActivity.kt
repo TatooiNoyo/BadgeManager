@@ -28,6 +28,7 @@ import io.github.tatooinoyo.star.badge.data.BadgeRepository
 import io.github.tatooinoyo.star.badge.service.FloatingButtonService
 import io.github.tatooinoyo.star.badge.ui.home.BadgeManagerScreen
 import io.github.tatooinoyo.star.badge.ui.home.BadgeManagerViewModel
+import io.github.tatooinoyo.star.badge.utils.LanguageManager
 import java.nio.charset.StandardCharsets
 
 class MainActivity : ComponentActivity() {
@@ -66,6 +67,9 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // 应用语言设置
+        LanguageManager.getInstance(this).applyLanguage(this)
+        
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         // 初始化数据库
@@ -198,7 +202,7 @@ class MainActivity : ComponentActivity() {
                     val payload = parsePayload(it)
                     if (payload.isNotEmpty()) {
                         scannedNfcData = payload
-                        Toast.makeText(this, "NFC读取成功", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, R.string.nfc_read_success, Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -208,7 +212,7 @@ class MainActivity : ComponentActivity() {
             val id = intent.getByteArrayExtra(NfcAdapter.EXTRA_ID)
             val idHex = id?.joinToString("") { "%02x".format(it) } ?: "Unknown"
             scannedNfcData = "Card ID: $idHex (Raw Tag)"
-            Toast.makeText(this, "检测到NFC卡片 ID: $idHex", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.nfc_card_detected, idHex), Toast.LENGTH_SHORT).show()
         }
     }
 

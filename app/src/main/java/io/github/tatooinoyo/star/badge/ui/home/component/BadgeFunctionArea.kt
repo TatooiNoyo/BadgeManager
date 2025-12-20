@@ -68,7 +68,7 @@ fun BadgeFunctionArea(
     val tabs = listOf(
         stringResource(R.string.tab_input),
         stringResource(R.string.tab_backup),
-        "同网互传"
+        stringResource(R.string.tab_syncdata)
     )
     // 可折叠的功能面板区域
     AnimatedVisibility(visible = uiState.isFunctionAreaExpanded,
@@ -105,7 +105,7 @@ fun BadgeFunctionArea(
                 IconButton(onClick = onHelpClick) {
                     Icon(
                         imageVector = Icons.Default.Info,
-                        contentDescription = "帮助与关于",
+                        contentDescription = stringResource(R.string.help_and_about),
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
@@ -150,7 +150,7 @@ fun BadgeFunctionArea(
     ) {
         Icon(
             imageVector = if (uiState.isFunctionAreaExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-            contentDescription = if (uiState.isFunctionAreaExpanded) "收起" else "展开",
+            contentDescription = if (uiState.isFunctionAreaExpanded) stringResource(R.string.collapse) else stringResource(R.string.expand),
             tint = MaterialTheme.colorScheme.primary
         )
     }

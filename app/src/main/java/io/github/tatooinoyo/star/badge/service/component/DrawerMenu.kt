@@ -45,9 +45,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import io.github.tatooinoyo.star.badge.R
 import io.github.tatooinoyo.star.badge.data.BadgeChannel
 
 // 1. 定义菜单项的数据模型 (替代 XML 中的 item)
@@ -204,7 +207,7 @@ fun DrawerMenu(
             ) {
                 Icon(
                     imageVector = Icons.Default.Close,
-                    contentDescription = "关闭菜单",
+                    contentDescription = stringResource(R.string.close_menu),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -231,6 +234,7 @@ fun DrawerMenu(
 // 3. 单个菜单项组件 (替代 XML 中的 <item>)
 @Composable
 fun DrawerMenuItemRow(item: DrawerMenuItem) {
+    val context = LocalContext.current
     // 用于监听按压状态
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -277,7 +281,7 @@ fun DrawerMenuItemRow(item: DrawerMenuItem) {
                     shape = MaterialTheme.shapes.extraSmall, // 胶囊圆角
                 ) {
                     Text(
-                        text = item.channel.label,
+                        text = item.channel.getLabel(context),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)

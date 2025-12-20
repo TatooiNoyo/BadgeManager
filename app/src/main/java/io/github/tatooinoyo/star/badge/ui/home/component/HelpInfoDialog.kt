@@ -41,7 +41,7 @@ fun HelpInfoDialog(
             Column(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text("这是一个开源的光遇徽章管理工具。")
+                Text(stringResource(R.string.about_badge_manager_desc))
 
                 HorizontalDivider()
 
@@ -92,7 +92,7 @@ fun HelpInfoDialog(
                         ),
                     )
                 }
-                Text("填入链接,标题未自动填充: 该徽章未录入! \n点击👆上方链接帮助完善该项目. \n \uD83D\uDCA1 SK码在 徽章录入页 链接右侧.")
+                Text(stringResource(R.string.badge_not_found_help))
 
 
                 // 联系作者
@@ -113,7 +113,7 @@ fun HelpInfoDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("关闭")
+                Text(stringResource(R.string.close))
             }
         }
     )

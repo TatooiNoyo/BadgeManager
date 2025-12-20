@@ -114,7 +114,7 @@ fun BadgeInputPanel(
                     onCheckedChange = onFastModeChange
                 )
                 Text(
-                    text = "连续录入", // 或者 "快速模式"
+                    text = stringResource(R.string.continuous_entry), // 或者 "快速模式"
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(start = 4.dp)
                 )
@@ -280,9 +280,9 @@ fun SyncDataPanel(
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
                     if (syncState is SyncState.Sender.Success) {
-                        Text("完成")
+                        Text(stringResource(R.string.complete))
                     } else {
-                        Text("停止分享")
+                        Text(stringResource(R.string.stop_sharing))
                     }
                 }
             }
@@ -296,19 +296,19 @@ fun SyncDataPanel(
                 // 统一的底部按钮，根据状态改变文案和行为
                 val (buttonText, buttonColor, buttonAction) = when (syncState) {
                     is SyncState.Receiver.Success -> Triple(
-                        "完成",
+                        stringResource(R.string.complete),
                         MaterialTheme.colorScheme.primary,
                         onStopReceiver
                     )
 
                     is SyncState.Receiver.Error -> Triple(
-                        "关闭 (失败)",
+                        stringResource(R.string.close_failed),
                         MaterialTheme.colorScheme.error,
                         onStopReceiver // 失败后点击也是重置回空闲状态，如果想重试需传入重试逻辑
                     )
 
                     else -> Triple(
-                        "取消同步",
+                        stringResource(R.string.cancel_sync),
                         MaterialTheme.colorScheme.error,
                         onStopReceiver
                     )
@@ -340,7 +340,7 @@ fun SyncIdleView(
     OutlinedButton(onClick = onStartSender) {
         Icon(Icons.Default.Share, contentDescription = null)
         Spacer(modifier = Modifier.width(8.dp))
-        Text("我是发送方 (生成码)")
+        Text(stringResource(R.string.i_am_sender))
     }
 
     Spacer(modifier = Modifier.height(24.dp))
@@ -351,7 +351,7 @@ fun SyncIdleView(
     OutlinedTextField(
         value = inputCode,
         onValueChange = { if (it.length <= 6) inputCode = it },
-        label = { Text("输入 6 位分享码") },
+        label = { Text(stringResource(R.string.enter_6_digit_code)) },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         singleLine = true
     )
@@ -362,7 +362,7 @@ fun SyncIdleView(
     ) {
         Icon(Icons.Default.Search, contentDescription = null)
         Spacer(modifier = Modifier.width(8.dp))
-        Text("我是接收方 (开始同步)")
+        Text(stringResource(R.string.i_am_receiver))
     }
 }
 
@@ -377,7 +377,7 @@ fun SenderStatusView(state: SyncState.Sender) {
         ) {
             when (state) {
                 is SyncState.Sender.Ready -> {
-                    Text("您的分享码", style = MaterialTheme.typography.labelMedium)
+                    Text(stringResource(R.string.your_share_code), style = MaterialTheme.typography.labelMedium)
                     Text(
                         text = state.shareCode,
                         style = MaterialTheme.typography.displayMedium,
@@ -385,7 +385,7 @@ fun SenderStatusView(state: SyncState.Sender) {
                         letterSpacing = 4.sp
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("等待接收端连接...", style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.waiting_for_receiver), style = MaterialTheme.typography.bodySmall)
                     LinearProgressIndicator(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -394,13 +394,13 @@ fun SenderStatusView(state: SyncState.Sender) {
                 }
 
                 is SyncState.Sender.Handshaking -> {
-                    Text("发现设备: ${state.targetIp}")
-                    Text("正在建立安全连接...")
+                    Text(stringResource(R.string.device_found, state.targetIp))
+                    Text(stringResource(R.string.establishing_secure_connection))
                     CircularProgressIndicator()
                 }
 
                 is SyncState.Sender.Sending -> {
-                    Text("正在发送数据...")
+                    Text(stringResource(R.string.sending_data))
                     LinearProgressIndicator()
                 }
 
@@ -411,7 +411,7 @@ fun SenderStatusView(state: SyncState.Sender) {
                         tint = Color.Green,
                         modifier = Modifier.size(48.dp)
                     )
-                    Text("发送成功！")
+                    Text(stringResource(R.string.send_success))
                 }
 
                 is SyncState.Sender.Error -> {
@@ -421,12 +421,12 @@ fun SenderStatusView(state: SyncState.Sender) {
                         tint = MaterialTheme.colorScheme.error
                     )
                     Text(
-                        "发送失败: ${state.message}",
+                        stringResource(R.string.send_failed, state.message),
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                         color = MaterialTheme.colorScheme.error
                     )
-                    Text("代码: ${state.shareCode}")
+                    Text(stringResource(R.string.code_label, state.shareCode))
                 }
             }
         }
@@ -440,13 +440,13 @@ fun ReceiverStatusView(state: SyncState.Receiver) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         when (state) {
             is SyncState.Receiver.Searching -> {
-                Text("正在搜索发送端...")
+                Text(stringResource(R.string.searching_for_sender))
                 Spacer(modifier = Modifier.height(16.dp))
                 CircularProgressIndicator()
             }
 
             is SyncState.Receiver.Receiving -> {
-                Text("正在从 ${state.senderIp} 接收数据...")
+                Text(stringResource(R.string.receiving_data, state.senderIp))
                 Spacer(modifier = Modifier.height(16.dp))
                 LinearProgressIndicator(modifier = Modifier.fillMaxWidth(0.8f))
             }
@@ -459,7 +459,7 @@ fun ReceiverStatusView(state: SyncState.Receiver) {
                     modifier = Modifier.size(64.dp)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("同步成功！数据已覆盖。")
+                Text(stringResource(R.string.sync_success_data_overwritten))
             }
 
             is SyncState.Receiver.Error -> {
@@ -471,7 +471,7 @@ fun ReceiverStatusView(state: SyncState.Receiver) {
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    "同步失败",
+                    stringResource(R.string.sync_failed),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.error

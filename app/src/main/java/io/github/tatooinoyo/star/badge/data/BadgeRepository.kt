@@ -6,6 +6,7 @@ import android.net.Uri
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.TypeConverter
+import io.github.tatooinoyo.star.badge.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -47,12 +48,16 @@ val PRESET_BADGES_MAP = mapOf(
 )
 
 // 定义预设的渠道
-enum class BadgeChannel(val label: String, val packageName: String, val className: String) {
-    HUAWEI("华为", "com.netease.sky.huawei", "com.tgc.sky.netease.GameActivity_Netease"),
-    BILIBILI("哔哩哔哩", "com.netease.sky.bilibili", "com.tgc.sky.netease.GameActivity_Netease"),
-    VIVO("VIVO", "com.netease.sky.vivo", "com.tgc.sky.netease.GameActivity_Netease"),
-    NETEASE("网易", "com.netease.sky", "com.tgc.sky.netease.GameActivity_Netease"),
-    SKY("国际服", "com.tgc.sky.android", "com.tgc.sky.GameActivity")
+enum class BadgeChannel(val labelResId: Int, val packageName: String, val className: String) {
+    HUAWEI(R.string.channel_huawei, "com.netease.sky.huawei", "com.tgc.sky.netease.GameActivity_Netease"),
+    BILIBILI(R.string.channel_bilibili, "com.netease.sky.bilibili", "com.tgc.sky.netease.GameActivity_Netease"),
+    VIVO(R.string.channel_vivo, "com.netease.sky.vivo", "com.tgc.sky.netease.GameActivity_Netease"),
+    NETEASE(R.string.channel_netease, "com.netease.sky", "com.tgc.sky.netease.GameActivity_Netease"),
+    SKY(R.string.channel_sky, "com.tgc.sky.android", "com.tgc.sky.GameActivity");
+
+    fun getLabel(context: Context): String {
+        return context.getString(labelResId)
+    }
 }
 
 // 1. 徽章数据模型
@@ -96,7 +101,7 @@ data class Badge(
             e.printStackTrace()
             android.widget.Toast.makeText(
                 context,
-                "启动失败: ${e.message}",
+                context.getString(R.string.launch_failed, e.message),
                 android.widget.Toast.LENGTH_SHORT
             ).show()
         }
