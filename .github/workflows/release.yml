@@ -16,6 +16,8 @@ jobs:
       # Step 1: Check out the repository
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 获取所有历史记录以生成准确的 Changelog
 
       # Step 2: Set up Java Environment
       - name: Setup Java
@@ -58,14 +60,23 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
-      # Step 10: Publish GitHub Release
+      # Step 7：Auto-generate Changelog
+      - name: Build Changelog
+        id: github_release
+        uses: mikepenz/release-changelog-builder-action@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Step 8: Publish GitHub Release
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
+          body: ${{ steps.github_release.outputs.changelog }} # 使用生成的 Changelog
           files: app/build/outputs/apk/release/BadgeManager_*.apk
+          generate_release_notes: true # 如果没有 PR，GitHub 会尝试用 commit 生成默认备注
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # 使用 GitHub 提供的访问令牌
 
-      # Step 11: Clean Sensitive Files (Optional)
+      # Step 9: Clean Sensitive Files (Optional)
       - name: Clean Up
         run: rm app.jks
