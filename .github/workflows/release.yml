@@ -27,13 +27,13 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
-      # Step 4: Prepare app.jks file
+      # Step 3: Prepare app.jks file
       - name: Setup app.jks
         run: |
           echo "${{ secrets.APP_JKS }}" | base64 -d > app.jks
           echo "Keystore file has been restored successfully!"
 
-      # Step 4.1: Create local.properties with content to satisfy secrets plugin
+      # Step 4: Create local.properties with content to satisfy secrets plugin
       - name: Create local.properties
         run: |
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
@@ -54,6 +54,8 @@ jobs:
       - name: Build Changelog
         id: github_release
         uses: mikepenz/release-changelog-builder-action@v4
+        with:
+          configuration: ".github/changelog_config.json"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
