@@ -7,6 +7,7 @@ import android.view.View
 import android.view.animation.DecelerateInterpolator
 import android.widget.Toast
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.MaterialTheme
@@ -15,6 +16,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
@@ -27,6 +29,7 @@ import io.github.tatooinoyo.star.badge.service.component.DrawerMenuItem
 import io.github.tatooinoyo.star.badge.service.component.FloatingWidget
 import io.github.tatooinoyo.star.badge.service.manager.FloatingWindowManager
 import io.github.tatooinoyo.star.badge.service.utils.ServiceLifecycleOwner
+import kotlinx.coroutines.launch
 
 class FloatingButtonService : Service() {
 
@@ -42,7 +45,7 @@ class FloatingButtonService : Service() {
     private var isMenuOpen = false
 
     private var selectedTag by mutableStateOf<String?>(null)
-
+    private var menuLazyListState: LazyListState? = null
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
@@ -166,6 +169,14 @@ class FloatingButtonService : Service() {
             setContent {
                 val badgeList by BadgeRepository.badges.collectAsState()
 
+                // 使用 remember，但初始化逻辑指向 Service 成员变量
+                val scrollState = remember {
+                    menuLazyListState ?: LazyListState().also {
+                        menuLazyListState = it
+                    }
+                }
+                val scope = rememberCoroutineScope()
+
                 val allTags = remember(badgeList) {
                     badgeList.flatMap { it.tags }.distinct().sorted()
                 }
@@ -196,10 +207,13 @@ class FloatingButtonService : Service() {
                 ) {
                     DrawerMenu(
                         items = dynamicMenuItems,
+                        lazyListState = scrollState,
                         allTags = allTags,
                         selectedTag = selectedTag,
                         onTagSelected = { tag ->
                             selectedTag = tag
+                            // 筛选时回到顶部
+                            scope.launch { scrollState.scrollToItem(0) }
                         },
                         onGoHomeClick = ::navigateToHome,
                         onCloseClick = ::closeMenu

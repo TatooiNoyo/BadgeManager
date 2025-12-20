@@ -15,7 +15,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Home
@@ -64,6 +66,7 @@ data class DrawerMenuItem(
 @Composable
 fun DrawerMenu(
     items: List<DrawerMenuItem>,
+    lazyListState: LazyListState = rememberLazyListState(),
     allTags: List<String> = emptyList(),
     selectedTag: String? = null,
     onTagSelected: (String?) -> Unit = {},
@@ -196,6 +199,7 @@ fun DrawerMenu(
             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
         )
         LazyColumn(
+            state = lazyListState,
             modifier = Modifier
                 .fillMaxWidth()
         ) {
