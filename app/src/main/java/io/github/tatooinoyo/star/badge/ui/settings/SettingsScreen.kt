@@ -31,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import io.github.tatooinoyo.star.badge.MainActivity
 import io.github.tatooinoyo.star.badge.R
@@ -103,7 +104,7 @@ fun SettingsScreen(
                     )
                     
                     LanguageOption(
-                        text = stringResource(R.string.english),
+                        text = "English",
                         isSelected = selectedLanguage == LanguageUtils.LANGUAGE_ENGLISH,
                         onClick = { 
                             selectedLanguage = LanguageUtils.LANGUAGE_ENGLISH
@@ -113,11 +114,21 @@ fun SettingsScreen(
                     )
                     
                     LanguageOption(
-                        text = stringResource(R.string.chinese),
+                        text = "简体中文",
                         isSelected = selectedLanguage == LanguageUtils.LANGUAGE_CHINESE,
                         onClick = { 
                             selectedLanguage = LanguageUtils.LANGUAGE_CHINESE
                             languageManager.setLanguage(LanguageUtils.LANGUAGE_CHINESE)
+                            restartApp(context)
+                        }
+                    )
+                    
+                    LanguageOption(
+                        text = "繁體中文",
+                        isSelected = selectedLanguage == LanguageUtils.LANGUAGE_CHINESE_TRADITIONAL,
+                        onClick = { 
+                            selectedLanguage = LanguageUtils.LANGUAGE_CHINESE_TRADITIONAL
+                            languageManager.setLanguage(LanguageUtils.LANGUAGE_CHINESE_TRADITIONAL)
                             restartApp(context)
                         }
                     )
@@ -155,4 +166,10 @@ fun restartApp(context: Context) {
         context.finish()
     }
     Runtime.getRuntime().exit(0)
+}
+
+@Composable
+@Preview
+fun SettingsScreenPreview() {
+    SettingsScreen(onNavigateBack = {})
 }

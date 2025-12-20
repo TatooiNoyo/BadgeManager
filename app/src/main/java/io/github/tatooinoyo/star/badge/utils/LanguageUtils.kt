@@ -8,6 +8,7 @@ object LanguageUtils {
     const val LANGUAGE_AUTO = "auto"
     const val LANGUAGE_ENGLISH = "en"
     const val LANGUAGE_CHINESE = "zh"
+    const val LANGUAGE_CHINESE_TRADITIONAL = "zh-TW"
 
     /**
      * 设置应用语言
@@ -16,6 +17,7 @@ object LanguageUtils {
         val locale = when (languageCode) {
             LANGUAGE_ENGLISH -> Locale.ENGLISH
             LANGUAGE_CHINESE -> Locale.CHINESE
+            LANGUAGE_CHINESE_TRADITIONAL -> Locale.TRADITIONAL_CHINESE
             else -> Locale.getDefault()
         }
         

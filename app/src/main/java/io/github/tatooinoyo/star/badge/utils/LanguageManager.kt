@@ -35,6 +35,7 @@ class LanguageManager private constructor(private val context: Context) {
         val locale = when (languageCode) {
             LanguageUtils.LANGUAGE_ENGLISH -> Locale.ENGLISH
             LanguageUtils.LANGUAGE_CHINESE -> Locale.CHINESE
+            LanguageUtils.LANGUAGE_CHINESE_TRADITIONAL -> Locale.TRADITIONAL_CHINESE
             else -> Locale.getDefault()
         }
         
