@@ -15,6 +15,7 @@ drawerlayout = "1.2.0"
 material = "1.13.0"
 cardview = "1.0.0"
 ksp = "2.0.21-1.0.27"
+bouncycastle = "1.78"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -36,6 +37,7 @@ generativeai = { group = "com.google.ai.client.generativeai", name = "generative
 androidx-drawerlayout = { group = "androidx.drawerlayout", name = "drawerlayout", version.ref = "drawerlayout" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-cardview = { group = "androidx.cardview", name = "cardview", version.ref = "cardview" }
+bouncycastle-bcprov = { group = "org.bouncycastle", name = "bcprov-jdk18on", version.ref = "bouncycastle" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

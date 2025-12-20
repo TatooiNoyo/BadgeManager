@@ -2,11 +2,14 @@ package io.github.tatooinoyo.star.badge.service.utils
 
 
 import android.util.Base64
+import org.bouncycastle.jcajce.spec.XDHParameterSpec
+import org.bouncycastle.jce.provider.BouncyCastleProvider
 import java.security.KeyFactory
 import java.security.KeyPair
 import java.security.KeyPairGenerator
 import java.security.PrivateKey
 import java.security.SecureRandom
+import java.security.Security
 import javax.crypto.Cipher
 import javax.crypto.Mac
 import javax.crypto.SecretKeyFactory
@@ -18,19 +21,29 @@ import javax.crypto.spec.SecretKeySpec
 object CryptoUtil {
     fun b64(bytes: ByteArray): String = Base64.encodeToString(bytes, Base64.NO_WRAP)
     fun d64(s: String): ByteArray = Base64.decode(s, Base64.NO_WRAP)
+    private val bcProvider = BouncyCastleProvider()
 
+    init {
+        if (Security.getProvider("BC") == null) {
+            Security.removeProvider("BC")
+            Security.addProvider(BouncyCastleProvider())
+        }
+    }
 
     fun generateX25519KeyPair(): KeyPair {
-        val kpg = KeyPairGenerator.getInstance("X25519")
+        // 使用 "XDH" 算法名称，并配合 X25519 的参数规范
+        val kpg = KeyPairGenerator.getInstance("XDH", bcProvider)
+        kpg.initialize(XDHParameterSpec("X25519"))
         return kpg.generateKeyPair()
     }
 
 
     fun computeX25519SharedSecret(privateKey: PrivateKey, peerPubBytes: ByteArray): ByteArray {
-        val kf = KeyFactory.getInstance("X25519")
+
+        val kf = KeyFactory.getInstance("XDH", bcProvider)
         val pubKeySpec = java.security.spec.X509EncodedKeySpec(peerPubBytes)
         val pubK = kf.generatePublic(pubKeySpec)
-        val ka = javax.crypto.KeyAgreement.getInstance("X25519")
+        val ka = javax.crypto.KeyAgreement.getInstance("XDH", bcProvider)
         ka.init(privateKey)
         ka.doPhase(pubK, true)
         return ka.generateSecret()

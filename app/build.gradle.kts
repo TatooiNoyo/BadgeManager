@@ -10,6 +10,12 @@ android {
     namespace = "io.github.tatooinoyo.star.badge"
     compileSdk = 35
 
+    packaging {
+        resources {
+            excludes += "/META-INF/versions/9/OSGI-INF/MANIFEST.MF"
+        }
+    }
+
     defaultConfig {
         applicationId = "io.github.tatooinoyo.star.badge"
         minSdk = 31
@@ -65,7 +71,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
-    implementation("androidx.compose.material:material-icons-extended") 
+    implementation("androidx.compose.material:material-icons-extended")
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
@@ -75,6 +81,7 @@ dependencies {
     implementation(libs.generativeai)
     implementation(libs.androidx.drawerlayout)
     implementation(libs.material)
+    implementation(libs.bouncycastle.bcprov)
     implementation("org.burnoutcrew.composereorderable:reorderable:0.9.6")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
