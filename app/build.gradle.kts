@@ -1,3 +1,4 @@
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -13,6 +14,23 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/versions/9/OSGI-INF/MANIFEST.MF"
+        }
+    }
+
+    applicationVariants.all {
+        val variant = this
+        // 仅处理 release 变体
+        if (variant.buildType.name == "release") {
+            variant.outputs.all {
+                val output = this as com.android.build.gradle.internal.api.ApkVariantOutputImpl
+
+                val projectName = rootProject.name
+
+                // 最终名称格式: BadgeManager_1.2.0_4_release.apk
+                val fileName = "${projectName}_${variant.versionName}_${variant.versionCode}_release.apk"
+
+                output.outputFileName = fileName
+            }
         }
     }
 

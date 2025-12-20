@@ -58,20 +58,11 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
-      # Step 7: Rename APK with Custom Format
-      - name: Rename APK
-        run: |
-          APK_ORIGINAL=app/build/outputs/apk/release/app-release.apk # 默认构建路径
-          APK_CUSTOM=app/build/outputs/apk/release/BadgeManager_${{ env.VERSION_NAME }}_${{ env.VERSION_CODE }}_release.apk
-          mv $APK_ORIGINAL $APK_CUSTOM
-          echo "APK_CUSTOM=$APK_CUSTOM" >> $GITHUB_ENV
-
-
       # Step 10: Publish GitHub Release
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ env.APK_CUSTOM }} # 上传自定义命名的 APK 文件
+          files: app/build/outputs/apk/release/BadgeManager_*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # 使用 GitHub 提供的访问令牌
 
