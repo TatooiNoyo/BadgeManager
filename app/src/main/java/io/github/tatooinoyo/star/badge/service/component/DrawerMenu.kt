@@ -251,7 +251,7 @@ fun DrawerMenuItemRow(item: DrawerMenuItem) {
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         modifier = Modifier
             // 外部间距：让每个 Item 之间分开
-            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .padding(start = 12.dp, end = 12.dp, top = 6.dp)
             .fillMaxWidth()
             // 应用缩放动画
             .graphicsLayer {
@@ -264,7 +264,7 @@ fun DrawerMenuItemRow(item: DrawerMenuItem) {
         Row(
             modifier = Modifier
                 // 内部间距：让文字和图标不贴边
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = 16.dp, vertical = 3.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(
@@ -284,7 +284,7 @@ fun DrawerMenuItemRow(item: DrawerMenuItem) {
                 // 标题 (加粗或稍微大一点)
                 Text(
                     text = item.title,
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1, // 限制行数，防止太长 (可选)
                     overflow = TextOverflow.Ellipsis // 超出显示省略号
