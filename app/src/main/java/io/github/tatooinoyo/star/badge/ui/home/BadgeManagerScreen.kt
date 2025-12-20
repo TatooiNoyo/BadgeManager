@@ -56,7 +56,9 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.tatooinoyo.star.badge.R
 import io.github.tatooinoyo.star.badge.data.Badge
@@ -311,7 +313,10 @@ fun BadgeDetailContent(
             .padding(16.dp)
             .safeDrawingPadding()
     ) {
-        Text(stringResource(R.string.edit_badge_details), style = MaterialTheme.typography.headlineMedium)
+        Text(
+            stringResource(R.string.edit_badge_details),
+            style = MaterialTheme.typography.headlineMedium
+        )
         Spacer(modifier = Modifier.height(24.dp))
 
         // 复用输入表单
@@ -463,21 +468,39 @@ fun BadgeInputForm(
     Column {
         OutlinedTextField(
             value = title, onValueChange = onTitleChange,
-            label = { Text(stringResource(R.string.title_placeholder)) },
+            label = {
+                Text(
+                    stringResource(R.string.title_placeholder),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            },
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
             value = remark, onValueChange = onRemarkChange,
-            label = { Text(stringResource(R.string.remark_placeholder)) },
+            label = {
+                Text(
+                    stringResource(R.string.remark_placeholder),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            },
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
             value = link, onValueChange = onLinkChange,
-            label = { Text(stringResource(R.string.link_placeholder)) },
+            label = {
+                Text(
+                    stringResource(R.string.link_placeholder),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .onFocusChanged { focusState ->
@@ -523,6 +546,7 @@ fun BadgeInputForm(
                     OutlinedTextField(
                         value = channel.getLabel(LocalContext.current),
                         onValueChange = {},
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp),
                         readOnly = true,
                         trailingIcon = {
                             Icon(
@@ -530,7 +554,7 @@ fun BadgeInputForm(
                                 contentDescription = null
                             )
                         },
-                        modifier = Modifier.width(120.dp),
+                        modifier = Modifier.width(150.dp),
                         enabled = false, // 禁用自带输入，完全靠点击触发
                         colors = TextFieldDefaults.colors(
                             disabledTextColor = MaterialTheme.colorScheme.onSurface,

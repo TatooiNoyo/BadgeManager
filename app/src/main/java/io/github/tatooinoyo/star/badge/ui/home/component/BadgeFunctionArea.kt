@@ -24,8 +24,8 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -36,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.tatooinoyo.star.badge.R
 import io.github.tatooinoyo.star.badge.data.BadgeChannel
@@ -71,7 +72,8 @@ fun BadgeFunctionArea(
         stringResource(R.string.tab_syncdata)
     )
     // 可折叠的功能面板区域
-    AnimatedVisibility(visible = uiState.isFunctionAreaExpanded,
+    AnimatedVisibility(
+        visible = uiState.isFunctionAreaExpanded,
         // 定义进入动画：仅垂直展开 + 渐显
         enter = expandVertically(expandFrom = Alignment.Top) + fadeIn(),
         // 定义退出动画：仅垂直收缩 + 渐隐
@@ -84,17 +86,24 @@ fun BadgeFunctionArea(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Box(modifier = Modifier.weight(1f)) {
-                    TabRow(
+                    ScrollableTabRow(
                         selectedTabIndex = selectedTabIndex,
                         containerColor = Color.Transparent,
                         contentColor = MaterialTheme.colorScheme.onSurface,
+                        edgePadding = 0.dp, // 这里的 padding 设为 0 保持左对齐
                         divider = {}
                     ) {
                         tabs.forEachIndexed { index, title ->
                             Tab(
                                 selected = selectedTabIndex == index,
                                 onClick = { selectedTabIndex = index },
-                                text = { Text(title) }
+                                text = {
+                                    Text(
+                                        text = title,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
                             )
                         }
                     }
@@ -150,7 +159,9 @@ fun BadgeFunctionArea(
     ) {
         Icon(
             imageVector = if (uiState.isFunctionAreaExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-            contentDescription = if (uiState.isFunctionAreaExpanded) stringResource(R.string.collapse) else stringResource(R.string.expand),
+            contentDescription = if (uiState.isFunctionAreaExpanded) stringResource(R.string.collapse) else stringResource(
+                R.string.expand
+            ),
             tint = MaterialTheme.colorScheme.primary
         )
     }

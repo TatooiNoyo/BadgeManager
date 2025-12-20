@@ -115,6 +115,7 @@ fun BadgeInputPanel(
                 )
                 Text(
                     text = stringResource(R.string.continuous_entry), // 或者 "快速模式"
+                    maxLines = 1,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(start = 4.dp)
                 )
@@ -126,7 +127,7 @@ fun BadgeInputPanel(
             ) {
                 Icon(Icons.Default.Add, contentDescription = null)
                 Spacer(modifier = Modifier.width(4.dp))
-                Text(stringResource(R.string.btn_add_badge))
+                Text(text = stringResource(R.string.btn_add_badge), maxLines = 1)
             }
         }
     }
@@ -377,7 +378,10 @@ fun SenderStatusView(state: SyncState.Sender) {
         ) {
             when (state) {
                 is SyncState.Sender.Ready -> {
-                    Text(stringResource(R.string.your_share_code), style = MaterialTheme.typography.labelMedium)
+                    Text(
+                        stringResource(R.string.your_share_code),
+                        style = MaterialTheme.typography.labelMedium
+                    )
                     Text(
                         text = state.shareCode,
                         style = MaterialTheme.typography.displayMedium,
@@ -385,7 +389,10 @@ fun SenderStatusView(state: SyncState.Sender) {
                         letterSpacing = 4.sp
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(stringResource(R.string.waiting_for_receiver), style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        stringResource(R.string.waiting_for_receiver),
+                        style = MaterialTheme.typography.bodySmall
+                    )
                     LinearProgressIndicator(
                         modifier = Modifier
                             .fillMaxWidth()
