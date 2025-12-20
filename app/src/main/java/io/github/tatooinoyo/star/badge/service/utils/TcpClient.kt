@@ -1,5 +1,6 @@
 package io.github.tatooinoyo.star.badge.service.utils
 
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.Socket
@@ -31,7 +32,7 @@ class TcpClient(
                     return@withContext null
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e("TcpClient", "connectAndGetChannel: ${e.stackTraceToString()}")
                 socket?.close()
                 return@withContext null
             }

@@ -5,23 +5,25 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
@@ -34,8 +36,6 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.InputChip
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -89,7 +89,7 @@ fun BadgeInputPanel(
             channel = uiState.addChannel,
             onChannelChange = onInputChannelChange,
             allTags = uiState.allTags,
-            selectedTags =  uiState.addTags,
+            selectedTags = uiState.addTags,
             onTagsChange = onTagsChange,
             onExtractSkClick = onExtractSkClick,
             isFastMode = uiState.isFastMode
@@ -471,11 +471,32 @@ fun ReceiverStatusView(state: SyncState.Receiver) {
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    "同步失败: ${state.message}",
+                    "同步失败",
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.error
                 )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(0.9f)
+                        .heightIn(max = 120.dp) // 限制最高 120dp，避免顶掉底部的“关闭”按钮
+                        .verticalScroll(rememberScrollState())
+                        .background(
+                            MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f),
+                            MaterialTheme.shapes.small
+                        )
+                        .padding(8.dp)
+                ) {
+                    SelectionContainer {
+                        Text(
+                            text = state.message,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            lineHeight = 18.sp
+                        )
+                    }
+                }
+
             }
         }
     }

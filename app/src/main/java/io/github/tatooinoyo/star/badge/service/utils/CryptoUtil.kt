@@ -7,7 +7,6 @@ import java.security.KeyPair
 import java.security.KeyPairGenerator
 import java.security.PrivateKey
 import java.security.SecureRandom
-import java.security.spec.NamedParameterSpec
 import javax.crypto.Cipher
 import javax.crypto.Mac
 import javax.crypto.SecretKeyFactory
@@ -38,7 +37,10 @@ object CryptoUtil {
     }
 
 
-    fun derivePskKeyFromCode(code6: String, salt: ByteArray = "fixed-salt".toByteArray()): ByteArray {
+    fun derivePskKeyFromCode(
+        code6: String,
+        salt: ByteArray = "fixed-salt".toByteArray()
+    ): ByteArray {
         val spec = PBEKeySpec(code6.toCharArray(), salt, 10000, 256)
         val skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
         return skf.generateSecret(spec).encoded
@@ -50,7 +52,6 @@ object CryptoUtil {
         mac.init(SecretKeySpec(key, "HmacSHA256"))
         return mac.doFinal(data)
     }
-
 
 
     fun hkdfSha256(ikm: ByteArray, salt: ByteArray?, info: ByteArray?, length: Int): ByteArray {

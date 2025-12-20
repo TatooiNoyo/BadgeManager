@@ -52,6 +52,7 @@ class TcpServer(
                             }
                         } catch (e: Exception) {
                             onError(e.stackTraceToString())
+                            Log.e("TcpServer", e.stackTraceToString())
                             clientSocket.close()
                         }
                     }.start()
