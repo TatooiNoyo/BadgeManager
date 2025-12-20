@@ -3,6 +3,10 @@ package io.github.tatooinoyo.star.badge.ui.home.component
 import android.content.Context
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -66,45 +70,49 @@ fun BadgeFunctionArea(
         stringResource(R.string.tab_backup),
         "同网互传"
     )
-
-    Column {
-        // Tab Row 和 帮助按钮
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Box(modifier = Modifier.weight(1f)) {
-                TabRow(
-                    selectedTabIndex = selectedTabIndex,
-                    containerColor = Color.Transparent,
-                    contentColor = MaterialTheme.colorScheme.onSurface,
-                    divider = {}
-                ) {
-                    tabs.forEachIndexed { index, title ->
-                        Tab(
-                            selected = selectedTabIndex == index,
-                            onClick = { selectedTabIndex = index },
-                            text = { Text(title) }
-                        )
+    // 可折叠的功能面板区域
+    AnimatedVisibility(visible = uiState.isFunctionAreaExpanded,
+        // 定义进入动画：仅垂直展开 + 渐显
+        enter = expandVertically(expandFrom = Alignment.Top) + fadeIn(),
+        // 定义退出动画：仅垂直收缩 + 渐隐
+        exit = shrinkVertically(shrinkTowards = Alignment.Top) + fadeOut()
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 12.dp)) {
+            // Tab Row 和 帮助按钮
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Box(modifier = Modifier.weight(1f)) {
+                    TabRow(
+                        selectedTabIndex = selectedTabIndex,
+                        containerColor = Color.Transparent,
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                        divider = {}
+                    ) {
+                        tabs.forEachIndexed { index, title ->
+                            Tab(
+                                selected = selectedTabIndex == index,
+                                onClick = { selectedTabIndex = index },
+                                text = { Text(title) }
+                            )
+                        }
                     }
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                IconButton(onClick = onHelpClick) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = "帮助与关于",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
 
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            IconButton(onClick = onHelpClick) {
-                Icon(
-                    imageVector = Icons.Default.Info,
-                    contentDescription = "帮助与关于",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // 可折叠的功能面板区域
-        AnimatedVisibility(visible = uiState.isFunctionAreaExpanded) {
             Box(modifier = Modifier.height(350.dp)) {
                 when (selectedTabIndex) {
                     0 -> BadgeInputPanel(
@@ -130,21 +138,20 @@ fun BadgeFunctionArea(
                 }
             }
         }
+    }
 
-        // 折叠/展开 按钮
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onToggleExpanded() }
-                .padding(vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                imageVector = if (uiState.isFunctionAreaExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                contentDescription = if (uiState.isFunctionAreaExpanded) "收起" else "展开",
-                tint = MaterialTheme.colorScheme.primary
-            )
-        }
+    // 折叠/展开 按钮
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onToggleExpanded() },
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = if (uiState.isFunctionAreaExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+            contentDescription = if (uiState.isFunctionAreaExpanded) "收起" else "展开",
+            tint = MaterialTheme.colorScheme.primary
+        )
     }
 }
