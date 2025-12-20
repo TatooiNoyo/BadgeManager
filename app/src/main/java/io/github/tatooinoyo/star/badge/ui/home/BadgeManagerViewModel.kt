@@ -1,18 +1,19 @@
 package io.github.tatooinoyo.star.badge.ui.home
 
 import android.app.Activity
+import android.app.Application
 import android.nfc.NdefMessage
 import android.nfc.NdefRecord
 import android.nfc.Tag
 import android.nfc.tech.Ndef
 import android.util.Base64
 import android.widget.Toast
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.tatooinoyo.star.badge.data.Badge
 import io.github.tatooinoyo.star.badge.data.BadgeChannel
 import io.github.tatooinoyo.star.badge.data.BadgeRepository
-import io.github.tatooinoyo.star.badge.data.PresetBadges.PRESET_BADGES_MAP
+import io.github.tatooinoyo.star.badge.data.PresetBadges
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -54,7 +55,7 @@ sealed class BadgeUiEvent {
     data class ShowToast(val message: String) : BadgeUiEvent()
 }
 
-class BadgeManagerViewModel : ViewModel() {
+class BadgeManagerViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow(BadgeUiState())
     val uiState: StateFlow<BadgeUiState> = _uiState.asStateFlow()
@@ -123,10 +124,8 @@ class BadgeManagerViewModel : ViewModel() {
         tags: List<String> = _uiState.value.addTags
     ) {
         val sk = getSkFromLink(link)
-        val preset = PRESET_BADGES_MAP[sk]
-        // 如果 preset 不为空，使用预置的 title/remark；否则使用传入的参数
-        val finalTitle = preset?.title ?: title
-        val finalRemark = preset?.remark ?: remark
+        val finalTitle = if (sk != null) PresetBadges.getTitle(getApplication<Application>(), sk) else title
+        val finalRemark = if (sk != null) PresetBadges.getRemark(getApplication<Application>(), sk) else remark
         _uiState.value = _uiState.value.copy(
             addTitle = finalTitle,
             addRemark = finalRemark,
@@ -134,7 +133,7 @@ class BadgeManagerViewModel : ViewModel() {
             addChannel = channel,
             addTags = tags // 确保更新状态
         )
-        if (_uiState.value.isFastMode && link.isNotBlank() && preset != null) {
+        if (_uiState.value.isFastMode && link.isNotBlank() && sk != null) {
             addBadge()
 
             viewModelScope.launch {
@@ -192,10 +191,8 @@ class BadgeManagerViewModel : ViewModel() {
         tags: List<String> = _uiState.value.detailTags
     ) {
         val sk = getSkFromLink(link)
-        val preset = PRESET_BADGES_MAP[sk]
-        // 如果 preset 不为空，使用预置的 title/remark；否则使用传入的参数
-        val finalTitle = preset?.title ?: title
-        val finalRemark = preset?.remark ?: remark
+        val finalTitle = if (sk != null) PresetBadges.getTitle(getApplication<Application>(), sk) else title
+        val finalRemark = if (sk != null) PresetBadges.getRemark(getApplication<Application>(), sk) else remark
         _uiState.value = _uiState.value.copy(
             detailTitle = finalTitle,
             detailRemark = finalRemark,

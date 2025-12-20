@@ -85,4 +85,37 @@
     <string name="manage_tags">管理标签</string>
     <string name="remove">移除</string>
     <string name="confirm_save">确认保存</string>
+    <!-- 预设徽章标题 -->
+    <string name="preset_badge_valley_of_prophecy">预言山谷</string>
+    <string name="preset_badge_legend_of_cloudy_world">云野传说</string>
+    <string name="preset_badge_keychain_light_of_love">光之爱钥匙扣</string>
+    <string name="preset_badge_keychain_aurora">欧若拉钥匙扣</string>
+    <string name="preset_badge_artbook_sky_memories">光遇设定集</string>
+    <string name="preset_badge_keychain_fox_plushie">狐狸毛绒钥匙扣</string>
+    <string name="preset_badge_keychain_moomin_doll">姆明玩偶钥匙扣</string>
+    <string name="preset_badge_umbrella_light_seeker">追光者雨伞</string>
+    <string name="preset_badge_lantern">灯笼徽章</string>
+    <string name="preset_badge_blue_anniversary">三周年小蓝</string>
+    <string name="preset_badge_little_one">小不点</string>
+    <string name="preset_badge_big_guy">大只佬</string>
+    <string name="preset_badge_dwarf_badge">矮人徽章</string>
+    <string name="preset_badge_grown_up">长大成人</string>
+    <string name="preset_badge_cape_bat">鬼蝙蝠斗篷</string>
+    <string name="preset_badge_twin_badge_twisted">你我成双徽章(麻花款)</string>
+    <string name="preset_badge_twin_badge_harp">你我成双徽章(竖琴款)</string>
+    <string name="preset_badge_crab_stack">叠叠蟹</string>
+    <string name="preset_badge_snowman_head">雪人头部</string>
+    <string name="preset_badge_turtle">海龟</string>
+    <string name="preset_badge_new_year_fireworks">新年烟花</string>
+    <string name="preset_badge_princess_carry">公主抱</string>
+    <string name="preset_badge_wings_aurora">欧若拉之翼</string>
+    <string name="preset_badge_seesaw_of_love">爱之跷跷板</string>
+    
+    <!-- 预设徽章备注 -->
+    <string name="preset_badge_cd_15s">15s CD</string>
+    <string name="preset_badge_cd_3min_dur_3min">3min CD, 3min Dur</string>
+    <string name="preset_badge_cd_15min_dur_20min">15min CD, 20min Dur</string>
+    <string name="preset_badge_cd_15min_dur_10min">15min CD, 10min Dur</string>
+    <string name="preset_badge_cd_10min_dur_30min">10min CD, 30min Dur</string>
+    <string name="preset_badge_cd_20min_dur_15min">20min CD, 15min Dur</string>
 </resources>

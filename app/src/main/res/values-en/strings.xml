@@ -85,4 +85,37 @@
     <string name="manage_tags">Manage Tags</string>
     <string name="remove">Remove</string>
     <string name="confirm_save">Confirm Save</string>
+    <!-- Preset Badges Titles -->
+    <string name="preset_badge_valley_of_prophecy">Valley of Prophecy</string>
+    <string name="preset_badge_legend_of_cloudy_world">Legend of Cloudy World</string>
+    <string name="preset_badge_keychain_light_of_love">Keychain: Light of Love</string>
+    <string name="preset_badge_keychain_aurora">Keychain: Aurora</string>
+    <string name="preset_badge_artbook_sky_memories">Artbook: Sky Memories</string>
+    <string name="preset_badge_keychain_fox_plushie">Keychain: Fox Plushie</string>
+    <string name="preset_badge_keychain_moomin_doll">Keychain: Moomin Doll</string>
+    <string name="preset_badge_umbrella_light_seeker">Umbrella: Light Seeker</string>
+    <string name="preset_badge_lantern">Lantern Badge</string>
+    <string name="preset_badge_blue_anniversary">Blue (3rd Anniversary)</string>
+    <string name="preset_badge_little_one">Little One</string>
+    <string name="preset_badge_big_guy">Big Guy</string>
+    <string name="preset_badge_dwarf_badge">Dwarf Badge</string>
+    <string name="preset_badge_grown_up">Grown Up</string>
+    <string name="preset_badge_cape_bat">Cape: Bat</string>
+    <string name="preset_badge_twin_badge_twisted">Twin Badge: Twisted</string>
+    <string name="preset_badge_twin_badge_harp">Twin Badge: Harp</string>
+    <string name="preset_badge_crab_stack">Crab Stack</string>
+    <string name="preset_badge_snowman_head">Snowman Head</string>
+    <string name="preset_badge_turtle">Turtle</string>
+    <string name="preset_badge_new_year_fireworks">New Year Fireworks</string>
+    <string name="preset_badge_princess_carry">Princess Carry</string>
+    <string name="preset_badge_wings_aurora">Wings: Aurora</string>
+    <string name="preset_badge_seesaw_of_love">Seesaw of Love</string>
+    
+    <!-- Preset Badges Remarks -->
+    <string name="preset_badge_cd_15s">15s CD</string>
+    <string name="preset_badge_cd_3min_dur_3min">3min CD, 3min Dur</string>
+    <string name="preset_badge_cd_15min_dur_20min">15min CD, 20min Dur</string>
+    <string name="preset_badge_cd_15min_dur_10min">15min CD, 10min Dur</string>
+    <string name="preset_badge_cd_10min_dur_30min">10min CD, 30min Dur</string>
+    <string name="preset_badge_cd_20min_dur_15min">20min CD, 15min Dur</string>
 </resources>
