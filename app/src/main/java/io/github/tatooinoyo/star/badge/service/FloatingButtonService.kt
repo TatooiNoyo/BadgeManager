@@ -69,19 +69,15 @@ class FloatingButtonService : Service() {
                 // 1. 获取当前配置
                 val configuration = androidx.compose.ui.platform.LocalConfiguration.current
                 val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-                
+
                 // 2. 根据横竖屏状态控制显示隐藏
                 val view = androidx.compose.ui.platform.LocalView.current
                 androidx.compose.runtime.LaunchedEffect(isLandscape) {
                     // 只在横屏时显示
                     view.visibility = if (isLandscape) View.VISIBLE else View.GONE
-                    if (isLandscape) {
-                        updateExclusionRect(view, true)
-                    } else {
-                        // 竖屏时关闭菜单（如果打开的话）
-                        if (isMenuOpen) {
-                            closeMenu()
-                        }
+                    // 竖屏时关闭菜单（如果打开的话）
+                    if (!isLandscape && isMenuOpen) {
+                        closeMenu()
                     }
                 }
 
@@ -89,7 +85,6 @@ class FloatingButtonService : Service() {
                 if (isLandscape) {
                     FloatingWidget(
                         onClick = { toggleMenu() },
-                        isMenuOpen = isMenuOpen
                     )
                 }
             }
@@ -97,18 +92,6 @@ class FloatingButtonService : Service() {
         }
         // 委托给 Helper 添加 View
         windowManagerHelper.addFloatingButton(floatingButtonView)
-    }
-
-    // 新增辅助方法
-    private fun updateExclusionRect(view: View, isLandscape: Boolean) {
-        view.post {
-            if (isLandscape) {
-                // 【横屏策略】
-                // 设置一个覆盖整个 View 区域的矩形，确保滑动能被捕获
-                val rect = android.graphics.Rect(0, 0, view.width, view.height)
-                view.systemGestureExclusionRects = listOf(rect)
-            }
-        }
     }
 
     private fun toggleMenu() {
