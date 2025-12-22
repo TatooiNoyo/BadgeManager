@@ -53,6 +53,7 @@ fun AppNavigation(
         composable(NavRoutes.HelpUs) {
             HelpUsScreen(
                 badges = homeViewModel?.uiState?.value?.badges ?: emptyList(),
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }

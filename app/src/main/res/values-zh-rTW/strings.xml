@@ -49,7 +49,10 @@
     <string name="usage_help_floating_menu">• 橫屏遊戲時，點擊螢幕右側邊緣即可彈出選單</string>
     <string name="usage_help_landscape_only">• 懸浮選單僅在橫屏模式下顯示</string>
     <string name="badge_not_found_help">填入連結,標題未自動填入: 該徽章未錄入! \n點擊👆上方連結協助完善該專案. \n💡 SK碼在 徽章錄入頁 連結右側.</string>
-    <string name="help_us">幫助我們</string>
+    <string name="help_us">幫助完善專案</string>
+    <string name="help_us_description">以下是您錄入的徽章中，應用尚未收錄的徽章。如果您願意向我們提供這些徽章的資料（名稱、備註、SK碼），將幫助我們完善這個專案，讓更多人受益！</string>
+    <string name="no_unrecorded_badges">暫無未錄入徽章</string>
+    <string name="copy">複製</string>
     <string name="sk_code">SK碼: %1$s</string>
     <string name="settings">設定</string>
     <string name="back">返回</string>
