@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import io.github.tatooinoyo.star.badge.ui.about.AboutScreen
 import io.github.tatooinoyo.star.badge.ui.home.HomeScreen
+import io.github.tatooinoyo.star.badge.ui.home.HomeViewModel
 import io.github.tatooinoyo.star.badge.ui.settings.SettingsScreen
 
 // 定义导航路线
@@ -18,7 +19,10 @@ object NavRoutes {
 
 @Composable
 fun AppNavigation(
-    navController: NavHostController = rememberNavController()
+    navController: NavHostController = rememberNavController(),
+    homeViewModel: HomeViewModel? = null,
+    nfcPayload: String? = null,
+    onNfcDataConsumed: () -> Unit = {}
 ) {
     NavHost(
         navController = navController,
@@ -26,6 +30,9 @@ fun AppNavigation(
     ) {
         composable(NavRoutes.Home) {
             HomeScreen(
+                homeViewModel = homeViewModel,
+                nfcPayload = nfcPayload,
+                onNfcDataConsumed = onNfcDataConsumed,
                 onNavigateToSettings = { navController.navigate(NavRoutes.Settings) },
                 onNavigateToAbout = { navController.navigate(NavRoutes.About) }
             )

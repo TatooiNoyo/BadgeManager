@@ -76,12 +76,14 @@ import kotlinx.coroutines.flow.collectLatest
 fun HomeScreen(
     nfcPayload: String? = null,
     onNfcDataConsumed: () -> Unit = {},
-    homeViewModel: HomeViewModel = viewModel(),
+    homeViewModel: HomeViewModel? = null,
     badgeSyncViewModel: BadgeSyncViewModel = viewModel(),
     onNavigateToSettings: () -> Unit = {},
     onNavigateToAbout: () -> Unit = {}
 ) {
-    val uiState by homeViewModel.uiState.collectAsState()
+    // 如果传入了 homeViewModel，则使用它；否则使用 viewModel() 创建
+    val viewModelInstance = homeViewModel ?: viewModel()
+    val uiState by viewModelInstance.uiState.collectAsState()
     val syncState by badgeSyncViewModel.syncState.collectAsState()
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
@@ -90,11 +92,11 @@ fun HomeScreen(
 
     LaunchedEffect(nfcPayload) {
         if (!nfcPayload.isNullOrEmpty()) {
-            homeViewModel.onNfcPayloadReceived(nfcPayload)
+            viewModelInstance.onNfcPayloadReceived(nfcPayload)
             onNfcDataConsumed()
         }
 
-        homeViewModel.uiEvent.collectLatest { event ->
+        viewModelInstance.uiEvent.collectLatest { event ->
             when (event) {
                 is BadgeUiEvent.ShowToast -> {
                     Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
@@ -109,19 +111,19 @@ fun HomeScreen(
         BadgeListContent(
             uiState = uiState,
             listState = listState,
-            onInputTitleChange = { homeViewModel.updateAddInput(title = it) },
-            onInputRemarkChange = { homeViewModel.updateAddInput(remark = it) },
-            onInputLinkChange = { homeViewModel.updateAddInput(link = it) },
-            onInputChannelChange = { homeViewModel.updateAddInput(channel = it) },
-            onFastModeChange = homeViewModel::toggleFastMode,
-            onAddClick = { homeViewModel.addBadge() },
-            onItemClick = { badge -> homeViewModel.selectBadge(badge) },
-            onToggleFunctionArea = { homeViewModel.toggleFunctionArea() },
-            onExtractSkClick = { link -> homeViewModel.extractSkFromLink(link) },
-            onTagsChange = { homeViewModel.updateAddInput(tags = it) },
-            onTagSelected = { tag -> homeViewModel.selectTag(tag) },
-            onMove = { from, to -> homeViewModel.moveBadge(from, to) },
-            onSaveOrder = { homeViewModel.saveOrder() },
+            onInputTitleChange = { viewModelInstance.updateAddInput(title = it) },
+            onInputRemarkChange = { viewModelInstance.updateAddInput(remark = it) },
+            onInputLinkChange = { viewModelInstance.updateAddInput(link = it) },
+            onInputChannelChange = { viewModelInstance.updateAddInput(channel = it) },
+            onFastModeChange = viewModelInstance::toggleFastMode,
+            onAddClick = { viewModelInstance.addBadge() },
+            onItemClick = { badge -> viewModelInstance.selectBadge(badge) },
+            onToggleFunctionArea = { viewModelInstance.toggleFunctionArea() },
+            onExtractSkClick = { link -> viewModelInstance.extractSkFromLink(link) },
+            onTagsChange = { viewModelInstance.updateAddInput(tags = it) },
+            onTagSelected = { tag -> viewModelInstance.selectTag(tag) },
+            onMove = { from, to -> viewModelInstance.moveBadge(from, to) },
+            onSaveOrder = { viewModelInstance.saveOrder() },
             // === 传递同步参数 ===
             syncState = syncState,
             onStartSender = { badgeSyncViewModel.startSenderMode() },
@@ -129,10 +131,10 @@ fun HomeScreen(
             onStartReceiver = { code -> badgeSyncViewModel.startReceiverMode(code) },
             onStopReceiver = { badgeSyncViewModel.stopReceiverMode() },
             onImport = { ctx, uri, onResult ->
-                homeViewModel.importBadgesFromUri(ctx, uri, onResult)
+                viewModelInstance.importBadgesFromUri(ctx, uri, onResult)
             },
             onExport = { ctx, uri, onResult ->
-                homeViewModel.exportBadgesToUri(ctx, uri, onResult)
+                viewModelInstance.exportBadgesToUri(ctx, uri, onResult)
             },
             // 导航相关
             onSettingsClick = onNavigateToSettings,
@@ -147,24 +149,24 @@ fun HomeScreen(
             channel = uiState.detailChannel,
             tags = uiState.detailTags,
             allTags = uiState.allTags,
-            onTagsChange = { homeViewModel.updateDetailInput(tags = it) },
+            onTagsChange = { viewModelInstance.updateDetailInput(tags = it) },
             isWritingNfc = uiState.isWritingNfc,
-            onTitleChange = { homeViewModel.updateDetailInput(title = it) },
-            onRemarkChange = { homeViewModel.updateDetailInput(remark = it) },
-            onLinkChange = { homeViewModel.updateDetailInput(link = it) },
-            onChannelChange = { homeViewModel.updateDetailInput(channel = it) },
-            onWriteNfcClick = { homeViewModel.startWritingNfc() },
-            onCancelWriteNfcClick = { homeViewModel.cancelWritingNfc() },
-            onSaveClick = { homeViewModel.saveBadgeUpdate() },
-            onDeleteClick = { homeViewModel.deleteBadge() },
-            onExitClick = { homeViewModel.exitEditMode() },
-            onExtractSkClick = { link -> homeViewModel.extractSkFromLink(link) }
+            onTitleChange = { viewModelInstance.updateDetailInput(title = it) },
+            onRemarkChange = { viewModelInstance.updateDetailInput(remark = it) },
+            onLinkChange = { viewModelInstance.updateDetailInput(link = it) },
+            onChannelChange = { viewModelInstance.updateDetailInput(channel = it) },
+            onWriteNfcClick = { viewModelInstance.startWritingNfc() },
+            onCancelWriteNfcClick = { viewModelInstance.cancelWritingNfc() },
+            onSaveClick = { viewModelInstance.saveBadgeUpdate() },
+            onDeleteClick = { viewModelInstance.deleteBadge() },
+            onExitClick = { viewModelInstance.exitEditMode() },
+            onExtractSkClick = { link -> viewModelInstance.extractSkFromLink(link) }
         )
     }
 
     uiState.extractedSk?.let { sk ->
         AlertDialog(
-            onDismissRequest = { homeViewModel.dismissSkDialog() },
+            onDismissRequest = { viewModelInstance.dismissSkDialog() },
             title = { Text(stringResource(R.string.dialog_sk_title)) },
             text = {
                 Row(
@@ -186,7 +188,7 @@ fun HomeScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { homeViewModel.dismissSkDialog() }) {
+                TextButton(onClick = { viewModelInstance.dismissSkDialog() }) {
                     Text(stringResource(R.string.btn_confirm))
                 }
             }
