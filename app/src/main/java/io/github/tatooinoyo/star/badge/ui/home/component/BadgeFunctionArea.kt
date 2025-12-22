@@ -68,7 +68,7 @@ fun BadgeFunctionArea(
     onImport: (Context, Uri, (Boolean) -> Unit) -> Unit,
     onExport: (Context, Uri, (Boolean) -> Unit) -> Unit,
     onSettingsClick: () -> Unit, // 点击设置菜单项
-    onHelpClick: () -> Unit // 点击帮助菜单项
+    onAboutClick: () -> Unit // 点击帮助菜单项
 ) {
     var selectedTabIndex by remember { mutableIntStateOf(0) }
 
@@ -120,7 +120,7 @@ fun BadgeFunctionArea(
                 // 菜单按钮
                 MenuButton(
                     onSettingsClick = onSettingsClick,
-                    onHelpClick = onHelpClick
+                    onAboutClick = onAboutClick
                 )
             }
 
@@ -174,7 +174,7 @@ fun BadgeFunctionArea(
 @Composable
 fun MenuButton(
     onSettingsClick: () -> Unit,
-    onHelpClick: () -> Unit
+    onAboutClick: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
     
@@ -209,7 +209,7 @@ fun MenuButton(
                 text = { Text(stringResource(R.string.about)) },
                 onClick = {
                     expanded = false
-                    onHelpClick()
+                    onAboutClick()
                 },
                 leadingIcon = {
                     Icon(

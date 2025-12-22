@@ -67,7 +67,7 @@ import io.github.tatooinoyo.star.badge.data.BadgeChannel
 import io.github.tatooinoyo.star.badge.navigation.NavRoutes
 import io.github.tatooinoyo.star.badge.ui.home.component.BadgeFunctionArea
 import io.github.tatooinoyo.star.badge.ui.home.component.BadgeReorderList
-import io.github.tatooinoyo.star.badge.ui.home.component.HelpInfoDialog
+
 import io.github.tatooinoyo.star.badge.ui.home.component.TagFilterBar
 import io.github.tatooinoyo.star.badge.ui.home.component.TagManageDialog
 import io.github.tatooinoyo.star.badge.ui.state.SyncState
@@ -80,7 +80,7 @@ fun BadgeManagerScreen(
     onNfcDataConsumed: () -> Unit = {},
     viewModel: BadgeManagerViewModel = viewModel(),
     badgeSyncViewModel: BadgeSyncViewModel = viewModel(),
-    navController: NavController? = null
+    navController: NavController? = null,
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val syncState by badgeSyncViewModel.syncState.collectAsState()
@@ -136,7 +136,8 @@ fun BadgeManagerScreen(
                 viewModel.exportBadgesToUri(ctx, uri, onResult)
             },
             // 导航相关
-            onSettingsClick = { navController?.navigate(NavRoutes.Settings) }
+            onSettingsClick = { navController?.navigate(NavRoutes.Settings) },
+            onAboutClick = { navController?.navigate(NavRoutes.About) }
         )
     } else {
         BadgeDetailContent(
@@ -221,10 +222,8 @@ fun BadgeListContent(
     onExport: (Context, Uri, (Boolean) -> Unit) -> Unit,
     // 导航相关
     onSettingsClick: () -> Unit,
+    onAboutClick: () -> Unit,
 ) {
-
-    // 帮助弹窗的状态和 URI 处理器
-    var showHelpDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -253,7 +252,7 @@ fun BadgeListContent(
             onImport = onImport,
             onExport = onExport,
             onSettingsClick = onSettingsClick,
-            onHelpClick = { showHelpDialog = true }
+            onAboutClick = onAboutClick
         )
 
         // 标签筛选栏
@@ -275,9 +274,6 @@ fun BadgeListContent(
         )
 
 
-        if (showHelpDialog) {
-            HelpInfoDialog(onDismiss = { showHelpDialog = false })
-        }
     }
 }
 
