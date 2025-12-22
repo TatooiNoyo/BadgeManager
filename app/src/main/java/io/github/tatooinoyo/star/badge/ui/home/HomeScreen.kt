@@ -60,11 +60,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import io.github.tatooinoyo.star.badge.R
 import io.github.tatooinoyo.star.badge.data.Badge
 import io.github.tatooinoyo.star.badge.data.BadgeChannel
-import io.github.tatooinoyo.star.badge.navigation.NavRoutes
 import io.github.tatooinoyo.star.badge.ui.home.component.BadgeFunctionArea
 import io.github.tatooinoyo.star.badge.ui.home.component.BadgeReorderList
 
@@ -80,7 +78,8 @@ fun HomeScreen(
     onNfcDataConsumed: () -> Unit = {},
     homeViewModel: HomeViewModel = viewModel(),
     badgeSyncViewModel: BadgeSyncViewModel = viewModel(),
-    navController: NavController? = null,
+    onNavigateToSettings: () -> Unit = {},
+    onNavigateToAbout: () -> Unit = {}
 ) {
     val uiState by homeViewModel.uiState.collectAsState()
     val syncState by badgeSyncViewModel.syncState.collectAsState()
@@ -136,8 +135,8 @@ fun HomeScreen(
                 homeViewModel.exportBadgesToUri(ctx, uri, onResult)
             },
             // 导航相关
-            onSettingsClick = { navController?.navigate(NavRoutes.Settings) },
-            onAboutClick = { navController?.navigate(NavRoutes.About) }
+            onSettingsClick = onNavigateToSettings,
+            onAboutClick = onNavigateToAbout
         )
     } else {
         BadgeDetailContent(

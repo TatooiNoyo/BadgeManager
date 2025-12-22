@@ -26,7 +26,8 @@ fun AppNavigation(
     ) {
         composable(NavRoutes.Home) {
             HomeScreen(
-                navController = navController
+                onNavigateToSettings = { navController.navigate(NavRoutes.Settings) },
+                onNavigateToAbout = { navController.navigate(NavRoutes.About) }
             )
         }
         composable(NavRoutes.Settings) {
