@@ -1,4 +1,3 @@
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -27,7 +26,8 @@ android {
                 val projectName = rootProject.name
 
                 // 最终名称格式: BadgeManager_1.2.0_4_release.apk
-                val fileName = "${projectName}_${variant.versionName}_${variant.versionCode}_release.apk"
+                val fileName =
+                    "${projectName}_${variant.versionName}_${variant.versionCode}_release.apk"
 
                 output.outputFileName = fileName
             }
@@ -80,16 +80,15 @@ android {
 
 dependencies {
     // Room 数据库
-    val roomVersion = "2.6.1"
-    implementation("androidx.room:room-runtime:$roomVersion")
-    implementation("androidx.room:room-ktx:$roomVersion") // 支持 Coroutines
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx) // 支持 Coroutines
     // 版本说明：必须与上面的 roomVersion (2.6.1) 完全一致
-    ksp("androidx.room:room-compiler:$roomVersion")
-    implementation("com.google.code.gson:gson:2.10.1")
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.gson)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
-    implementation("androidx.compose.material:material-icons-extended")
+    implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
@@ -100,7 +99,7 @@ dependencies {
     implementation(libs.androidx.drawerlayout)
     implementation(libs.material)
     implementation(libs.bouncycastle.bcprov)
-    implementation("org.burnoutcrew.composereorderable:reorderable:0.9.6")
+    implementation(libs.reorderable)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
