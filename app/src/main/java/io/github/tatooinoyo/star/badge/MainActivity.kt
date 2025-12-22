@@ -27,7 +27,7 @@ import androidx.navigation.compose.rememberNavController
 import io.github.tatooinoyo.star.badge.data.BadgeRepository
 import io.github.tatooinoyo.star.badge.navigation.AppNavigation
 import io.github.tatooinoyo.star.badge.service.FloatingButtonService
-import io.github.tatooinoyo.star.badge.ui.home.BadgeManagerViewModel
+import io.github.tatooinoyo.star.badge.ui.home.HomeViewModel
 import io.github.tatooinoyo.star.badge.utils.LanguageManager
 import java.nio.charset.StandardCharsets
 
@@ -171,7 +171,7 @@ class MainActivity : ComponentActivity() {
             // 我们可以直接再次获取它。
             try {
                 val viewModel =
-                    androidx.lifecycle.ViewModelProvider(this)[BadgeManagerViewModel::class.java]
+                    androidx.lifecycle.ViewModelProvider(this)[HomeViewModel::class.java]
                 if (viewModel.uiState.value.isWritingNfc) {
                     val success = viewModel.writeNfcTag(tag, this)
                     if (success) {

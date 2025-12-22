@@ -56,7 +56,7 @@ sealed class BadgeUiEvent {
     data class ShowToast(val message: String) : BadgeUiEvent()
 }
 
-class BadgeManagerViewModel(application: Application) : AndroidViewModel(application) {
+class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow(BadgeUiState())
     val uiState: StateFlow<BadgeUiState> = _uiState.asStateFlow()
