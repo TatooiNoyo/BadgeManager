@@ -1,6 +1,7 @@
 package io.github.tatooinoyo.star.badge
 
 import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.net.Uri
@@ -54,6 +55,12 @@ class MainActivity : ComponentActivity() {
         } else {
             Toast.makeText(this, "需要悬浮窗权限才能显示悬浮球", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    override fun attachBaseContext(newBase: Context) {
+        // 在 Context 附加之前应用语言设置
+        val wrappedContext = LanguageManager.getInstance(newBase).wrapContext(newBase)
+        super.attachBaseContext(wrappedContext)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

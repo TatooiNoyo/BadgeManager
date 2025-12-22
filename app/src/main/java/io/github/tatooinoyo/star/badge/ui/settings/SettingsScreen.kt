@@ -2,6 +2,7 @@ package io.github.tatooinoyo.star.badge.ui.settings
 
 import android.content.Context
 import android.content.Intent
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -154,6 +155,7 @@ fun LanguageOption(
         },
         modifier = Modifier
             .fillMaxWidth()
+            .clickable(onClick = onClick)  // 添加点击事件
             .padding(vertical = 4.dp)
     )
 }
