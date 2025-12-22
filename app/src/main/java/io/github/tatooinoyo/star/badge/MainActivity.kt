@@ -69,7 +69,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         // 应用语言设置
         LanguageManager.getInstance(this).applyLanguage(this)
-        
+
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         // 初始化数据库
@@ -118,10 +118,11 @@ class MainActivity : ComponentActivity() {
         val intent = Intent(this, javaClass).apply {
             addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
         }
-        val pendingIntent = PendingIntent.getActivity(
-            this, 0, intent,
-            PendingIntent.FLAG_MUTABLE or 0 // Android 12+ 需要 FLAG_MUTABLE
-        )
+        val pendingIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_MUTABLE)
+        } else {
+            PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+        }
 
         // 添加 TAG_DISCOVERED 和 TECH_DISCOVERED 作为兜底，确保能捕获所有类型的 NFC 标签
         val nfcFilters = arrayOf(
@@ -160,7 +161,12 @@ class MainActivity : ComponentActivity() {
 
     // 解析 NFC 数据的方法
     private fun handleNfcIntent(intent: Intent) {
-        val tag: Tag? = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG)
+        val tag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getParcelableExtra(NfcAdapter.EXTRA_TAG, Tag::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            intent.getParcelableExtra(NfcAdapter.EXTRA_TAG)
+        }
 
         // 尝试获取 Activity 作用域的 ViewModel
         // 注意：这需要在 UI 线程中执行
@@ -212,7 +218,8 @@ class MainActivity : ComponentActivity() {
             val id = intent.getByteArrayExtra(NfcAdapter.EXTRA_ID)
             val idHex = id?.joinToString("") { "%02x".format(it) } ?: "Unknown"
             scannedNfcData = "Card ID: $idHex (Raw Tag)"
-            Toast.makeText(this, getString(R.string.nfc_card_detected, idHex), Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.nfc_card_detected, idHex), Toast.LENGTH_SHORT)
+                .show()
         }
     }
 
@@ -300,22 +307,16 @@ class MainActivity : ComponentActivity() {
 
     // 检查是否有悬浮窗权限
     private fun checkOverlayPermission(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            Settings.canDrawOverlays(this)
-        } else {
-            true
-        }
+        return Settings.canDrawOverlays(this)
     }
 
     // 请求权限
     private fun requestOverlayPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val intent = Intent(
-                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                Uri.parse("package:$packageName")
-            )
-            overlayPermissionLauncher.launch(intent)
-        }
+        val intent = Intent(
+            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+            Uri.parse("package:$packageName")
+        )
+        overlayPermissionLauncher.launch(intent)
     }
 
     // 启动 Service

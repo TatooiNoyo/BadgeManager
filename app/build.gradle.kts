@@ -36,7 +36,7 @@ android {
 
     defaultConfig {
         applicationId = "io.github.tatooinoyo.star.badge"
-        minSdk = 31
+        minSdk = 29
         targetSdk = 35
         versionCode = 10
         versionName = "1.4.1"
