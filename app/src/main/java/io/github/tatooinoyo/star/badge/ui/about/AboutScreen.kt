@@ -64,6 +64,23 @@ fun AboutScreen(
 
             HorizontalDivider()
 
+            // 使用帮助部分
+            Text(
+                text = stringResource(R.string.usage_help_title),
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                text = stringResource(R.string.usage_help_floating_menu),
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
+                text = stringResource(R.string.usage_help_landscape_only),
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+            HorizontalDivider()
+
             // 仓库链接
             Row(
                 modifier = Modifier
