@@ -23,10 +23,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.rememberNavController
 import io.github.tatooinoyo.star.badge.data.BadgeRepository
+import io.github.tatooinoyo.star.badge.navigation.AppNavigation
 import io.github.tatooinoyo.star.badge.service.FloatingButtonService
-import io.github.tatooinoyo.star.badge.ui.home.BadgeManagerScreen
 import io.github.tatooinoyo.star.badge.ui.home.BadgeManagerViewModel
 import io.github.tatooinoyo.star.badge.utils.LanguageManager
 import java.nio.charset.StandardCharsets
@@ -80,18 +80,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    // 获取 ViewModel 实例，它会自动从 Activity 的 ViewModelStore 中获取
-                    val viewModel: BadgeManagerViewModel = viewModel()
-
-                    // 当发现新的 Tag 时，尝试写入
-                    // 注意：这里是一个副作用，当 currentTag 更新时触发
-                    // 但更合理的做法是让 ViewModel 处理业务，Activity 只负责传递事件
-
-                    BadgeManagerScreen(
-                        nfcPayload = scannedNfcData,
-                        onNfcDataConsumed = { scannedNfcData = null },
-                        viewModel = viewModel
-                    )
+                    val navController = rememberNavController()
+                    AppNavigation(navController = navController)
                 }
             }
         }

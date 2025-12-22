@@ -20,7 +20,7 @@
     <string name="help_poll">📝 Badge Data Collection</string>
     <string name="contact_me">📧 Contact Me</string>
     <string name="tab_syncdata">Nearby Share</string>
-    <string name="help_and_about">Help &amp; About</string>
+    <string name="about">About</string>
     <string name="collapse">Collapse</string>
     <string name="expand">Expand</string>
     <string name="continuous_entry">Continuous Entry</string>
@@ -52,6 +52,7 @@
     <string name="english">English</string>
     <string name="chinese">Chinese</string>
     <string name="close_menu">Close Menu</string>
+        <string name="menu">Menu</string>
     <string name="complete">Complete</string>
     <string name="close_failed">Close (Failed)</string>
     <string name="nfc_read_success">NFC read successful</string>

@@ -19,6 +19,7 @@ ksp = "2.0.21-1.0.27"
 bouncycastle = "1.78"
 reorderable = "0.9.6"
 roomVersion = "2.6.1"
+navigation = "2.8.5"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -47,6 +48,7 @@ material = { group = "com.google.android.material", name = "material", version.r
 androidx-cardview = { group = "androidx.cardview", name = "cardview", version.ref = "cardview" }
 bouncycastle-bcprov = { group = "org.bouncycastle", name = "bcprov-jdk18on", version.ref = "bouncycastle" }
 reorderable = { module = "org.burnoutcrew.composereorderable:reorderable", version.ref = "reorderable" }
+androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

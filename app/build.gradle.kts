@@ -100,6 +100,7 @@ dependencies {
     implementation(libs.material)
     implementation(libs.bouncycastle.bcprov)
     implementation(libs.reorderable)
+    implementation(libs.androidx.navigation.compose)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

@@ -60,9 +60,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import io.github.tatooinoyo.star.badge.R
 import io.github.tatooinoyo.star.badge.data.Badge
 import io.github.tatooinoyo.star.badge.data.BadgeChannel
+import io.github.tatooinoyo.star.badge.navigation.NavRoutes
 import io.github.tatooinoyo.star.badge.ui.home.component.BadgeFunctionArea
 import io.github.tatooinoyo.star.badge.ui.home.component.BadgeReorderList
 import io.github.tatooinoyo.star.badge.ui.home.component.HelpInfoDialog
@@ -77,7 +79,8 @@ fun BadgeManagerScreen(
     nfcPayload: String? = null,
     onNfcDataConsumed: () -> Unit = {},
     viewModel: BadgeManagerViewModel = viewModel(),
-    badgeSyncViewModel: BadgeSyncViewModel = viewModel()
+    badgeSyncViewModel: BadgeSyncViewModel = viewModel(),
+    navController: NavController? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val syncState by badgeSyncViewModel.syncState.collectAsState()
@@ -131,7 +134,9 @@ fun BadgeManagerScreen(
             },
             onExport = { ctx, uri, onResult ->
                 viewModel.exportBadgesToUri(ctx, uri, onResult)
-            }
+            },
+            // 导航相关
+            onSettingsClick = { navController?.navigate(NavRoutes.Settings) }
         )
     } else {
         BadgeDetailContent(
@@ -214,6 +219,8 @@ fun BadgeListContent(
     onStopReceiver: () -> Unit,
     onImport: (Context, Uri, (Boolean) -> Unit) -> Unit,
     onExport: (Context, Uri, (Boolean) -> Unit) -> Unit,
+    // 导航相关
+    onSettingsClick: () -> Unit,
 ) {
 
     // 帮助弹窗的状态和 URI 处理器
@@ -245,6 +252,7 @@ fun BadgeListContent(
             onStopReceiver = onStopReceiver,
             onImport = onImport,
             onExport = onExport,
+            onSettingsClick = onSettingsClick,
             onHelpClick = { showHelpDialog = true }
         )
 

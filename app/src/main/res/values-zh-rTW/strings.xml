@@ -21,7 +21,7 @@
     <string name="toast_import_success">資料還原成功</string>
     <string name="toast_import_fail">匯入失敗，檔案格式可能錯誤</string>
     <string name="tab_syncdata">同網互傳</string>
-    <string name="help_and_about">說明與關於</string>
+    <string name="about">關於</string>
     <string name="collapse">收合</string>
     <string name="expand">展開</string>
     <string name="continuous_entry">連續錄入</string>
@@ -52,7 +52,8 @@
     <string name="follow_system">跟隨系統</string>
     <string name="english">英語</string>
     <string name="chinese">中文</string>
-    <string name="close_menu">關閉選單</string>
+        <string name="close_menu">關閉選單</string>
+        <string name="menu">選單</string>
     <string name="complete">完成</string>
     <string name="close_failed">關閉 (失敗)</string>
     <string name="nfc_read_success">NFC讀取成功</string>

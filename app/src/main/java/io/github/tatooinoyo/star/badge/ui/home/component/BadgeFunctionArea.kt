@@ -21,6 +21,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -30,6 +34,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -62,7 +67,8 @@ fun BadgeFunctionArea(
     onStopReceiver: () -> Unit,
     onImport: (Context, Uri, (Boolean) -> Unit) -> Unit,
     onExport: (Context, Uri, (Boolean) -> Unit) -> Unit,
-    onHelpClick: () -> Unit // 新增回调：点击帮助按钮
+    onSettingsClick: () -> Unit, // 点击设置菜单项
+    onHelpClick: () -> Unit // 点击帮助菜单项
 ) {
     var selectedTabIndex by remember { mutableIntStateOf(0) }
 
@@ -111,13 +117,11 @@ fun BadgeFunctionArea(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                IconButton(onClick = onHelpClick) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = stringResource(R.string.help_and_about),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
+                // 菜单按钮
+                MenuButton(
+                    onSettingsClick = onSettingsClick,
+                    onHelpClick = onHelpClick
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -164,5 +168,56 @@ fun BadgeFunctionArea(
             ),
             tint = MaterialTheme.colorScheme.primary
         )
+    }
+}
+
+@Composable
+fun MenuButton(
+    onSettingsClick: () -> Unit,
+    onHelpClick: () -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    
+    Box {
+        IconButton(onClick = { expanded = true }) {
+            Icon(
+                imageVector = Icons.Default.Menu,
+                contentDescription = stringResource(R.string.menu),
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
+        
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.settings)) },
+                onClick = {
+                    expanded = false
+                    onSettingsClick()
+                },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = null
+                    )
+                }
+            )
+            
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.about)) },
+                onClick = {
+                    expanded = false
+                    onHelpClick()
+                },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = null
+                    )
+                }
+            )
+        }
     }
 }
