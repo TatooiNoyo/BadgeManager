@@ -49,6 +49,8 @@
     <string name="usage_help_floating_menu">• 橫屏遊戲時，點擊螢幕右側邊緣即可彈出選單</string>
     <string name="usage_help_landscape_only">• 懸浮選單僅在橫屏模式下顯示</string>
     <string name="badge_not_found_help">填入連結,標題未自動填入: 該徽章未錄入! \n點擊👆上方連結協助完善該專案. \n💡 SK碼在 徽章錄入頁 連結右側.</string>
+    <string name="help_us">幫助我們</string>
+    <string name="sk_code">SK碼: %1$s</string>
     <string name="settings">設定</string>
     <string name="back">返回</string>
     <string name="language_setting">語言</string>

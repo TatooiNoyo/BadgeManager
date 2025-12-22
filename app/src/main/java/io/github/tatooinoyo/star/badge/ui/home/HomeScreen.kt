@@ -80,7 +80,8 @@ fun HomeScreen(
     homeViewModel: HomeViewModel? = null,
     badgeSyncViewModel: BadgeSyncViewModel = viewModel(),
     onNavigateToSettings: () -> Unit = {},
-    onNavigateToAbout: () -> Unit = {}
+    onNavigateToAbout: () -> Unit = {},
+    onNavigateToUnrecordedBadges: () -> Unit = {}
 ) {
     // 如果传入了 homeViewModel，则使用它；否则使用 viewModel() 创建
     val viewModelInstance = homeViewModel ?: viewModel()
@@ -139,7 +140,8 @@ fun HomeScreen(
             },
             // 导航相关
             onSettingsClick = onNavigateToSettings,
-            onAboutClick = onNavigateToAbout
+            onAboutClick = onNavigateToAbout,
+            onUnrecordedBadgesClick = onNavigateToUnrecordedBadges
         )
     } else {
         BadgeDetailContent(
@@ -225,6 +227,7 @@ fun BadgeListContent(
     // 导航相关
     onSettingsClick: () -> Unit,
     onAboutClick: () -> Unit,
+    onUnrecordedBadgesClick: () -> Unit,
 ) {
 
     Column(
@@ -254,7 +257,8 @@ fun BadgeListContent(
             onImport = onImport,
             onExport = onExport,
             onSettingsClick = onSettingsClick,
-            onAboutClick = onAboutClick
+            onAboutClick = onAboutClick,
+            onUnrecordedBadgesClick = onUnrecordedBadgesClick
         )
 
         // 标签筛选栏

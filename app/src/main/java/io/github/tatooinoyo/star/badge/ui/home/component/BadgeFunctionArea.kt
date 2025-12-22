@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Handshake
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -68,7 +69,8 @@ fun BadgeFunctionArea(
     onImport: (Context, Uri, (Boolean) -> Unit) -> Unit,
     onExport: (Context, Uri, (Boolean) -> Unit) -> Unit,
     onSettingsClick: () -> Unit, // 点击设置菜单项
-    onAboutClick: () -> Unit // 点击帮助菜单项
+    onAboutClick: () -> Unit, // 点击帮助菜单项
+    onUnrecordedBadgesClick: () -> Unit // 点击"未录入徽章"菜单项
 ) {
     var selectedTabIndex by remember { mutableIntStateOf(0) }
 
@@ -120,7 +122,8 @@ fun BadgeFunctionArea(
                 // 菜单按钮
                 MenuButton(
                     onSettingsClick = onSettingsClick,
-                    onAboutClick = onAboutClick
+                    onAboutClick = onAboutClick,
+                    onUnrecordedBadgesClick = onUnrecordedBadgesClick
                 )
             }
 
@@ -174,10 +177,11 @@ fun BadgeFunctionArea(
 @Composable
 fun MenuButton(
     onSettingsClick: () -> Unit,
-    onAboutClick: () -> Unit
+    onAboutClick: () -> Unit,
+    onUnrecordedBadgesClick: () -> Unit  // 添加这一行
 ) {
     var expanded by remember { mutableStateOf(false) }
-    
+
     Box {
         IconButton(onClick = { expanded = true }) {
             Icon(
@@ -186,7 +190,7 @@ fun MenuButton(
                 tint = MaterialTheme.colorScheme.primary
             )
         }
-        
+
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false }
@@ -204,7 +208,21 @@ fun MenuButton(
                     )
                 }
             )
-            
+
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.help_us)) },
+                onClick = {
+                    expanded = false
+                    onUnrecordedBadgesClick()  // 添加这一行
+                },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Handshake,
+                        contentDescription = null
+                    )
+                }
+            )
+
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.about)) },
                 onClick = {

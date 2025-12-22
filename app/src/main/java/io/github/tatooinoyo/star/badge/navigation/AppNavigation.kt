@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import io.github.tatooinoyo.star.badge.ui.about.AboutScreen
+import io.github.tatooinoyo.star.badge.ui.helpus.HelpUsScreen
 import io.github.tatooinoyo.star.badge.ui.home.HomeScreen
 import io.github.tatooinoyo.star.badge.ui.home.HomeViewModel
 import io.github.tatooinoyo.star.badge.ui.settings.SettingsScreen
@@ -15,6 +16,7 @@ object NavRoutes {
     const val Home = "home"
     const val Settings = "settings"
     const val About = "about"
+    const val HelpUs = "helpUs"
 }
 
 @Composable
@@ -34,7 +36,8 @@ fun AppNavigation(
                 nfcPayload = nfcPayload,
                 onNfcDataConsumed = onNfcDataConsumed,
                 onNavigateToSettings = { navController.navigate(NavRoutes.Settings) },
-                onNavigateToAbout = { navController.navigate(NavRoutes.About) }
+                onNavigateToAbout = { navController.navigate(NavRoutes.About) },
+                onNavigateToUnrecordedBadges = { navController.navigate(NavRoutes.HelpUs) }
             )
         }
         composable(NavRoutes.Settings) {
@@ -45,6 +48,11 @@ fun AppNavigation(
         composable(NavRoutes.About) {
             AboutScreen(
                 onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        composable(NavRoutes.HelpUs) {
+            HelpUsScreen(
+                badges = homeViewModel?.uiState?.value?.badges ?: emptyList(),
             )
         }
     }
