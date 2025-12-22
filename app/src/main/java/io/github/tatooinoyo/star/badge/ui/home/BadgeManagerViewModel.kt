@@ -124,11 +124,25 @@ class BadgeManagerViewModel(application: Application) : AndroidViewModel(applica
         channel: BadgeChannel = _uiState.value.addChannel,
         tags: List<String> = _uiState.value.addTags
     ) {
-        val sk = getSkFromLink(link)
-        val finalTitle =
-            if (sk != null) PresetBadges.getTitle(getApplication<Application>(), sk) else title
-        val finalRemark =
-            if (sk != null) PresetBadges.getRemark(getApplication<Application>(), sk) else remark
+        val isLinkChanged = link != _uiState.value.addLink
+        var finalTitle = title
+        var finalRemark = remark
+
+        // 只有在链接改变时，才尝试提取 SK 并覆盖标题/备注
+        if (isLinkChanged && link.isNotBlank()) {
+            val sk = getSkFromLink(link)
+            if (sk.startsWith("SKY-")) { // 假设有效的 SK 以 SKY- 开头，或者根据 getSkFromLink 的返回值判断
+                val presetTitle = PresetBadges.getTitle(getApplication<Application>(), sk)
+                val presetRemark = PresetBadges.getRemark(getApplication<Application>(), sk)
+
+                // 如果预设库里有这个东西，才覆盖
+                if (presetTitle != sk) { // 这里的判断逻辑取决于你的 PresetBadges 实现，防止没搜到返回了原字符串
+                    finalTitle = presetTitle
+                    finalRemark = presetRemark
+                }
+            }
+        }
+
         _uiState.value = _uiState.value.copy(
             addTitle = finalTitle,
             addRemark = finalRemark,
@@ -136,7 +150,7 @@ class BadgeManagerViewModel(application: Application) : AndroidViewModel(applica
             addChannel = channel,
             addTags = tags // 确保更新状态
         )
-        if (_uiState.value.isFastMode && link.isNotBlank() && sk != null) {
+        if (_uiState.value.isFastMode && link.isNotBlank()) {
             addBadge()
 
             viewModelScope.launch {
@@ -193,11 +207,25 @@ class BadgeManagerViewModel(application: Application) : AndroidViewModel(applica
         channel: BadgeChannel = _uiState.value.detailChannel,
         tags: List<String> = _uiState.value.detailTags
     ) {
-        val sk = getSkFromLink(link)
-        val finalTitle =
-            if (sk != null) PresetBadges.getTitle(getApplication<Application>(), sk) else title
-        val finalRemark =
-            if (sk != null) PresetBadges.getRemark(getApplication<Application>(), sk) else remark
+        val isLinkChanged = link != _uiState.value.detailLink
+        var finalTitle = title
+        var finalRemark = remark
+
+        // 只有在链接改变时，才尝试提取 SK 并覆盖标题/备注
+        if (isLinkChanged && link.isNotBlank()) {
+            val sk = getSkFromLink(link)
+            if (sk.startsWith("SKY-")) { // 假设有效的 SK 以 SKY- 开头，或者根据 getSkFromLink 的返回值判断
+                val presetTitle = PresetBadges.getTitle(getApplication<Application>(), sk)
+                val presetRemark = PresetBadges.getRemark(getApplication<Application>(), sk)
+
+                // 如果预设库里有这个东西，才覆盖
+                if (presetTitle != sk) { // 这里的判断逻辑取决于你的 PresetBadges 实现，防止没搜到返回了原字符串
+                    finalTitle = presetTitle
+                    finalRemark = presetRemark
+                }
+            }
+        }
+
         _uiState.value = _uiState.value.copy(
             detailTitle = finalTitle,
             detailRemark = finalRemark,
