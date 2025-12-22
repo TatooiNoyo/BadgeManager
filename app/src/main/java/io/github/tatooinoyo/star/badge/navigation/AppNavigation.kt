@@ -6,7 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import io.github.tatooinoyo.star.badge.ui.about.AboutScreen
-import io.github.tatooinoyo.star.badge.ui.home.BadgeManagerScreen
+import io.github.tatooinoyo.star.badge.ui.home.HomeScreen
 import io.github.tatooinoyo.star.badge.ui.settings.SettingsScreen
 
 // 定义导航路线
@@ -25,7 +25,7 @@ fun AppNavigation(
         startDestination = NavRoutes.Home
     ) {
         composable(NavRoutes.Home) {
-            BadgeManagerScreen(
+            HomeScreen(
                 navController = navController
             )
         }

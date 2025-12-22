@@ -75,7 +75,7 @@ import io.github.tatooinoyo.star.badge.ui.theme.PeachTheme
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
-fun BadgeManagerScreen(
+fun HomeScreen(
     nfcPayload: String? = null,
     onNfcDataConsumed: () -> Unit = {},
     viewModel: BadgeManagerViewModel = viewModel(),
