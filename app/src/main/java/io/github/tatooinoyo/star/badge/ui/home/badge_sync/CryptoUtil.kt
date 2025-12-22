@@ -1,4 +1,4 @@
-package io.github.tatooinoyo.star.badge.service.utils
+package io.github.tatooinoyo.star.badge.ui.home.badge_sync
 
 
 import android.util.Base64
@@ -10,7 +10,9 @@ import java.security.KeyPairGenerator
 import java.security.PrivateKey
 import java.security.SecureRandom
 import java.security.Security
+import java.security.spec.X509EncodedKeySpec
 import javax.crypto.Cipher
+import javax.crypto.KeyAgreement
 import javax.crypto.Mac
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.GCMParameterSpec
@@ -41,9 +43,9 @@ object CryptoUtil {
     fun computeX25519SharedSecret(privateKey: PrivateKey, peerPubBytes: ByteArray): ByteArray {
 
         val kf = KeyFactory.getInstance("XDH", bcProvider)
-        val pubKeySpec = java.security.spec.X509EncodedKeySpec(peerPubBytes)
+        val pubKeySpec = X509EncodedKeySpec(peerPubBytes)
         val pubK = kf.generatePublic(pubKeySpec)
-        val ka = javax.crypto.KeyAgreement.getInstance("XDH", bcProvider)
+        val ka = KeyAgreement.getInstance("XDH", bcProvider)
         ka.init(privateKey)
         ka.doPhase(pubK, true)
         return ka.generateSecret()

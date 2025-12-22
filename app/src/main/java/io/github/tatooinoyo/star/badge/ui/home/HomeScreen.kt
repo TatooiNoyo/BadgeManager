@@ -63,6 +63,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.tatooinoyo.star.badge.R
 import io.github.tatooinoyo.star.badge.data.Badge
 import io.github.tatooinoyo.star.badge.data.BadgeChannel
+import io.github.tatooinoyo.star.badge.ui.home.badge_sync.BadgeSyncViewModel
 import io.github.tatooinoyo.star.badge.ui.home.component.BadgeFunctionArea
 import io.github.tatooinoyo.star.badge.ui.home.component.BadgeReorderList
 

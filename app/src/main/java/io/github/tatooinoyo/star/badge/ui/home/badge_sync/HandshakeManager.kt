@@ -1,9 +1,10 @@
-package io.github.tatooinoyo.star.badge.service.utils
+package io.github.tatooinoyo.star.badge.ui.home.badge_sync
 
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.Socket
+import java.security.SecureRandom
 
 
 object HandshakeManager {
@@ -36,7 +37,7 @@ object HandshakeManager {
         val kp = CryptoUtil.generateX25519KeyPair()
         val localPub = kp.public.encoded
         val localPriv = kp.private
-        val localNonce = ByteArray(16).also { java.security.SecureRandom().nextBytes(it) }
+        val localNonce = ByteArray(16).also { SecureRandom().nextBytes(it) }
         val role = "server"
         val hmac = CryptoUtil.hmacSha256(pskKey, localPub + localNonce + role.toByteArray())
 
@@ -69,7 +70,7 @@ object HandshakeManager {
         val kp = CryptoUtil.generateX25519KeyPair()
         val localPub = kp.public.encoded
         val localPriv = kp.private
-        val localNonce = ByteArray(16).also { java.security.SecureRandom().nextBytes(it) }
+        val localNonce = ByteArray(16).also { SecureRandom().nextBytes(it) }
         val role = "client"
         val pskKey = CryptoUtil.derivePskKeyFromCode(psk6)
         val hmac = CryptoUtil.hmacSha256(pskKey, localPub + localNonce + role.toByteArray())

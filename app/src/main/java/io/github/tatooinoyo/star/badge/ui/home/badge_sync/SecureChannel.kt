@@ -1,12 +1,15 @@
-package io.github.tatooinoyo.star.badge.service.utils
+package io.github.tatooinoyo.star.badge.ui.home.badge_sync
 
 import android.util.Log
+import com.google.gson.Gson
 import org.json.JSONObject
+import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.net.Socket
 import java.nio.ByteBuffer
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 class SecureChannel(
     private val socket: Socket,
@@ -64,7 +67,7 @@ class SecureChannel(
 
         sendExecutor.submit {
             try {
-                val gson = com.google.gson.Gson()
+                val gson = Gson()
                 val resultJson = gson.toJson(result)
                 val plaintext = resultJson.toByteArray(Charsets.UTF_8)
                 val payload = CryptoUtil.aesGcmEncrypt(sessionKey, plaintext)
@@ -118,7 +121,7 @@ class SecureChannel(
                 sendExecutor.shutdown()
 
                 // 3. 稍微等待一下发送队列清空（可选，但更稳健）
-                 try { sendExecutor.awaitTermination(200, java.util.concurrent.TimeUnit.MILLISECONDS) } catch (e: Exception) {}
+                 try { sendExecutor.awaitTermination(200, TimeUnit.MILLISECONDS) } catch (e: Exception) {}
 
                 if (!socket.isClosed) {
                     socket.shutdownOutput()
@@ -154,7 +157,7 @@ class SecureChannel(
         var offset = 0
         while (offset < length) {
             val read = input.read(buffer, offset, length - offset)
-            if (read == -1) throw java.io.IOException("Stream closed")
+            if (read == -1) throw IOException("Stream closed")
             offset += read
         }
     }

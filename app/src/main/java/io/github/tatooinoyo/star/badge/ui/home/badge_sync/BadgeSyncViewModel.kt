@@ -1,16 +1,13 @@
-package io.github.tatooinoyo.star.badge.ui.home
+package io.github.tatooinoyo.star.badge.ui.home.badge_sync
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.reflect.TypeToken
 import io.github.tatooinoyo.star.badge.data.Badge
 import io.github.tatooinoyo.star.badge.data.BadgeRepository
-import io.github.tatooinoyo.star.badge.service.utils.SecureChannel
-import io.github.tatooinoyo.star.badge.service.utils.TcpClient
-import io.github.tatooinoyo.star.badge.service.utils.TcpServer
-import io.github.tatooinoyo.star.badge.service.utils.UdpBroadcaster
-import io.github.tatooinoyo.star.badge.service.utils.UdpListener
 import io.github.tatooinoyo.star.badge.ui.state.SyncState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -165,8 +162,8 @@ class BadgeSyncViewModel(
                 return
             }
 
-            val gson = com.google.gson.Gson()
-            val type = object : com.google.gson.reflect.TypeToken<List<Badge>>() {}.type
+            val gson = Gson()
+            val type = object : TypeToken<List<Badge>>() {}.type
             val badges: List<Badge> = gson.fromJson(jsonStr, type)
 
             if (badges.isNotEmpty()) {

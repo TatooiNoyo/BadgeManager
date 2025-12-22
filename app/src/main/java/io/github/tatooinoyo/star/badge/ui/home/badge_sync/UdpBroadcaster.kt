@@ -1,4 +1,4 @@
-package io.github.tatooinoyo.star.badge.service.utils
+package io.github.tatooinoyo.star.badge.ui.home.badge_sync
 
 import java.net.DatagramPacket
 import java.net.DatagramSocket
