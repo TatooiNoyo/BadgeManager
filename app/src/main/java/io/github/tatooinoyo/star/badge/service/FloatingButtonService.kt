@@ -2,6 +2,7 @@ package io.github.tatooinoyo.star.badge.service
 
 import android.app.Service
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.IBinder
 import android.view.View
 import android.view.animation.DecelerateInterpolator
@@ -67,18 +68,30 @@ class FloatingButtonService : Service() {
             setContent {
                 // 1. 获取当前配置
                 val configuration = androidx.compose.ui.platform.LocalConfiguration.current
-                val isLandscape = configuration.screenWidthDp > configuration.screenHeightDp
-                // 2. 根据横竖屏状态，直接在这里更新排他区域
-                // 利用 SideEffect 或 LaunchedEffect 确保 View 构建完成后执行
+                val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+                
+                // 2. 根据横竖屏状态控制显示隐藏
                 val view = androidx.compose.ui.platform.LocalView.current
                 androidx.compose.runtime.LaunchedEffect(isLandscape) {
-                    updateExclusionRect(view, isLandscape)
+                    // 只在横屏时显示
+                    view.visibility = if (isLandscape) View.VISIBLE else View.GONE
+                    if (isLandscape) {
+                        updateExclusionRect(view, true)
+                    } else {
+                        // 竖屏时关闭菜单（如果打开的话）
+                        if (isMenuOpen) {
+                            closeMenu()
+                        }
+                    }
                 }
 
-                FloatingWidget(
-                    onClick = { toggleMenu() },
-                    isMenuOpen = isMenuOpen
-                )
+                // 只在横屏时渲染内容
+                if (isLandscape) {
+                    FloatingWidget(
+                        onClick = { toggleMenu() },
+                        isMenuOpen = isMenuOpen
+                    )
+                }
             }
 
         }
@@ -91,16 +104,9 @@ class FloatingButtonService : Service() {
         view.post {
             if (isLandscape) {
                 // 【横屏策略】
-                // 设置一个覆盖整个 View 右边缘（或左边缘）的矩形。
-                // 简单起见，直接覆盖整个 View 区域，确保滑动一定能被捕获。
+                // 设置一个覆盖整个 View 区域的矩形，确保滑动能被捕获
                 val rect = android.graphics.Rect(0, 0, view.width, view.height)
                 view.systemGestureExclusionRects = listOf(rect)
-            } else {
-                // 【竖屏策略】
-                // 清空排他区域。
-                // 这样手指在蓝条上滑动时，触发的是系统返回，而不是 App 的滑动。
-                // 点击事件不受影响。
-                view.systemGestureExclusionRects = emptyList()
             }
         }
     }
