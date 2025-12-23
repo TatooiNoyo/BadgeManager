@@ -3,7 +3,6 @@
 [![GitHub stars](https://img.shields.io/github/stars/tatooinoyo/BadgeManager)](https://github.com/tatooinoyo/BadgeManager/stargazers)
 [![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/tatooinoyo/BadgeManager)](https://github.com/tatooinoyo/BadgeManager/releases)
 [![GitHub all releases](https://img.shields.io/github/downloads/tatooinoyo/BadgeManager/total)](https://github.com/tatooinoyo/BadgeManager/releases)
-[![Docker Pulls](https://img.shields.io/docker/pulls/tatooinoyo/BadgeManager)](https://hub.docker.com/r/tatooinoyo/BadgeManager)
 
 [English Version](README_EN.md)
 
