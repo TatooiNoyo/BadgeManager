@@ -121,6 +121,16 @@
     <string name="preset_badge_wings_aurora">Wings: Aurora</string>
     <string name="preset_badge_seesaw_of_love">Seesaw of Love</string>
     <string name="preset_badge_keychain_bear_hug">Keychain: Bear Hug Doll</string>
+    <string name="preset_badge_plush_pippi_cat">Plush Pippi Cat</string>
+    <string name="preset_badge_pop_up_book">Pop-up Book</string>
+    <string name="preset_badge_snowman_body">Snowman Body</string>
+    <string name="preset_badge_rose_path">Rose Path</string>
+    <string name="preset_badge_lucky_fireworks">Lucky Fireworks</string>
+    <string name="preset_badge_hermit_valley">Hermit Valley</string>
+    <string name="preset_badge_starlight_desert">Starlight Desert</string>
+    <string name="preset_badge_forgotten_ark">Forgotten Ark</string>
+    <string name="preset_badge_calla_lily">Calla Lily</string>
+    <string name="preset_badge_manatee_plush">Manatee Plush</string>
     
     <!-- Preset Badges Remarks -->
     <string name="preset_badge_cd_15s">15s CD</string>
@@ -129,4 +139,6 @@
     <string name="preset_badge_cd_15min_dur_10min">15min CD, 10min Dur</string>
     <string name="preset_badge_cd_10min_dur_30min">10min CD, 30min Dur</string>
     <string name="preset_badge_cd_20min_dur_15min">20min CD, 15min Dur</string>
+    <string name="preset_badge_cd_20min">20min CD</string>
+    <string name="preset_badge_cd_30min">30min CD</string>
 </resources>

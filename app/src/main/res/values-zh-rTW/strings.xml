@@ -122,6 +122,16 @@
     <string name="preset_badge_wings_aurora">歐若拉之翼</string>
     <string name="preset_badge_seesaw_of_love">愛之蹺蹺板</string>
     <string name="preset_badge_keychain_bear_hug">熊抱玩偶鑰匙扣</string>
+    <string name="preset_badge_plush_pippi_cat">皮皮貓玩偶</string>
+    <string name="preset_badge_pop_up_book">立體繪本</string>
+    <string name="preset_badge_snowman_body">雪人身體</string>
+    <string name="preset_badge_rose_path">玫瑰花徑</string>
+    <string name="preset_badge_lucky_fireworks">幸運煙花</string>
+    <string name="preset_badge_hermit_valley">隱士山谷</string>
+    <string name="preset_badge_starlight_desert">星光沙漠</string>
+    <string name="preset_badge_forgotten_ark">遗忘方舟</string>
+    <string name="preset_badge_calla_lily">馬蹄蓮</string>
+    <string name="preset_badge_manatee_plush">海牛毛絨玩具</string>
     
     <!-- 預設徽章備註 -->
     <string name="preset_badge_cd_15s">15s CD</string>
@@ -130,4 +140,6 @@
     <string name="preset_badge_cd_15min_dur_10min">15min CD, 10min Dur</string>
     <string name="preset_badge_cd_10min_dur_30min">10min CD, 30min Dur</string>
     <string name="preset_badge_cd_20min_dur_15min">20min CD, 15min Dur</string>
+    <string name="preset_badge_cd_20min">20min CD</string>
+    <string name="preset_badge_cd_30min">30min CD</string>
 </resources>
