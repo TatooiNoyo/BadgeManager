@@ -94,6 +94,8 @@
     <string name="manage_tags">Manage Tags</string>
     <string name="remove">Remove</string>
     <string name="confirm_save">Confirm Save</string>
+    <string name="copy_all_badges">Copy All Badges Info</string>
+    <string name="copy_all_badges_success">Copied %1$d badges info</string>
     <!-- Preset Badges Titles -->
     <string name="preset_badge_valley_of_prophecy">Valley of Prophecy</string>
     <string name="preset_badge_legend_of_cloudy_world">Legend of Cloudy World</string>

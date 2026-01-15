@@ -94,6 +94,8 @@
     <string name="manage_tags">管理标签</string>
     <string name="remove">移除</string>
     <string name="confirm_save">确认保存</string>
+    <string name="copy_all_badges">复制所有徽章信息</string>
+    <string name="copy_all_badges_success">已复制 %1$d 个徽章信息</string>
     <!-- 预设徽章标题 -->
     <string name="preset_badge_valley_of_prophecy">预言山谷</string>
     <string name="preset_badge_legend_of_cloudy_world">云野传说</string>
