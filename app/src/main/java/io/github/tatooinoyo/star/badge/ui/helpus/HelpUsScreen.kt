@@ -31,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
@@ -48,6 +49,8 @@ fun HelpUsScreen(
 ) {
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
+    val pollUrl = "https://f.kdocs.cn/g/IGyZAOLU/"
 
     val unrecordedBadges = remember(badges) {
         badges.filter { badge ->
@@ -100,6 +103,7 @@ fun HelpUsScreen(
                             context.getString(R.string.copy_all_badges_success, unrecordedBadges.size),
                             android.widget.Toast.LENGTH_SHORT
                         ).show()
+                        uriHandler.openUri(pollUrl)
                     },
                     modifier = Modifier
                         .fillMaxWidth()
