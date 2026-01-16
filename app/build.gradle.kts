@@ -101,6 +101,8 @@ dependencies {
     implementation(libs.bouncycastle.bcprov)
     implementation(libs.reorderable)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.coil.compose)
+    implementation("io.coil-kt:coil-svg:2.5.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
