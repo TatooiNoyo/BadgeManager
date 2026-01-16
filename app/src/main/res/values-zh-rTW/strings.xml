@@ -46,7 +46,7 @@
     <string name="sync_success_data_overwritten">同步成功！資料已覆蓋。</string>
     <string name="about_badge_manager_desc">這是一個開源的光遇徽章管理工具。</string>
     <string name="usage_help_title">使用幫助</string>
-    <string name="usage_help_floating_menu">• 橫屏遊戲時，點擊螢幕右側邊緣即可彈出選單</string>
+    <string name="usage_help_floating_menu">• 橫屏遊戲時,雙擊螢幕右側邊緣即可彈出選單</string>
     <string name="usage_help_landscape_only">• 懸浮選單僅在橫屏模式下顯示</string>
     <string name="badge_not_found_help">填入連結,標題未自動填入: 該徽章未錄入! \n點擊👆上方連結協助完善該專案. \n💡 SK碼在 徽章錄入頁 連結右側.</string>
     <string name="help_us">幫助完善專案</string>
