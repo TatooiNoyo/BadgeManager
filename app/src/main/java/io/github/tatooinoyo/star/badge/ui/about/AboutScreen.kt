@@ -55,8 +55,9 @@ fun AboutScreen(
     val contactMail = "tatooi.noyo@outlook.com"
 
     var showUpdateDialog by remember { mutableStateOf(false) }
-    val updateImageUrl = "https://badgen.net/github/release/tatooinoyo/BadgeManager"
-    val downloadUrl = "https://www.pgyer.com/badgemanager"
+    val updateImageUrl =
+        stringResource(R.string.update_image_url)
+    val downloadUrl = stringResource(R.string.download_url)
 
     Scaffold(
         topBar = {
@@ -180,7 +181,7 @@ fun AboutScreen(
                     .fillMaxWidth()
                     .padding(top = 16.dp)
             ) {
-                Text("检查更新")
+                Text(stringResource(R.string.check_update))
             }
         }
 
@@ -201,12 +202,12 @@ fun AboutScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            "当前版本: V${BuildConfig.VERSION_NAME}",
+                            stringResource(R.string.current_version, BuildConfig.VERSION_NAME),
                             style = MaterialTheme.typography.headlineSmall
                         )
                         Row(modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically) {
-                            Text("最新版本: ", style = MaterialTheme.typography.headlineSmall)
+                            Text(stringResource(R.string.latest_version), style = MaterialTheme.typography.headlineSmall)
 
                             AsyncImage(
                                 model = ImageRequest.Builder(LocalContext.current)
@@ -221,7 +222,7 @@ fun AboutScreen(
                             )
                         }
                         Text(
-                            text = "点击上方图标前往下载页",
+                            text = stringResource(R.string.click_to_download),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -230,7 +231,7 @@ fun AboutScreen(
                             onClick = { showUpdateDialog = false },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("确定")
+                            Text(stringResource(R.string.confirm))
                         }
                     }
                 }

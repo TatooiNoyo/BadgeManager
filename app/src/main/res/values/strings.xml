@@ -141,4 +141,11 @@
     <string name="preset_badge_cd_20min_dur_15min">20min CD, 15min Dur</string>
     <string name="preset_badge_cd_20min">20min CD</string>
     <string name="preset_badge_cd_30min">30min CD</string>
+    <string name="update_image_url">https://img.shields.io/github/v/release/tatooinoyo/BadgeManager</string>
+    <string name="download_url">https://github.com/tatooinoyo/BadgeManager/releases</string>
+    <string name="current_version">Current: V%1$s</string>
+    <string name="latest_version">"Latest: "</string>
+    <string name="click_to_download">Click the icon above to go to the download page</string>
+    <string name="check_update">Check for Updates</string>
+    <string name="confirm">Confirm</string>
 </resources>
