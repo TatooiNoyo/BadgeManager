@@ -104,6 +104,7 @@
     <string name="preset_badge_artbook_sky_memories">光遇设定集</string>
     <string name="preset_badge_keychain_fox_plushie">狐狸毛绒钥匙扣</string>
     <string name="preset_badge_keychain_moomin_doll">姆明玩偶钥匙扣</string>
+    <string name="preset_badge_keychain_angry_crab">生气螃蟹钥匙扣</string>
     <string name="preset_badge_umbrella_light_seeker">追光者雨伞</string>
     <string name="preset_badge_lantern">灯笼徽章</string>
     <string name="preset_badge_blue_anniversary">三周年小蓝</string>
@@ -132,11 +133,12 @@
     <string name="preset_badge_forgotten_ark">遗忘方舟</string>
     <string name="preset_badge_calla_lily">马蹄莲</string>
     <string name="preset_badge_manatee_plush">海牛毛绒玩具</string>
-    
+
     <!-- 预设徽章备注 -->
     <string name="preset_badge_cd_15s">15s CD</string>
     <string name="preset_badge_cd_3min_dur_3min">3min CD, 3min Dur</string>
     <string name="preset_badge_cd_15min_dur_20min">15min CD, 20min Dur</string>
+    <string name="preset_badge_cd_15min_dur_15min">15min CD, 15min Dur</string>
     <string name="preset_badge_cd_15min_dur_10min">15min CD, 10min Dur</string>
     <string name="preset_badge_cd_10min_dur_30min">10min CD, 30min Dur</string>
     <string name="preset_badge_cd_20min_dur_15min">20min CD, 15min Dur</string>

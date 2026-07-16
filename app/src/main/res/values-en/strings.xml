@@ -104,6 +104,7 @@
     <string name="preset_badge_artbook_sky_memories">Artbook: Sky Memories</string>
     <string name="preset_badge_keychain_fox_plushie">Keychain: Fox Plushie</string>
     <string name="preset_badge_keychain_moomin_doll">Keychain: Moomin Doll</string>
+    <string name="preset_badge_keychain_angry_crab">Keychain: Angry Crab</string>
     <string name="preset_badge_umbrella_light_seeker">Umbrella: Light Seeker</string>
     <string name="preset_badge_lantern">Lantern Badge</string>
     <string name="preset_badge_blue_anniversary">Blue (3rd Anniversary)</string>
@@ -132,11 +133,12 @@
     <string name="preset_badge_forgotten_ark">Forgotten Ark</string>
     <string name="preset_badge_calla_lily">Calla Lily</string>
     <string name="preset_badge_manatee_plush">Manatee Plush</string>
-    
+
     <!-- Preset Badges Remarks -->
     <string name="preset_badge_cd_15s">15s CD</string>
     <string name="preset_badge_cd_3min_dur_3min">3min CD, 3min Dur</string>
     <string name="preset_badge_cd_15min_dur_20min">15min CD, 20min Dur</string>
+    <string name="preset_badge_cd_15min_dur_15min">15min CD, 15min Dur</string>
     <string name="preset_badge_cd_15min_dur_10min">15min CD, 10min Dur</string>
     <string name="preset_badge_cd_10min_dur_30min">10min CD, 30min Dur</string>
     <string name="preset_badge_cd_20min_dur_15min">20min CD, 15min Dur</string>

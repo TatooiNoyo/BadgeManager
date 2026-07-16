@@ -43,6 +43,7 @@ object PresetBadges {
         "SKY-PN-ST-POR-FA" to TitleAndRemark(R.string.preset_badge_forgotten_ark, R.string.preset_badge_cd_30min),
         "SKY-PN-ST-SUM-PPB" to TitleAndRemark(R.string.preset_badge_calla_lily, R.string.preset_badge_cd_15s),
         "SKY-PL-ST-CRE-MNT" to TitleAndRemark(R.string.preset_badge_manatee_plush, R.string.preset_badge_cd_15s),
+        "SKY-KC-ST-CB-AC" to TitleAndRemark(R.string.preset_badge_keychain_angry_crab, R.string.preset_badge_cd_15min_dur_15min),
     )
 
     fun getTitle(context: Context, key: String): String {
