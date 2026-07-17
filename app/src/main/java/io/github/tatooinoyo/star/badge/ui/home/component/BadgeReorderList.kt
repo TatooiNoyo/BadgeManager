@@ -2,6 +2,9 @@ package io.github.tatooinoyo.star.badge.ui.home.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,11 +15,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -28,24 +33,37 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color.Companion.Green
 import androidx.compose.ui.graphics.Color.Companion.White
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import io.github.tatooinoyo.star.badge.data.Badge
-import org.burnoutcrew.reorderable.ReorderableItem
-import org.burnoutcrew.reorderable.detectReorder
-import org.burnoutcrew.reorderable.rememberReorderableLazyListState
-import org.burnoutcrew.reorderable.reorderable
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 private const val FUNCTION_AREA_SCROLL_THRESHOLD = 80f
 
@@ -56,7 +74,7 @@ fun BadgeTagList(tags: List<String>) {
         FlowRow(
             modifier = Modifier.padding(start = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp) // 紧凑排列
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             tags.forEach { tag ->
                 Surface(
@@ -67,14 +85,13 @@ fun BadgeTagList(tags: List<String>) {
                     Text(
                         text = tag,
                         style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp) // 极窄内边距
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
                     )
                 }
             }
         }
     }
 }
-
 
 @Composable
 fun BadgeReorderList(
@@ -89,11 +106,26 @@ fun BadgeReorderList(
 ) {
     val isExpandedState = rememberUpdatedState(isFunctionAreaExpanded)
     val onSetExpandedState = rememberUpdatedState(onSetFunctionAreaExpanded)
+    val reorderState = rememberMultiTouchReorderState(listState, onMove, onSaveOrder)
+    val isDraggingState = rememberUpdatedState(reorderState.isDragging)
+
+    // 拖拽中从列表暂隐被拖项，下方自动补位；落点下标相对此展示列表
+    val displayBadges = remember(badges, reorderState.draggingKey, reorderState.isDragging) {
+        val key = reorderState.draggingKey
+        if (reorderState.isDragging && key != null) {
+            badges.filter { it.id != key }
+        } else {
+            badges
+        }
+    }
+    reorderState.itemCount = displayBadges.size
+
+    val density = LocalDensity.current
+    val indicatorHalfHeightPx = with(density) { 1.5.dp.toPx() }
 
     val nestedScrollConnection = remember(listState) {
         var collapseDrag = 0f
         var expandDrag = 0f
-        // 本次手势已触发折叠/展开后，剩余滑动继续消费，等松手后再允许翻列表
         var lockListUntilGestureEnd = false
 
         fun resetGestureTracking() {
@@ -104,14 +136,12 @@ fun BadgeReorderList(
 
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                if (source != NestedScrollSource.Drag) {
+                if (isDraggingState.value || source != NestedScrollSource.Drag) {
                     return Offset.Zero
                 }
-                // 本手势已用于切换功能区：继续吃掉滚动，不带动列表
                 if (lockListUntilGestureEnd) {
                     return if (available.y != 0f) Offset(0f, available.y) else Offset.Zero
                 }
-                // 功能区展开时，上滑只用于折叠
                 if (isExpandedState.value && available.y < 0f) {
                     collapseDrag += -available.y
                     if (collapseDrag >= FUNCTION_AREA_SCROLL_THRESHOLD) {
@@ -130,7 +160,7 @@ fun BadgeReorderList(
                 available: Offset,
                 source: NestedScrollSource
             ): Offset {
-                if (source != NestedScrollSource.Drag) {
+                if (isDraggingState.value || source != NestedScrollSource.Drag) {
                     return Offset.Zero
                 }
                 if (lockListUntilGestureEnd) {
@@ -138,7 +168,6 @@ fun BadgeReorderList(
                 }
                 val atTop = listState.firstVisibleItemIndex == 0 &&
                     listState.firstVisibleItemScrollOffset == 0
-                // 到顶且功能区收起时，下拉只用于展开
                 if (atTop && !isExpandedState.value && available.y > 0f) {
                     expandDrag += available.y
                     if (expandDrag >= FUNCTION_AREA_SCROLL_THRESHOLD) {
@@ -159,80 +188,268 @@ fun BadgeReorderList(
         }
     }
 
-    val reorderableState = rememberReorderableLazyListState(
-        onMove = { from, to -> onMove(from.index, to.index) },
-        onDragEnd = { _, _ -> onSaveOrder() },
-        listState = listState
-    )
-
-    LazyColumn(
-        state = reorderableState.listState,
+    Box(
         modifier = modifier
             .fillMaxSize()
-            .nestedScroll(nestedScrollConnection)
-            .reorderable(reorderableState)
-            .padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(vertical = 8.dp)
-    ) {
-        items(badges, { it.id }) { badge ->
-            ReorderableItem(reorderableState, key = badge.id) { isDragging ->
-                val elevation = if (isDragging) 8.dp else 2.dp
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp)
-                        .clickable { onItemClick(badge) },
-                    elevation = CardDefaults.cardElevation(defaultElevation = elevation)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = badge.title,
-                                    style = MaterialTheme.typography.titleMedium,
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Box(
-                                    modifier = Modifier
-                                        .padding(4.dp)
-                                        .background(
-                                            MaterialTheme.colorScheme.primary,
-                                            RoundedCornerShape(4.dp)
-                                        ),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Text(
-                                        badge.channel.getLabel(LocalContext.current),
-                                        modifier = Modifier.padding(4.dp),
-                                        color = White,
-                                        style = MaterialTheme.typography.labelSmall,
-                                    )
+            .pointerInput(listState, reorderState) {
+                coroutineScope {
+                    val scrollChannel = Channel<Float>(Channel.CONFLATED)
+                    launch {
+                        for (dy in scrollChannel) {
+                            listState.scrollBy(-dy)
+                            reorderState.onListScrolled()
+                        }
+                    }
+                    try {
+                        awaitPointerEventScope {
+                            while (true) {
+                                val event = awaitPointerEvent(PointerEventPass.Initial)
+                                if (!reorderState.isDragging) continue
+
+                                val dragPointerId = reorderState.dragPointerId
+                                var dragEnded = false
+
+                                event.changes.forEach { change ->
+                                    if (change.id == dragPointerId) {
+                                        reorderState.updateDragFingerY(change.position.y)
+                                        if (!change.pressed) {
+                                            dragEnded = true
+                                        }
+                                    } else if (change.pressed) {
+                                        val dy = change.positionChange().y
+                                        if (dy != 0f) {
+                                            scrollChannel.trySend(dy)
+                                        }
+                                        change.consume()
+                                    }
                                 }
-                                BadgeTagList(tags = badge.tags)
-                            }
-                            if (badge.remark.isNotEmpty()) {
-                                Text(
-                                    text = badge.remark,
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            } else {
-                                Text(text = " ", style = MaterialTheme.typography.bodyMedium)
+
+                                if (dragEnded) {
+                                    reorderState.onDragEnd()
+                                }
                             }
                         }
-                        Icon(
-                            imageVector = Icons.Default.Menu,
-                            contentDescription = "Drag to reorder",
-                            modifier = Modifier.detectReorder(reorderableState)
-                        )
+                    } finally {
+                        scrollChannel.close()
                     }
                 }
             }
+    ) {
+        LazyColumn(
+            state = listState,
+            userScrollEnabled = !reorderState.isDragging,
+            modifier = Modifier
+                .fillMaxSize()
+                .onGloballyPositioned { reorderState.listCoordinates = it }
+                .nestedScroll(nestedScrollConnection)
+                .padding(horizontal = 16.dp),
+            contentPadding = PaddingValues(vertical = 8.dp)
+        ) {
+            itemsIndexed(displayBadges, key = { _, badge -> badge.id }) { _, badge ->
+                BadgeListCard(
+                    badge = badge,
+                    elevated = false,
+                    onClick = { onItemClick(badge) },
+                    clickEnabled = !reorderState.isDragging,
+                    dragHandle = {
+                        val fullIndex = badges.indexOfFirst { it.id == badge.id }
+                        DragHandle(
+                            badge = badge,
+                            index = fullIndex,
+                            reorderState = reorderState,
+                        )
+                    },
+                )
+            }
+        }
+
+        // 落点横杆（高于悬浮层，避免被挡住）
+        if (reorderState.isDragging &&
+            reorderState.dropInsertBeforeIndex >= 0 &&
+            reorderState.dropInsertBeforeIndex != reorderState.draggingIndex
+        ) {
+            Box(
+                modifier = Modifier
+                    .zIndex(25f)
+                    .padding(horizontal = 16.dp)
+                    .offset {
+                        IntOffset(
+                            x = 0,
+                            y = (reorderState.dropIndicatorY - indicatorHalfHeightPx).roundToInt()
+                        )
+                    }
+                    .fillMaxWidth()
+                    .height(3.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.primary,
+                        shape = RoundedCornerShape(2.dp)
+                    )
+            )
+        }
+
+        // 悬浮被拖项：略缩小，减少遮挡横杆
+        val draggingBadge = reorderState.draggingBadge
+        if (reorderState.isDragging && draggingBadge != null) {
+            val floatScale = 0.88f
+            val halfH = reorderState.draggingItemHeight * floatScale / 2f
+            Box(
+                modifier = Modifier
+                    .zIndex(20f)
+                    .padding(horizontal = 24.dp)
+                    .offset {
+                        IntOffset(
+                            x = 0,
+                            y = (reorderState.dragFingerY - halfH).roundToInt()
+                        )
+                    }
+                    .fillMaxWidth()
+                    .graphicsLayer {
+                        scaleX = floatScale
+                        scaleY = floatScale
+                        alpha = 0.92f
+                    }
+            ) {
+                BadgeListCard(
+                    badge = draggingBadge,
+                    elevated = true,
+                    onClick = {},
+                    clickEnabled = false,
+                    dragHandle = {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = null,
+                        )
+                    },
+                )
+            }
         }
     }
+}
+
+@Composable
+private fun BadgeListCard(
+    badge: Badge,
+    elevated: Boolean,
+    onClick: () -> Unit,
+    clickEnabled: Boolean,
+    dragHandle: @Composable () -> Unit,
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .clickable(enabled = clickEnabled, onClick = onClick),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (elevated) 8.dp else 2.dp
+        ),
+        colors = if (elevated) {
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        } else {
+            CardDefaults.cardColors()
+        },
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = badge.title,
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .padding(4.dp)
+                            .background(
+                                MaterialTheme.colorScheme.primary,
+                                RoundedCornerShape(4.dp)
+                            ),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            badge.channel.getLabel(LocalContext.current),
+                            modifier = Modifier.padding(4.dp),
+                            color = White,
+                            style = MaterialTheme.typography.labelSmall,
+                        )
+                    }
+                    BadgeTagList(tags = badge.tags)
+                }
+                if (badge.remark.isNotEmpty()) {
+                    Text(
+                        text = badge.remark,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                } else {
+                    Text(text = " ", style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+            dragHandle()
+        }
+    }
+}
+
+@Composable
+private fun DragHandle(
+    badge: Badge,
+    index: Int,
+    reorderState: MultiTouchReorderState,
+) {
+    var handleCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
+    val density = LocalDensity.current
+
+    Icon(
+        imageVector = Icons.Default.Menu,
+        contentDescription = "Drag to reorder",
+        modifier = Modifier
+            .onGloballyPositioned { handleCoordinates = it }
+            .pointerInput(badge.id) {
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    val coords = handleCoordinates
+                    val listCoords = reorderState.listCoordinates
+                    if (index < 0 ||
+                        coords == null ||
+                        listCoords == null ||
+                        !coords.isAttached ||
+                        !listCoords.isAttached
+                    ) {
+                        return@awaitEachGesture
+                    }
+
+                    val startFingerY = listCoords.localPositionOf(coords, down.position).y
+                    val itemHeight = reorderState.itemHeightForKey(badge.id)
+                        ?: with(density) { 72.dp.toPx() }
+                    down.consume()
+                    reorderState.onDragStart(
+                        badge = badge,
+                        index = index,
+                        fingerY = startFingerY,
+                        pointerId = down.id,
+                        itemHeight = itemHeight,
+                    )
+
+                    try {
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            val dragChange = event.changes.find { it.id == down.id } ?: continue
+                            if (!dragChange.pressed) {
+                                reorderState.onDragEnd()
+                                break
+                            }
+                            dragChange.consume()
+                        }
+                    } catch (e: CancellationException) {
+                        throw e
+                    }
+                }
+            }
+    )
 }

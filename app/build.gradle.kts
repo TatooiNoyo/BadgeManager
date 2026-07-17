@@ -95,7 +95,6 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.bouncycastle.bcprov)
-    implementation(libs.reorderable)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.coil.compose)
     implementation("io.coil-kt:coil-svg:2.5.0")

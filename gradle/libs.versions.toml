@@ -12,7 +12,6 @@ activityCompose = "1.8.0"
 composeBom = "2024.09.00"
 ksp = "2.0.21-1.0.27"
 bouncycastle = "1.78"
-reorderable = "0.9.6"
 roomVersion = "2.6.1"
 navigation = "2.8.5"
 coil = "2.5.0"
@@ -39,7 +38,6 @@ androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-man
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 bouncycastle-bcprov = { group = "org.bouncycastle", name = "bcprov-jdk18on", version.ref = "bouncycastle" }
-reorderable = { module = "org.burnoutcrew.composereorderable:reorderable", version.ref = "reorderable" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
 
