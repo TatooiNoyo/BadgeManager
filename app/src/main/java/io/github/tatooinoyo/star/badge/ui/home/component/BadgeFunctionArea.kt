@@ -13,10 +13,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Handshake
 import androidx.compose.material.icons.filled.Info
@@ -34,9 +37,9 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,6 +51,7 @@ import io.github.tatooinoyo.star.badge.R
 import io.github.tatooinoyo.star.badge.data.BadgeChannel
 import io.github.tatooinoyo.star.badge.ui.home.BadgeUiState
 import io.github.tatooinoyo.star.badge.ui.state.SyncState
+import kotlinx.coroutines.launch
 
 @Composable
 fun BadgeFunctionArea(
@@ -72,13 +76,14 @@ fun BadgeFunctionArea(
     onAboutClick: () -> Unit, // 点击帮助菜单项
     onUnrecordedBadgesClick: () -> Unit // 点击"未录入徽章"菜单项
 ) {
-    var selectedTabIndex by remember { mutableIntStateOf(0) }
-
     val tabs = listOf(
         stringResource(R.string.tab_input),
         stringResource(R.string.tab_backup),
         stringResource(R.string.tab_syncdata)
     )
+    val pagerState = rememberPagerState(pageCount = { tabs.size })
+    val scope = rememberCoroutineScope()
+
     // 可折叠的功能面板区域
     AnimatedVisibility(
         visible = uiState.isFunctionAreaExpanded,
@@ -95,7 +100,7 @@ fun BadgeFunctionArea(
             ) {
                 Box(modifier = Modifier.weight(1f)) {
                     ScrollableTabRow(
-                        selectedTabIndex = selectedTabIndex,
+                        selectedTabIndex = pagerState.currentPage,
                         containerColor = Color.Transparent,
                         contentColor = MaterialTheme.colorScheme.onSurface,
                         edgePadding = 0.dp, // 这里的 padding 设为 0 保持左对齐
@@ -103,8 +108,10 @@ fun BadgeFunctionArea(
                     ) {
                         tabs.forEachIndexed { index, title ->
                             Tab(
-                                selected = selectedTabIndex == index,
-                                onClick = { selectedTabIndex = index },
+                                selected = pagerState.currentPage == index,
+                                onClick = {
+                                    scope.launch { pagerState.animateScrollToPage(index) }
+                                },
                                 text = {
                                     Text(
                                         text = title,
@@ -129,28 +136,35 @@ fun BadgeFunctionArea(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Box(modifier = Modifier.height(350.dp)) {
-                when (selectedTabIndex) {
-                    0 -> BadgeInputPanel(
-                        uiState = uiState,
-                        onInputTitleChange = onInputTitleChange,
-                        onInputRemarkChange = onInputRemarkChange,
-                        onInputLinkChange = onInputLinkChange,
-                        onInputChannelChange = onInputChannelChange,
-                        onFastModeChange = onFastModeChange,
-                        onAddClick = onAddClick,
-                        onExtractSkClick = onExtractSkClick,
-                        onTagsChange = onTagsChange,
-                    )
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(350.dp)
+            ) { page ->
+                Box(modifier = Modifier.fillMaxSize()) {
+                    when (page) {
+                        0 -> BadgeInputPanel(
+                            uiState = uiState,
+                            onInputTitleChange = onInputTitleChange,
+                            onInputRemarkChange = onInputRemarkChange,
+                            onInputLinkChange = onInputLinkChange,
+                            onInputChannelChange = onInputChannelChange,
+                            onFastModeChange = onFastModeChange,
+                            onAddClick = onAddClick,
+                            onExtractSkClick = onExtractSkClick,
+                            onTagsChange = onTagsChange,
+                        )
 
-                    1 -> BackupRestorePanel(onImport = onImport, onExport = onExport)
-                    2 -> SyncDataPanel(
-                        syncState = syncState,
-                        onStartSender = onStartSender,
-                        onStopSender = onStopSender,
-                        onStartReceiver = onStartReceiver,
-                        onStopReceiver = onStopReceiver
-                    )
+                        1 -> BackupRestorePanel(onImport = onImport, onExport = onExport)
+                        2 -> SyncDataPanel(
+                            syncState = syncState,
+                            onStartSender = onStartSender,
+                            onStopSender = onStopSender,
+                            onStartReceiver = onStartReceiver,
+                            onStopReceiver = onStopReceiver
+                        )
+                    }
                 }
             }
         }
@@ -178,7 +192,7 @@ fun BadgeFunctionArea(
 fun MenuButton(
     onSettingsClick: () -> Unit,
     onAboutClick: () -> Unit,
-    onUnrecordedBadgesClick: () -> Unit  // 添加这一行
+    onUnrecordedBadgesClick: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -213,7 +227,7 @@ fun MenuButton(
                 text = { Text(stringResource(R.string.help_us)) },
                 onClick = {
                     expanded = false
-                    onUnrecordedBadgesClick()  // 添加这一行
+                    onUnrecordedBadgesClick()
                 },
                 leadingIcon = {
                     Icon(
