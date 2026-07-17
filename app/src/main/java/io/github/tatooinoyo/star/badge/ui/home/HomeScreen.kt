@@ -121,6 +121,7 @@ fun HomeScreen(
             onAddClick = { viewModelInstance.addBadge() },
             onItemClick = { badge -> viewModelInstance.selectBadge(badge) },
             onToggleFunctionArea = { viewModelInstance.toggleFunctionArea() },
+            onSetFunctionAreaExpanded = { viewModelInstance.setFunctionAreaExpanded(it) },
             onExtractSkClick = { link -> viewModelInstance.extractSkFromLink(link) },
             onTagsChange = { viewModelInstance.updateAddInput(tags = it) },
             onTagSelected = { tag -> viewModelInstance.selectTag(tag) },
@@ -211,6 +212,7 @@ fun BadgeListContent(
     onAddClick: () -> Unit,
     onItemClick: (Badge) -> Unit,
     onToggleFunctionArea: () -> Unit,
+    onSetFunctionAreaExpanded: (Boolean) -> Unit,
     onExtractSkClick: (String) -> Unit,
     onTagsChange: (List<String>) -> Unit,
     onTagSelected: (String?) -> Unit = {},
@@ -276,7 +278,9 @@ fun BadgeListContent(
             onMove = onMove,
             onSaveOrder = onSaveOrder,
             listState = listState,
-//            modifier = Modifier.weight(1f) // 占据剩余空间
+            isFunctionAreaExpanded = uiState.isFunctionAreaExpanded,
+            onSetFunctionAreaExpanded = onSetFunctionAreaExpanded,
+            modifier = Modifier.weight(1f)
         )
 
 

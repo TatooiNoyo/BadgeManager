@@ -103,6 +103,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.update { it.copy(isFunctionAreaExpanded = !it.isFunctionAreaExpanded) }
     }
 
+    fun setFunctionAreaExpanded(expanded: Boolean) {
+        if (_uiState.value.isFunctionAreaExpanded == expanded) return
+        _uiState.update { it.copy(isFunctionAreaExpanded = expanded) }
+    }
+
     // === 列表/添加页面的操作 ===
 
     fun selectTag(tag: String?) {

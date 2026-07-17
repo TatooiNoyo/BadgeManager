@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -27,17 +28,26 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color.Companion.Green
 import androidx.compose.ui.graphics.Color.Companion.White
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import io.github.tatooinoyo.star.badge.data.Badge
 import org.burnoutcrew.reorderable.ReorderableItem
 import org.burnoutcrew.reorderable.detectReorder
 import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 import org.burnoutcrew.reorderable.reorderable
+
+private const val FUNCTION_AREA_SCROLL_THRESHOLD = 80f
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -73,7 +83,81 @@ fun BadgeReorderList(
     onMove: (Int, Int) -> Unit,
     onSaveOrder: () -> Unit,
     listState: LazyListState = rememberLazyListState(),
+    isFunctionAreaExpanded: Boolean = true,
+    onSetFunctionAreaExpanded: (Boolean) -> Unit = {},
+    modifier: Modifier = Modifier,
 ) {
+    val isExpandedState = rememberUpdatedState(isFunctionAreaExpanded)
+    val onSetExpandedState = rememberUpdatedState(onSetFunctionAreaExpanded)
+
+    val nestedScrollConnection = remember(listState) {
+        var collapseDrag = 0f
+        var expandDrag = 0f
+        // 本次手势已触发折叠/展开后，剩余滑动继续消费，等松手后再允许翻列表
+        var lockListUntilGestureEnd = false
+
+        fun resetGestureTracking() {
+            collapseDrag = 0f
+            expandDrag = 0f
+            lockListUntilGestureEnd = false
+        }
+
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                if (source != NestedScrollSource.Drag) {
+                    return Offset.Zero
+                }
+                // 本手势已用于切换功能区：继续吃掉滚动，不带动列表
+                if (lockListUntilGestureEnd) {
+                    return if (available.y != 0f) Offset(0f, available.y) else Offset.Zero
+                }
+                // 功能区展开时，上滑只用于折叠
+                if (isExpandedState.value && available.y < 0f) {
+                    collapseDrag += -available.y
+                    if (collapseDrag >= FUNCTION_AREA_SCROLL_THRESHOLD) {
+                        onSetExpandedState.value(false)
+                        lockListUntilGestureEnd = true
+                        collapseDrag = 0f
+                    }
+                    return Offset(0f, available.y)
+                }
+                collapseDrag = 0f
+                return Offset.Zero
+            }
+
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource
+            ): Offset {
+                if (source != NestedScrollSource.Drag) {
+                    return Offset.Zero
+                }
+                if (lockListUntilGestureEnd) {
+                    return if (available.y != 0f) Offset(0f, available.y) else Offset.Zero
+                }
+                val atTop = listState.firstVisibleItemIndex == 0 &&
+                    listState.firstVisibleItemScrollOffset == 0
+                // 到顶且功能区收起时，下拉只用于展开
+                if (atTop && !isExpandedState.value && available.y > 0f) {
+                    expandDrag += available.y
+                    if (expandDrag >= FUNCTION_AREA_SCROLL_THRESHOLD) {
+                        onSetExpandedState.value(true)
+                        lockListUntilGestureEnd = true
+                        expandDrag = 0f
+                    }
+                    return Offset(0f, available.y)
+                }
+                expandDrag = 0f
+                return Offset.Zero
+            }
+
+            override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
+                resetGestureTracking()
+                return Velocity.Zero
+            }
+        }
+    }
 
     val reorderableState = rememberReorderableLazyListState(
         onMove = { from, to -> onMove(from.index, to.index) },
@@ -83,7 +167,9 @@ fun BadgeReorderList(
 
     LazyColumn(
         state = reorderableState.listState,
-        modifier = Modifier
+        modifier = modifier
+            .fillMaxSize()
+            .nestedScroll(nestedScrollConnection)
             .reorderable(reorderableState)
             .padding(horizontal = 16.dp),
         contentPadding = PaddingValues(vertical = 8.dp)
@@ -142,7 +228,7 @@ fun BadgeReorderList(
                         Icon(
                             imageVector = Icons.Default.Menu,
                             contentDescription = "Drag to reorder",
-                            modifier = Modifier.detectReorder(reorderableState) // 修正了这里
+                            modifier = Modifier.detectReorder(reorderableState)
                         )
                     }
                 }
