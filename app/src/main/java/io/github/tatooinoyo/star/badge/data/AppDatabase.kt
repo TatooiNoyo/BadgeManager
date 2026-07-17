@@ -7,10 +7,11 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.google.gson.Gson
 
 @Database(
     entities = [Badge::class],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(Converters::class) // 注册转换器
@@ -29,6 +30,31 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** 将逗号分隔的 tags 转为 JSON 数组，避免标签名含逗号时损坏。 */
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                val gson = Gson()
+                database.query("SELECT id, tags FROM badges").use { cursor ->
+                    val idIndex = cursor.getColumnIndexOrThrow("id")
+                    val tagsIndex = cursor.getColumnIndexOrThrow("tags")
+                    while (cursor.moveToNext()) {
+                        val id = cursor.getString(idIndex)
+                        val raw = cursor.getString(tagsIndex).orEmpty().trim()
+                        if (raw.isEmpty() || raw.startsWith("[")) continue
+
+                        val tags = raw.split(",")
+                            .map { it.trim() }
+                            .filter { it.isNotEmpty() }
+                        val json = gson.toJson(tags)
+                        database.execSQL(
+                            "UPDATE badges SET tags = ? WHERE id = ?",
+                            arrayOf(json, id)
+                        )
+                    }
+                }
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -36,7 +62,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "badge_database"
                 )
-                    .addMigrations(MIGRATION_1_2) // 3. 应用迁移
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .build()
                 INSTANCE = instance
                 instance

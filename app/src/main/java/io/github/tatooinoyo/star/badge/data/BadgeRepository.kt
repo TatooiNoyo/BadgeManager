@@ -16,6 +16,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.util.UUID
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 
 
 // 定义预设的渠道
@@ -162,6 +164,9 @@ object BadgeRepository {
 }
 
 class Converters {
+    private val gson = Gson()
+    private val tagsListType = object : TypeToken<List<String>>() {}.type
+
     @TypeConverter
     fun fromChannel(channel: BadgeChannel): String {
         return channel.name // 存枚举的名字，如 "HUAWEI"
@@ -178,12 +183,27 @@ class Converters {
 
     @TypeConverter
     fun fromTagsList(tags: List<String>): String {
-        return tags.joinToString(",")
+        val cleaned = tags.map { it.trim() }.filter { it.isNotEmpty() }
+        return gson.toJson(cleaned)
     }
 
     @TypeConverter
     fun toTagsList(data: String): List<String> {
         if (data.isBlank()) return emptyList()
-        return data.split(",").map { it.trim() }
+        val trimmed = data.trim()
+        // 新格式：JSON 数组；旧格式：逗号分隔（兼容已有数据）
+        if (trimmed.startsWith("[")) {
+            return try {
+                val list: List<String>? = gson.fromJson(trimmed, tagsListType)
+                list?.map { it.trim() }?.filter { it.isNotEmpty() } ?: emptyList()
+            } catch (_: Exception) {
+                legacySplitTags(trimmed)
+            }
+        }
+        return legacySplitTags(trimmed)
+    }
+
+    private fun legacySplitTags(data: String): List<String> {
+        return data.split(",").map { it.trim() }.filter { it.isNotEmpty() }
     }
 }
