@@ -162,21 +162,21 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         if (state.addTitle.isNotBlank()) {
             // 兼容没有协议的链接
             val finalLink = normalizeLink(state.addLink)
+            val title = state.addTitle
+            val remark = state.addRemark
+            val channel = state.addChannel
+            val tags = state.addTags
 
-            BadgeRepository.addBadge(
-                state.addTitle,
-                state.addRemark,
-                finalLink,
-                state.addChannel,
-                state.addTags
-            )
-            // 重置输入
+            // 乐观重置输入，写库由 viewModelScope 驱动
             _uiState.value = state.copy(
                 addTitle = "",
                 addRemark = "",
                 addLink = "",
                 addTags = emptyList()
             )
+            viewModelScope.launch {
+                BadgeRepository.addBadge(title, remark, finalLink, channel, tags)
+            }
         }
     }
 
@@ -226,24 +226,35 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         val state = _uiState.value
         state.editingBadge?.let { originalBadge ->
             val finalLink = normalizeLink(state.detailLink)
-            BadgeRepository.updateBadge(
-                originalBadge.id,
-                state.detailTitle,
-                state.detailRemark,
-                finalLink,
-                state.detailChannel,
-                originalBadge.orderIndex,
-                state.detailTags
-            )
+            val title = state.detailTitle
+            val remark = state.detailRemark
+            val channel = state.detailChannel
+            val tags = state.detailTags
+            val orderIndex = originalBadge.orderIndex
+            val id = originalBadge.id
             exitEditMode()
+            viewModelScope.launch {
+                BadgeRepository.updateBadge(
+                    id,
+                    title,
+                    remark,
+                    finalLink,
+                    channel,
+                    orderIndex,
+                    tags
+                )
+            }
         }
     }
 
     fun deleteBadge() {
         val state = _uiState.value
         state.editingBadge?.let {
-            BadgeRepository.removeBadge(it.id)
+            val id = it.id
             exitEditMode()
+            viewModelScope.launch {
+                BadgeRepository.removeBadge(id)
+            }
         }
     }
 
@@ -267,7 +278,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         val updatedList = _uiState.value.badges.mapIndexed { index, badge ->
             badge.copy(orderIndex = index)
         }
-        BadgeRepository.updateBadgeOrder(updatedList)
+        viewModelScope.launch {
+            BadgeRepository.updateBadgeOrder(updatedList)
+        }
     }
 
     // === NFC 处理逻辑 ===

@@ -9,6 +9,7 @@ import androidx.room.TypeConverter
 import io.github.tatooinoyo.star.badge.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -83,6 +84,9 @@ object BadgeRepository {
     private var database: AppDatabase? = null
     private var badgeDao: BadgeDao? = null
 
+    // 仅用于监听 DB → StateFlow；写操作由调用方 viewModelScope 驱动
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     // 内存缓存流，UI 监听这个
     private val _badges = MutableStateFlow<List<Badge>>(emptyList())
     val badges: StateFlow<List<Badge>> = _badges.asStateFlow()
@@ -93,8 +97,7 @@ object BadgeRepository {
             database = AppDatabase.getDatabase(context)
             badgeDao = database?.badgeDao()
 
-            // 启动协程监听数据库变化，并更新到 StateFlow
-            CoroutineScope(Dispatchers.IO).launch {
+            scope.launch {
                 badgeDao?.getAllBadges()?.collectLatest { dbList ->
                     _badges.value = dbList
                 }
@@ -102,9 +105,17 @@ object BadgeRepository {
         }
     }
 
-    // 添加徽章
-    // 修改方法签名，增加 link 和 channel
-    fun addBadge(title: String, remark: String, link: String, channel: BadgeChannel, tags: List<String> = emptyList()) {
+    private fun requireDao(): BadgeDao {
+        return badgeDao ?: error("BadgeRepository is not initialized")
+    }
+
+    suspend fun addBadge(
+        title: String,
+        remark: String,
+        link: String,
+        channel: BadgeChannel,
+        tags: List<String> = emptyList()
+    ) {
         val currentMaxOrder = _badges.value.maxOfOrNull { it.orderIndex } ?: 0
         val newBadge = Badge(
             title = title,
@@ -114,52 +125,39 @@ object BadgeRepository {
             tags = tags,
             orderIndex = currentMaxOrder + 1
         )
-        CoroutineScope(Dispatchers.IO).launch {
-            badgeDao?.insertBadge(newBadge)
-        }
+        requireDao().insertBadge(newBadge)
     }
 
-    // 在 BadgeRepository.kt 中添加
-    fun updateBadge(
+    suspend fun updateBadge(
         id: String,
         title: String,
         remark: String,
         link: String,
         channel: BadgeChannel,
-        orderIndex: Int, // 保持 orderIndex 不变
+        orderIndex: Int,
         tags: List<String>
     ) {
-        CoroutineScope(Dispatchers.IO).launch {
-            // 这里应该调用 updateBadgeContent，但它没有 orderIndex，所以我们直接更新整个对象
-            val badge = Badge(id, title, remark, link, channel, orderIndex, tags)
-            badgeDao?.updateBadge(badge)
-        }
+        val badge = Badge(id, title, remark, link, channel, orderIndex, tags)
+        requireDao().updateBadge(badge)
     }
 
-    fun updateBadgeOrder(badges: List<Badge>) {
-        CoroutineScope(Dispatchers.IO).launch {
-            badgeDao?.updateBadges(badges)
-        }
+    suspend fun updateBadgeOrder(badges: List<Badge>) {
+        requireDao().updateBadges(badges)
     }
 
-    // 删除徽章
-    fun removeBadge(id: String) {
-        CoroutineScope(Dispatchers.IO).launch {
-            badgeDao?.deleteBadgeById(id)
-        }
+    suspend fun removeBadge(id: String) {
+        requireDao().deleteBadgeById(id)
     }
 
-    // 获取当前所有徽章的一次性快照（非 Flow），用于导出
-    fun getAllBadgesSnapshot(): List<Badge> {
-        return badgeDao?.getAllBadges4export() ?: emptyList()
+    suspend fun getAllBadgesSnapshot(): List<Badge> {
+        return requireDao().getAllBadges4export()
     }
 
-    // 还原数据：清空旧数据并插入新数据
+    // 还原数据：清空旧数据并插入新数据（覆盖策略）
     suspend fun restoreBadges(badges: List<Badge>) {
-        // 这一步取决于你的策略：是“覆盖”还是“追加”？
-        // 策略 A: 覆盖 (先清空再插入) - 推荐用于完整备份还原
-        badgeDao?.deleteAll()
-        badgeDao?.insertAll(badges)
+        val dao = requireDao()
+        dao.deleteAll()
+        dao.insertAll(badges)
     }
 }
 

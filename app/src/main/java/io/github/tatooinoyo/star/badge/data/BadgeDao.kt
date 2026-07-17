@@ -14,7 +14,7 @@ interface BadgeDao {
     fun getAllBadges(): Flow<List<Badge>>
 
     @Query("SELECT * FROM badges")
-    fun getAllBadges4export(): List<Badge>
+    suspend fun getAllBadges4export(): List<Badge>
 
     // 插入或替换
     @Insert(onConflict = OnConflictStrategy.REPLACE)
