@@ -274,9 +274,20 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.value = _uiState.value.copy(badges = list)
     }
 
+    /**
+     * 保存排序：只重分配当前列表中徽章已有的 orderIndex，
+     * 避免标签过滤下把子集重编号成 0..n-1 从而与未显示项冲突。
+     *
+     * 例：全局 A=0,B=1,C=2,D=3,E=4，过滤得 A,C,E；拖成 E,A,C
+     * → 将原序号池 [0,2,4] 按新顺序赋给 E,A,C，得到 E=0,A=2,C=4（B/D 不变）。
+     */
     fun saveOrder() {
-        val updatedList = _uiState.value.badges.mapIndexed { index, badge ->
-            badge.copy(orderIndex = index)
+        val reordered = _uiState.value.badges
+        if (reordered.isEmpty()) return
+
+        val orderIndices = reordered.map { it.orderIndex }.sorted()
+        val updatedList = reordered.mapIndexed { index, badge ->
+            badge.copy(orderIndex = orderIndices[index])
         }
         viewModelScope.launch {
             BadgeRepository.updateBadgeOrder(updatedList)
