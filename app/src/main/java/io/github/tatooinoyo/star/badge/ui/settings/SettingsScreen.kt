@@ -126,7 +126,7 @@ fun SettingsScreen(
                     )
 
                     LanguageOption(
-                        text = "简体中文",
+                        text = stringResource(R.string.chinese_simplified),
                         isSelected = selectedLanguage == LanguageUtils.LANGUAGE_CHINESE,
                         onClick = {
                             selectedLanguage = LanguageUtils.LANGUAGE_CHINESE
@@ -136,7 +136,7 @@ fun SettingsScreen(
                     )
 
                     LanguageOption(
-                        text = "繁體中文",
+                        text = stringResource(R.string.chinese_traditional),
                         isSelected = selectedLanguage == LanguageUtils.LANGUAGE_CHINESE_TRADITIONAL,
                         onClick = {
                             selectedLanguage = LanguageUtils.LANGUAGE_CHINESE_TRADITIONAL

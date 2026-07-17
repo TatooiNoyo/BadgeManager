@@ -8,6 +8,10 @@ import java.net.SocketException
 class TcpServer(
     private val psk6: String,
 ) {
+    companion object {
+        const val ERROR_HANDSHAKE_FAILED = "HANDSHAKE_FAILED"
+        const val ERROR_LISTENER_DISCONNECTED = "LISTENER_DISCONNECTED"
+    }
     @Volatile
     private var running = false
     private var serverSocket: ServerSocket? = null
@@ -47,7 +51,7 @@ class TcpServer(
                                 val channel = SecureChannel(clientSocket, sessionKey)
                                 onChannelReady(channel)
                             } else {
-                                onError("握手失败!")
+                                onError(TcpServer.ERROR_HANDSHAKE_FAILED)
                                 clientSocket.close()
                             }
                         } catch (e: Exception) {
@@ -63,7 +67,7 @@ class TcpServer(
                 if (running) {
                     // 如果 running 还是 true，说明是异常关闭
                     Log.e("TcpServer", "Accept failed", e)
-                    onError("监听服务异常断开")
+                    onError(TcpServer.ERROR_LISTENER_DISCONNECTED)
                 } else {
                     // 如果 running 是 false，说明是用户主动 stop()，属于正常退出流程
                     Log.d("TcpServer", "Server stopped normally")

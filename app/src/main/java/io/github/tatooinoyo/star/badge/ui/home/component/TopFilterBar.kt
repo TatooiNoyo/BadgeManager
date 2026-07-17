@@ -10,7 +10,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import io.github.tatooinoyo.star.badge.R
 
 @Composable
 fun TagFilterBar(
@@ -34,7 +36,7 @@ fun TagFilterBar(
             androidx.compose.material3.FilterChip(
                 selected = selectedTag == null,
                 onClick = { onTagSelected(null) },
-                label = { Text("全部") },
+                label = { Text(stringResource(R.string.tag_all)) },
                 leadingIcon = if (selectedTag == null) {
                     {
                         Icon(

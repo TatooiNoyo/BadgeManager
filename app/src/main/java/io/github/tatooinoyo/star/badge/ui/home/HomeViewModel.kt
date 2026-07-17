@@ -153,7 +153,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             addBadge()
 
             viewModelScope.launch {
-                _uiEvent.emit(BadgeUiEvent.ShowToast("已自动添加: $finalTitle"))
+                _uiEvent.emit(
+                    BadgeUiEvent.ShowToast(
+                        getApplication<Application>().getString(R.string.toast_auto_added, finalTitle)
+                    )
+                )
             }
         }
     }
@@ -328,7 +332,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         val linkToWrite = _uiState.value.detailLink
         if (linkToWrite.isBlank()) {
             activity.runOnUiThread {
-                Toast.makeText(activity, "链接为空，无法写入", Toast.LENGTH_SHORT).show()
+                Toast.makeText(activity, R.string.nfc_write_link_empty, Toast.LENGTH_SHORT).show()
             }
             return false
         }
@@ -336,7 +340,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         val ndef = Ndef.get(tag)
         if (ndef == null) {
             activity.runOnUiThread {
-                Toast.makeText(activity, "NFC标签不支持NDEF格式", Toast.LENGTH_SHORT).show()
+                Toast.makeText(activity, R.string.nfc_write_not_ndef, Toast.LENGTH_SHORT).show()
             }
             return false
         }
@@ -345,7 +349,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             ndef.connect()
             if (!ndef.isWritable) {
                 activity.runOnUiThread {
-                    Toast.makeText(activity, "NFC标签只读", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(activity, R.string.nfc_write_readonly, Toast.LENGTH_SHORT).show()
                 }
                 return false
             }
@@ -355,21 +359,25 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
             if (ndef.maxSize < ndefMessage.toByteArray().size) {
                 activity.runOnUiThread {
-                    Toast.makeText(activity, "NFC标签容量不足", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(activity, R.string.nfc_write_insufficient_capacity, Toast.LENGTH_SHORT).show()
                 }
                 return false
             }
 
             ndef.writeNdefMessage(ndefMessage)
             activity.runOnUiThread {
-                Toast.makeText(activity, "写入成功", Toast.LENGTH_SHORT).show()
+                Toast.makeText(activity, R.string.nfc_write_success, Toast.LENGTH_SHORT).show()
             }
             _uiState.value = _uiState.value.copy(isWritingNfc = false)
             return true
         } catch (e: Exception) {
             e.printStackTrace()
             activity.runOnUiThread {
-                Toast.makeText(activity, "写入失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    activity,
+                    activity.getString(R.string.nfc_write_failed, e.message),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
             return false
         } finally {

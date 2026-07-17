@@ -1,11 +1,13 @@
 package io.github.tatooinoyo.star.badge.ui.home.badge_sync
 
+import android.app.Application
 import android.util.Log
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
+import io.github.tatooinoyo.star.badge.R
 import io.github.tatooinoyo.star.badge.data.Badge
 import io.github.tatooinoyo.star.badge.data.BadgeRepository
 import io.github.tatooinoyo.star.badge.ui.state.SyncState
@@ -16,8 +18,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class BadgeSyncViewModel(
-
-) : ViewModel() {
+    application: Application
+) : AndroidViewModel(application) {
     // ===局域网同步状态 ===
     private val _syncState = MutableStateFlow<SyncState>(SyncState.Idle)
     val syncState = _syncState.asStateFlow()
@@ -28,6 +30,17 @@ class BadgeSyncViewModel(
     private var tcpServer: TcpServer? = null
     private var tcpChannel: SecureChannel? = null
 
+    private fun str(resId: Int, vararg args: Any): String {
+        return getApplication<Application>().getString(resId, *args)
+    }
+
+    private fun mapSyncError(codeOrMessage: String): String {
+        return when (codeOrMessage) {
+            TcpServer.ERROR_HANDSHAKE_FAILED -> str(R.string.sync_handshake_failed)
+            TcpServer.ERROR_LISTENER_DISCONNECTED -> str(R.string.sync_listener_disconnected)
+            else -> codeOrMessage
+        }
+    }
 
     // === 局域网同步 ===
 
@@ -65,7 +78,8 @@ class BadgeSyncViewModel(
                                 _syncState.value = SyncState.Sender.Success(code)
                             }
                         } else {
-                            _syncState.value = SyncState.Sender.Error(code, "连接失败")
+                            _syncState.value =
+                                SyncState.Sender.Error(code, str(R.string.sync_connect_failed))
                             stopSenderConn()
                         }
                     }
@@ -74,8 +88,9 @@ class BadgeSyncViewModel(
 
 
             } catch (e: Exception) {
-                _syncState.value = SyncState.Sender.Error(code, "发送出错: ${e.message}")
-                Log.w("startSenderMode", "发送出错: ${e.message}")
+                _syncState.value =
+                    SyncState.Sender.Error(code, str(R.string.sync_send_error, e.message ?: ""))
+                Log.w("startSenderMode", "send error: ${e.message}")
                 stopSenderConn()
             }
         }
@@ -85,7 +100,7 @@ class BadgeSyncViewModel(
         udpListener?.stop()
         udpListener = null
 
-        tcpChannel?.disconnect("主动关闭")
+        tcpChannel?.disconnect("closed")
         tcpChannel = null
 
         tcpClient = null
@@ -115,7 +130,8 @@ class BadgeSyncViewModel(
                             if (success) {
                                 _syncState.value = SyncState.Receiver.Success
                             } else {
-                                _syncState.value = SyncState.Receiver.Error("导入失败")
+                                _syncState.value =
+                                    SyncState.Receiver.Error(str(R.string.sync_import_failed))
                             }
                         }
                     }
@@ -123,7 +139,7 @@ class BadgeSyncViewModel(
                     _syncState.value = SyncState.Receiver.Error(err.stackTraceToString())
                 })
             }, { errMsg ->
-                _syncState.value = SyncState.Receiver.Error(errMsg)
+                _syncState.value = SyncState.Receiver.Error(mapSyncError(errMsg))
             })
 
         }
@@ -138,7 +154,7 @@ class BadgeSyncViewModel(
         udpBroadcaster?.stop()
         udpBroadcaster = null
 
-        tcpChannel?.disconnect("主动关闭")
+        tcpChannel?.disconnect("closed")
         tcpChannel = null
 
         tcpServer?.stop()

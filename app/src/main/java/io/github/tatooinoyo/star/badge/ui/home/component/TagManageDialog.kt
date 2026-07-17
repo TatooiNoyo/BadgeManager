@@ -29,8 +29,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import io.github.tatooinoyo.star.badge.R
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -46,7 +48,7 @@ fun TagManageDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("管理标签") },
+        title = { Text(stringResource(R.string.manage_tags)) },
         text = {
             Column {
                 // 1. 输入新标签区域
@@ -57,7 +59,7 @@ fun TagManageDialog(
                     OutlinedTextField(
                         value = newTagInput,
                         onValueChange = { newTagInput = it },
-                        label = { Text("新建标签") },
+                        label = { Text(stringResource(R.string.new_tag)) },
                         modifier = Modifier.weight(1f),
                         singleLine = true
                     )
@@ -75,13 +77,13 @@ fun TagManageDialog(
                         },
                         enabled = newTagInput.isNotBlank()
                     ) {
-                        Text("添加")
+                        Text(stringResource(R.string.btn_add))
                     }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text("选择标签:", style = MaterialTheme.typography.labelMedium)
+                Text(stringResource(R.string.select_tags), style = MaterialTheme.typography.labelMedium)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // 2. 现有标签选择区域 (混合了系统已有标签和刚才新增的标签)
@@ -89,7 +91,11 @@ fun TagManageDialog(
                 val displayTags = (allTags + currentSelected).distinct().sorted()
 
                 if (displayTags.isEmpty()) {
-                    Text("暂无标签", color = Color.Gray, style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        stringResource(R.string.no_tags),
+                        color = Color.Gray,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 } else {
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -128,12 +134,12 @@ fun TagManageDialog(
                     onDismiss()
                 }
             ) {
-                Text("确定")
+                Text(stringResource(R.string.confirm))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("取消")
+                Text(stringResource(R.string.cancel))
             }
         }
     )

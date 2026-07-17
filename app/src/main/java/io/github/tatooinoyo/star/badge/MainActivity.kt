@@ -53,7 +53,7 @@ class MainActivity : ComponentActivity() {
         if (checkOverlayPermission()) {
             startFloatingService()
         } else {
-            Toast.makeText(this, "需要悬浮窗权限才能显示悬浮球", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, R.string.overlay_permission_required, Toast.LENGTH_SHORT).show()
         }
     }
 

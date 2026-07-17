@@ -24,6 +24,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.unit.dp
 import io.github.tatooinoyo.star.badge.MainActivity
+import io.github.tatooinoyo.star.badge.R
 import io.github.tatooinoyo.star.badge.data.BadgeRepository
 import io.github.tatooinoyo.star.badge.service.component.DrawerMenu
 import io.github.tatooinoyo.star.badge.service.component.DrawerMenuItem
@@ -184,7 +185,11 @@ class FloatingButtonService : Service() {
                         channel = badge.channel,
                         remark = badge.remark
                     ) {
-                        Toast.makeText(context, "选中: ${badge.title}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.toast_badge_selected, badge.title),
+                            Toast.LENGTH_SHORT
+                        ).show()
                         badge.usage(context)
                     }
                 }

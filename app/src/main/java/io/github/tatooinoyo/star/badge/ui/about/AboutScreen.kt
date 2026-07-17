@@ -215,7 +215,7 @@ fun AboutScreen(
                                     .decoderFactory(SvgDecoder.Factory()) // 必须指定 SVG 解码器
                                     .crossfade(true)
                                     .build(),
-                                contentDescription = "最新版本",
+                                contentDescription = stringResource(R.string.latest_version),
                                 modifier = Modifier
                                     .height(30.dp)
                                     .clickable { uriHandler.openUri(downloadUrl) }

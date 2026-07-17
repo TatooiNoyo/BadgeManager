@@ -119,7 +119,7 @@ fun DrawerMenu(
             ) {
                 Icon(
                     imageVector = Icons.Default.Home,
-                    contentDescription = "主页",
+                    contentDescription = stringResource(R.string.home),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -135,7 +135,7 @@ fun DrawerMenu(
                         onClick = { filterMenuExpanded = true },
                         label = {
                             Text(
-                                text = selectedTag ?: "全部标签",
+                                text = selectedTag ?: stringResource(R.string.all_tags),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -167,7 +167,7 @@ fun DrawerMenu(
                     ) {
                         // 选项：全部
                         DropdownMenuItem(
-                            text = { Text("全部标签") },
+                            text = { Text(stringResource(R.string.all_tags)) },
                             onClick = {
                                 onTagSelected(null)
                                 filterMenuExpanded = false

@@ -613,7 +613,7 @@ fun BadgeInputForm(
                 // 2. 显示标签
                 if (allTags.isEmpty()) {
                     Text(
-                        text = "添加标签...",
+                        text = stringResource(R.string.add_tags),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                         modifier = Modifier.padding(start = 4.dp)
