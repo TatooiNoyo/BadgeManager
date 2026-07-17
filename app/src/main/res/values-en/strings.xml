@@ -61,6 +61,12 @@
     <string name="settings">Settings</string>
     <string name="back">Back</string>
     <string name="language_setting">Language</string>
+    <string name="sk_link_tool_title">SK Link Generator</string>
+    <string name="sk_link_tool_desc">Enter an SK code to generate a badge URL for testing unrecorded badges.</string>
+    <string name="sk_link_tool_hint">e.g. SKY-TEST-UNRECORDED-001</string>
+    <string name="sk_link_tool_generate">Generate Link</string>
+    <string name="sk_link_tool_result">Generated URL</string>
+    <string name="sk_link_tool_empty_sk">Please enter an SK code</string>
     <string name="follow_system">Follow System</string>
     <string name="english">English</string>
     <string name="chinese">Chinese</string>

@@ -61,6 +61,12 @@
     <string name="settings">設定</string>
     <string name="back">返回</string>
     <string name="language_setting">語言</string>
+    <string name="sk_link_tool_title">SK 連結產生</string>
+    <string name="sk_link_tool_desc">輸入 SK 碼產生徽章連結，用於測試未收錄徽章的自動填入與幫助頁。</string>
+    <string name="sk_link_tool_hint">例如 SKY-TEST-UNRECORDED-001</string>
+    <string name="sk_link_tool_generate">產生連結</string>
+    <string name="sk_link_tool_result">產生的連結</string>
+    <string name="sk_link_tool_empty_sk">請輸入 SK 碼</string>
     <string name="follow_system">跟隨系統</string>
     <string name="english">英語</string>
     <string name="chinese">中文</string>
