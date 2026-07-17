@@ -1,10 +1,13 @@
 package io.github.tatooinoyo.star.badge.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import io.github.tatooinoyo.star.badge.data.BadgeRepository
 import io.github.tatooinoyo.star.badge.ui.about.AboutScreen
 import io.github.tatooinoyo.star.badge.ui.helpus.HelpUsScreen
 import io.github.tatooinoyo.star.badge.ui.home.HomeScreen
@@ -51,8 +54,10 @@ fun AppNavigation(
             )
         }
         composable(NavRoutes.HelpUs) {
+            // 使用 Repository 全量列表，避免受首页标签筛选影响
+            val badges by BadgeRepository.badges.collectAsState()
             HelpUsScreen(
-                badges = homeViewModel?.uiState?.value?.badges ?: emptyList(),
+                badges = badges,
                 onNavigateBack = { navController.popBackStack() }
             )
         }
