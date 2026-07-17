@@ -55,8 +55,7 @@ fun HelpUsScreen(
     val unrecordedBadges = remember(badges) {
         badges.filter { badge ->
             if (badge.link.isBlank()) return@filter false
-            val skCode = SkExtractor.getSkFromLink(badge.link)
-            if (skCode.isBlank()) return@filter false
+            val skCode = SkExtractor.getSkFromLinkOrNull(badge.link) ?: return@filter false
             PresetBadges.getTitle(context, skCode).isBlank()
         }
     }
@@ -164,8 +163,7 @@ fun UnrecordedBadgeItem(
     badge: Badge,
     onCopySkCode: (String) -> Unit
 ) {
-    val context = LocalContext.current
-    val skCode = SkExtractor.getSkFromLink(badge.link)
+    val skCode = SkExtractor.getSkFromLinkOrNull(badge.link).orEmpty()
 
     Column(
         modifier = Modifier

@@ -6,15 +6,17 @@ import android.nfc.NdefMessage
 import android.nfc.NdefRecord
 import android.nfc.Tag
 import android.nfc.tech.Ndef
-import android.util.Base64
 import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import io.github.tatooinoyo.star.badge.R
 import io.github.tatooinoyo.star.badge.data.Badge
 import io.github.tatooinoyo.star.badge.data.BadgeChannel
 import io.github.tatooinoyo.star.badge.data.BadgeRepository
 import io.github.tatooinoyo.star.badge.data.PresetBadges
+import io.github.tatooinoyo.star.badge.utils.SkExtractException
+import io.github.tatooinoyo.star.badge.utils.SkExtractor
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -25,7 +27,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.IOException
-import java.nio.charset.Charset
 
 // 定义 UI 状态
 data class BadgeUiState(
@@ -130,16 +131,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
         // 只有在链接改变时，才尝试提取 SK 并覆盖标题/备注
         if (isLinkChanged && link.isNotBlank()) {
-            val sk = getSkFromLink(link)
-            if (sk.startsWith("SKY-")) { // 假设有效的 SK 以 SKY- 开头，或者根据 getSkFromLink 的返回值判断
-                val presetTitle = PresetBadges.getTitle(getApplication<Application>(), sk)
-                val presetRemark = PresetBadges.getRemark(getApplication<Application>(), sk)
-
-                // 如果预设库里有这个东西，才覆盖
-                if (presetTitle != sk) { // 这里的判断逻辑取决于你的 PresetBadges 实现，防止没搜到返回了原字符串
-                    finalTitle = presetTitle
-                    finalRemark = presetRemark
-                }
+            tryFillPresetFromLink(link)?.let { (presetTitle, presetRemark) ->
+                finalTitle = presetTitle
+                finalRemark = presetRemark
             }
         }
 
@@ -213,16 +207,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
         // 只有在链接改变时，才尝试提取 SK 并覆盖标题/备注
         if (isLinkChanged && link.isNotBlank()) {
-            val sk = getSkFromLink(link)
-            if (sk.startsWith("SKY-")) { // 假设有效的 SK 以 SKY- 开头，或者根据 getSkFromLink 的返回值判断
-                val presetTitle = PresetBadges.getTitle(getApplication<Application>(), sk)
-                val presetRemark = PresetBadges.getRemark(getApplication<Application>(), sk)
-
-                // 如果预设库里有这个东西，才覆盖
-                if (presetTitle != sk) { // 这里的判断逻辑取决于你的 PresetBadges 实现，防止没搜到返回了原字符串
-                    finalTitle = presetTitle
-                    finalRemark = presetRemark
-                }
+            tryFillPresetFromLink(link)?.let { (presetTitle, presetRemark) ->
+                finalTitle = presetTitle
+                finalRemark = presetRemark
             }
         }
 
@@ -365,33 +352,45 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun getSkFromLink(link: String): String {
-        val decodedSk = try {
-            val uri = android.net.Uri.parse(link)
-            val sParam = uri.getQueryParameter("s")
+    // === SK 提取逻辑 ===
 
-            if (sParam.isNullOrBlank()) {
-                "链接中未找到 's' 参数。"
-            } else {
-                // Base64 解码
-                val decodedBytes = Base64.decode(sParam, Base64.URL_SAFE) // Sky 的链接通常是 URL_SAFE
-                val decodedString = String(decodedBytes, Charset.forName("UTF-8"))
-
-                // 从解码后的字符串中提取 sk 参数
-                val decodedUri = android.net.Uri.parse("dummy://host?" + decodedString)
-                decodedUri.getQueryParameter("sk") ?: "解码后未找到 'sk' 参数。"
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            "提取失败: ${e.message}"
+    /** 解析成功且命中预设时返回标题/备注；解析失败或未收录时返回 null（不向用户报错）。 */
+    private fun tryFillPresetFromLink(link: String): Pair<String, String>? {
+        return try {
+            val sk = SkExtractor.getSkFromLink(link)
+            if (!sk.startsWith("SKY-")) return null
+            val context = getApplication<Application>()
+            val presetTitle = PresetBadges.getTitle(context, sk)
+            if (presetTitle.isEmpty()) return null
+            presetTitle to PresetBadges.getRemark(context, sk)
+        } catch (_: SkExtractException) {
+            null
         }
-        return decodedSk
     }
 
-    // === SK 提取逻辑 ===
+    private fun skExtractErrorMessage(e: SkExtractException): String {
+        val context = getApplication<Application>()
+        return when (e.reason) {
+            SkExtractException.Reason.MISSING_S_PARAM ->
+                context.getString(R.string.sk_extract_missing_s)
+            SkExtractException.Reason.MISSING_SK_PARAM ->
+                context.getString(R.string.sk_extract_missing_sk)
+            SkExtractException.Reason.DECODE_FAILED ->
+                context.getString(
+                    R.string.sk_extract_failed,
+                    e.cause?.message ?: context.getString(R.string.sk_extract_failed_unknown)
+                )
+        }
+    }
+
     fun extractSkFromLink(link: String) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(extractedSk = getSkFromLink(link))
+            try {
+                val sk = SkExtractor.getSkFromLink(link)
+                _uiState.value = _uiState.value.copy(extractedSk = sk)
+            } catch (e: SkExtractException) {
+                _uiEvent.emit(BadgeUiEvent.ShowToast(skExtractErrorMessage(e)))
+            }
         }
     }
 

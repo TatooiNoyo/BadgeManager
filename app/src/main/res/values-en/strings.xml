@@ -13,6 +13,10 @@
     <string name="toast_import_fail">Import failed</string>
     <string name="warn_restore">Note: Restore will overwrite current data</string>
     <string name="dialog_sk_title">Extracted SK Code</string>
+    <string name="sk_extract_missing_s">No \'s\' parameter found in the link.</string>
+    <string name="sk_extract_missing_sk">No \'sk\' parameter found after decoding.</string>
+    <string name="sk_extract_failed">Extraction failed: %1$s</string>
+    <string name="sk_extract_failed_unknown">unknown error</string>
     <string name="btn_copy">Copy</string>
     <string name="btn_confirm">OK</string>
     <string name="help_title">About BadgeManager</string>

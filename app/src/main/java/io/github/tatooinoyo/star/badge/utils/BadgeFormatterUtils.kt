@@ -12,8 +12,7 @@ object BadgeFormatterUtils {
                 if (badge.remark.isNotBlank()) {
                     append("${badge.remark}\n")
                 }
-                val skCode = SkExtractor.getSkFromLink(badge.link)
-                if (skCode.isNotBlank()) {
+                SkExtractor.getSkFromLinkOrNull(badge.link)?.let { skCode ->
                     append("$skCode\n")
                 }
                 if (index < badges.size - 1) append("\n")

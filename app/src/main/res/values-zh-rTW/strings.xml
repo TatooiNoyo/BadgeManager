@@ -10,6 +10,10 @@
     <string name="btn_export_json">匯出為 JSON 檔案</string>
     <string name="warn_restore">注意：還原將覆蓋目前所有資料</string>
     <string name="dialog_sk_title">提取到的 SK 編碼</string>
+    <string name="sk_extract_missing_s">連結中未找到 \'s\' 參數。</string>
+    <string name="sk_extract_missing_sk">解碼後未找到 \'sk\' 參數。</string>
+    <string name="sk_extract_failed">提取失敗: %1$s</string>
+    <string name="sk_extract_failed_unknown">未知錯誤</string>
     <string name="btn_copy">複製</string>
     <string name="help_repo">📦 專案倉儲 (GitHub)</string>
     <string name="help_feedback">💡 提供建議 / 回報 Bug</string>
