@@ -33,11 +33,9 @@ jobs:
           echo "${{ secrets.APP_JKS }}" | base64 -d > app.jks
           echo "Keystore file has been restored successfully!"
 
-      # Step 4: Create local.properties with content to satisfy secrets plugin
+      # Step 4: Create local.properties
       - name: Create local.properties
-        run: |
-          echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
-          echo "MAPS_API_KEY=unused" >> local.properties
+        run: echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
 
       # Step 5: Install dependencies
       - name: Install Dependencies

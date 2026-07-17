@@ -25,7 +25,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Create local.properties
-        run: echo -e "sdk.dir=$ANDROID_HOME\napiKey=AIzaSyDummmyKeyForBuild" > local.properties
+        run: echo "sdk.dir=$ANDROID_HOME" > local.properties
 
       #  运行构建命令 (构建 Debug 包)
       - name: Build with Gradle

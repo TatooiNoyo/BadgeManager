@@ -2,7 +2,6 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.google.android.libraries.mapsplatform.secrets.gradle.plugin)
     alias(libs.plugins.ksp)
 }
 
@@ -95,9 +94,6 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    implementation(libs.generativeai)
-    implementation(libs.androidx.drawerlayout)
-    implementation(libs.material)
     implementation(libs.bouncycastle.bcprov)
     implementation(libs.reorderable)
     implementation(libs.androidx.navigation.compose)
