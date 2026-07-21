@@ -63,14 +63,17 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.tatooinoyo.star.badge.R
 import io.github.tatooinoyo.star.badge.data.Badge
 import io.github.tatooinoyo.star.badge.data.BadgeChannel
+import io.github.tatooinoyo.star.badge.ui.about.UpdateCheckDialog
 import io.github.tatooinoyo.star.badge.ui.home.badge_sync.BadgeSyncViewModel
 import io.github.tatooinoyo.star.badge.ui.home.component.BadgeFunctionArea
 import io.github.tatooinoyo.star.badge.ui.home.component.BadgeReorderList
-
 import io.github.tatooinoyo.star.badge.ui.home.component.TagFilterBar
 import io.github.tatooinoyo.star.badge.ui.home.component.TagManageDialog
 import io.github.tatooinoyo.star.badge.ui.state.SyncState
 import io.github.tatooinoyo.star.badge.ui.theme.PeachTheme
+import io.github.tatooinoyo.star.badge.utils.update.UpdateCheckResult
+import io.github.tatooinoyo.star.badge.utils.update.UpdateChecker
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
@@ -91,6 +94,18 @@ fun HomeScreen(
     val context = LocalContext.current
     val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
     val listState = rememberLazyListState()
+    val updateChecker = remember { UpdateChecker(context) }
+    var silentUpdate by remember { mutableStateOf<UpdateCheckResult.Available?>(null) }
+
+    LaunchedEffect(Unit) {
+        delay(2_500)
+        val result = updateChecker.checkSilently()
+        if (result is UpdateCheckResult.Available &&
+            !updateChecker.isDismissed(result.info.versionName)
+        ) {
+            silentUpdate = result
+        }
+    }
 
     LaunchedEffect(nfcPayload) {
         if (!nfcPayload.isNullOrEmpty()) {
@@ -196,6 +211,18 @@ fun HomeScreen(
                     Text(stringResource(R.string.btn_confirm))
                 }
             }
+        )
+    }
+
+    silentUpdate?.let { available ->
+        UpdateCheckDialog(
+            result = available,
+            loading = false,
+            onDismiss = { silentUpdate = null },
+            onDismissVersion = {
+                updateChecker.dismissVersion(it)
+                silentUpdate = null
+            },
         )
     }
 }

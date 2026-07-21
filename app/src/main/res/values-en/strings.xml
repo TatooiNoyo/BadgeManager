@@ -181,7 +181,17 @@
     <string name="download_url">https://github.com/tatooinoyo/BadgeManager/releases</string>
     <string name="current_version">Current: V%1$s</string>
     <string name="latest_version">"Latest: "</string>
+    <string name="latest_version_value">Latest: %1$s</string>
     <string name="click_to_download">Click the icon above to go to the download page</string>
     <string name="check_update">Check for Updates</string>
+    <string name="update_checking">Checking for updates…</string>
+    <string name="update_up_to_date">You are on the latest version</string>
+    <string name="update_available">New version available: %1$s</string>
+    <string name="update_check_failed">Update check failed</string>
+    <string name="update_download">Download</string>
+    <string name="update_later">Later</string>
+    <string name="update_open_releases">Open download page</string>
+    <string name="update_source_github">Source: GitHub Releases</string>
+    <string name="update_source_pgyer">Source: PGYER</string>
     <string name="confirm">Confirm</string>
 </resources>

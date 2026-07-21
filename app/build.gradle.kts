@@ -41,6 +41,13 @@ android {
         versionName = "1.8.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField(
+            "String",
+            "UPDATE_PROXY_URL",
+            "\"https://badge-update-proxy.tatooi-noyo.workers.dev\""
+        )
+        buildConfigField("String", "GITHUB_REPO", "\"tatooinoyo/BadgeManager\"")
     }
 
     signingConfigs {

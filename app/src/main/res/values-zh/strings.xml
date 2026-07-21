@@ -181,7 +181,17 @@
     <string name="download_url">https://www.pgyer.com/badgemanager</string>
     <string name="current_version">当前版本: V%1$s</string>
     <string name="latest_version">最新版本: </string>
+    <string name="latest_version_value">最新版本: %1$s</string>
     <string name="click_to_download">点击上方图标前往下载页</string>
     <string name="check_update">检查更新</string>
+    <string name="update_checking">正在检查更新…</string>
+    <string name="update_up_to_date">已是最新版本</string>
+    <string name="update_available">发现新版本: %1$s</string>
+    <string name="update_check_failed">检查更新失败</string>
+    <string name="update_download">前往下载</string>
+    <string name="update_later">稍后</string>
+    <string name="update_open_releases">打开下载页</string>
+    <string name="update_source_github">来源: GitHub Releases</string>
+    <string name="update_source_pgyer">来源: 蒲公英</string>
     <string name="confirm">确定</string>
 </resources>

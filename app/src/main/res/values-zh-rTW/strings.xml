@@ -181,7 +181,17 @@
     <string name="download_url">https://github.com/tatooinoyo/BadgeManager/releases</string>
     <string name="current_version">當前版本: V%1$s</string>
     <string name="latest_version">最新版本: </string>
+    <string name="latest_version_value">最新版本: %1$s</string>
     <string name="click_to_download">點擊上方圖示前往下載頁</string>
     <string name="check_update">檢查更新</string>
+    <string name="update_checking">正在檢查更新…</string>
+    <string name="update_up_to_date">已是最新版本</string>
+    <string name="update_available">發現新版本: %1$s</string>
+    <string name="update_check_failed">檢查更新失敗</string>
+    <string name="update_download">前往下載</string>
+    <string name="update_later">稍後</string>
+    <string name="update_open_releases">打開下載頁</string>
+    <string name="update_source_github">來源: GitHub Releases</string>
+    <string name="update_source_pgyer">來源: 蒲公英</string>
     <string name="confirm">確定</string>
 </resources>

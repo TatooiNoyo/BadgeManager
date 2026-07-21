@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -20,13 +19,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,12 +35,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import coil.compose.AsyncImage
-import coil.decode.SvgDecoder
-import coil.request.ImageRequest
 import io.github.tatooinoyo.star.badge.BuildConfig
 import io.github.tatooinoyo.star.badge.R
+import io.github.tatooinoyo.star.badge.utils.update.UpdateCheckResult
+import io.github.tatooinoyo.star.badge.utils.update.UpdateChecker
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,15 +47,27 @@ fun AboutScreen(
     onNavigateBack: () -> Unit
 ) {
     val uriHandler = LocalUriHandler.current
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val projectUrl = "https://github.com/tatooinoyo/BadgeManager"
     val issuesUrl = "$projectUrl/issues"
     val pollUrl = "https://f.wps.cn/g/RQq78MAA"
     val contactMail = "tatooi.noyo@outlook.com"
 
+    val updateChecker = remember { UpdateChecker(context) }
     var showUpdateDialog by remember { mutableStateOf(false) }
-    val updateImageUrl =
-        stringResource(R.string.update_image_url)
-    val downloadUrl = stringResource(R.string.download_url)
+    var updateLoading by remember { mutableStateOf(false) }
+    var updateResult by remember { mutableStateOf<UpdateCheckResult?>(null) }
+
+    fun startUpdateCheck() {
+        showUpdateDialog = true
+        updateLoading = true
+        updateResult = null
+        scope.launch {
+            updateResult = updateChecker.check(force = true)
+            updateLoading = false
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -94,7 +104,6 @@ fun AboutScreen(
 
             HorizontalDivider()
 
-            // 使用帮助部分
             Text(
                 text = stringResource(R.string.usage_help_title),
                 style = MaterialTheme.typography.titleLarge,
@@ -111,11 +120,10 @@ fun AboutScreen(
 
             HorizontalDivider()
 
-            // 仓库链接
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { uriHandler.openUri(projectUrl) }, // 点击跳转
+                    .clickable { uriHandler.openUri(projectUrl) },
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
@@ -127,7 +135,6 @@ fun AboutScreen(
                 )
             }
 
-            // 建议链接
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -143,7 +150,6 @@ fun AboutScreen(
                 )
             }
 
-            // 徽章信息采集
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -160,8 +166,6 @@ fun AboutScreen(
             }
             Text(stringResource(R.string.badge_not_found_help))
 
-
-            // 联系作者
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -173,10 +177,10 @@ fun AboutScreen(
                     ),
                 )
             }
-            SelectionContainer() { Text(contactMail) }
+            SelectionContainer { Text(contactMail) }
 
             Button(
-                onClick = { showUpdateDialog = true },
+                onClick = { startUpdateCheck() },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 16.dp)
@@ -186,57 +190,12 @@ fun AboutScreen(
         }
 
         if (showUpdateDialog) {
-            Dialog(onDismissRequest = { showUpdateDialog = false }) {
-                Surface(
-                    shape = MaterialTheme.shapes.extraLarge, // 圆角
-                    tonalElevation = 6.dp, // Material 3 的色调海拔（提供阴影和背景色深度）
-                    color = MaterialTheme.colorScheme.surface, // 背景色
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            stringResource(R.string.current_version, BuildConfig.VERSION_NAME),
-                            style = MaterialTheme.typography.headlineSmall
-                        )
-                        Row(modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically) {
-                            Text(stringResource(R.string.latest_version), style = MaterialTheme.typography.headlineSmall)
-
-                            AsyncImage(
-                                model = ImageRequest.Builder(LocalContext.current)
-                                    .data(updateImageUrl)
-                                    .decoderFactory(SvgDecoder.Factory()) // 必须指定 SVG 解码器
-                                    .crossfade(true)
-                                    .build(),
-                                contentDescription = stringResource(R.string.latest_version),
-                                modifier = Modifier
-                                    .height(30.dp)
-                                    .clickable { uriHandler.openUri(downloadUrl) }
-                            )
-                        }
-                        Text(
-                            text = stringResource(R.string.click_to_download),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        Button(
-                            onClick = { showUpdateDialog = false },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(stringResource(R.string.confirm))
-                        }
-                    }
-                }
-
-            }
+            UpdateCheckDialog(
+                result = updateResult,
+                loading = updateLoading,
+                onDismiss = { showUpdateDialog = false },
+                onDismissVersion = { updateChecker.dismissVersion(it) },
+            )
         }
     }
 }
