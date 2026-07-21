@@ -1,5 +1,8 @@
 package io.github.tatooinoyo.star.badge.ui.home.component
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -33,6 +36,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -66,6 +70,11 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 private const val FUNCTION_AREA_SCROLL_THRESHOLD = 80f
+private const val REORDER_PLACEMENT_MS = 250
+private const val FLOAT_APPEAR_MS = 180
+private const val INDICATOR_MOVE_MS = 120
+private const val FLOAT_SCALE = 0.88f
+private const val FLOAT_ALPHA = 0.92f
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -251,6 +260,11 @@ fun BadgeReorderList(
                     elevated = false,
                     onClick = { onItemClick(badge) },
                     clickEnabled = !reorderState.isDragging,
+                    modifier = Modifier.animateItem(
+                        fadeInSpec = null,
+                        fadeOutSpec = null,
+                        placementSpec = tween(REORDER_PLACEMENT_MS),
+                    ),
                     dragHandle = {
                         val fullIndex = badges.indexOfFirst { it.id == badge.id }
                         DragHandle(
@@ -264,10 +278,15 @@ fun BadgeReorderList(
         }
 
         // 落点横杆（高于悬浮层，避免被挡住）
-        if (reorderState.isDragging &&
+        val showDropIndicator = reorderState.isDragging &&
             reorderState.dropInsertBeforeIndex >= 0 &&
             reorderState.dropInsertBeforeIndex != reorderState.draggingIndex
-        ) {
+        val animatedIndicatorY by animateFloatAsState(
+            targetValue = reorderState.dropIndicatorY,
+            animationSpec = tween(INDICATOR_MOVE_MS),
+            label = "dropIndicatorY",
+        )
+        if (showDropIndicator) {
             Box(
                 modifier = Modifier
                     .zIndex(25f)
@@ -275,7 +294,7 @@ fun BadgeReorderList(
                     .offset {
                         IntOffset(
                             x = 0,
-                            y = (reorderState.dropIndicatorY - indicatorHalfHeightPx).roundToInt()
+                            y = (animatedIndicatorY - indicatorHalfHeightPx).roundToInt()
                         )
                     }
                     .fillMaxWidth()
@@ -287,42 +306,62 @@ fun BadgeReorderList(
             )
         }
 
-        // 悬浮被拖项：略缩小，减少遮挡横杆
+        // 悬浮被拖项：出现时缩小/透明过渡，减少遮挡横杆
         val draggingBadge = reorderState.draggingBadge
         if (reorderState.isDragging && draggingBadge != null) {
-            val floatScale = 0.88f
-            val halfH = reorderState.draggingItemHeight * floatScale / 2f
-            Box(
-                modifier = Modifier
-                    .zIndex(20f)
-                    .padding(horizontal = 24.dp)
-                    .offset {
-                        IntOffset(
-                            x = 0,
-                            y = (reorderState.dragFingerY - halfH).roundToInt()
-                        )
-                    }
-                    .fillMaxWidth()
-                    .graphicsLayer {
-                        scaleX = floatScale
-                        scaleY = floatScale
-                        alpha = 0.92f
-                    }
-            ) {
-                BadgeListCard(
-                    badge = draggingBadge,
-                    elevated = true,
-                    onClick = {},
-                    clickEnabled = false,
-                    dragHandle = {
-                        Icon(
-                            imageVector = Icons.Default.Menu,
-                            contentDescription = null,
-                        )
-                    },
+            FloatingDragBadge(
+                badge = draggingBadge,
+                fingerY = reorderState.dragFingerY,
+                itemHeight = reorderState.draggingItemHeight,
+            )
+        }
+    }
+}
+
+@Composable
+private fun FloatingDragBadge(
+    badge: Badge,
+    fingerY: Float,
+    itemHeight: Float,
+) {
+    val floatScale = remember { Animatable(1f) }
+    val floatAlpha = remember { Animatable(1f) }
+    LaunchedEffect(badge.id) {
+        floatScale.snapTo(1f)
+        floatAlpha.snapTo(1f)
+        launch { floatScale.animateTo(FLOAT_SCALE, tween(FLOAT_APPEAR_MS)) }
+        launch { floatAlpha.animateTo(FLOAT_ALPHA, tween(FLOAT_APPEAR_MS)) }
+    }
+    val halfH = itemHeight * floatScale.value / 2f
+    Box(
+        modifier = Modifier
+            .zIndex(20f)
+            .padding(horizontal = 24.dp)
+            .offset {
+                IntOffset(
+                    x = 0,
+                    y = (fingerY - halfH).roundToInt()
                 )
             }
-        }
+            .fillMaxWidth()
+            .graphicsLayer {
+                scaleX = floatScale.value
+                scaleY = floatScale.value
+                alpha = floatAlpha.value
+            }
+    ) {
+        BadgeListCard(
+            badge = badge,
+            elevated = true,
+            onClick = {},
+            clickEnabled = false,
+            dragHandle = {
+                Icon(
+                    imageVector = Icons.Default.Menu,
+                    contentDescription = null,
+                )
+            },
+        )
     }
 }
 
@@ -332,10 +371,11 @@ private fun BadgeListCard(
     elevated: Boolean,
     onClick: () -> Unit,
     clickEnabled: Boolean,
+    modifier: Modifier = Modifier,
     dragHandle: @Composable () -> Unit,
 ) {
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .clickable(enabled = clickEnabled, onClick = onClick),
