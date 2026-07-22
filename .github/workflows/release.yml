@@ -62,11 +62,12 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          body: ${{ steps.github_release.outputs.changelog }} # 使用生成的 Changelog
+          body: ${{ steps.github_release.outputs.changelog }}
           files: app/build/outputs/apk/release/BadgeManager_*.apk
-          generate_release_notes: true # 如果没有 PR，GitHub 会尝试用 commit 生成默认备注
+          # 关闭自动 notes：以 mikepenz COMMIT changelog 为准，避免与 PR 向说明混杂
+          generate_release_notes: false
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # 使用 GitHub 提供的访问令牌
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # Step 9: Resolve release APK path for PGYER upload
       - name: Resolve APK path

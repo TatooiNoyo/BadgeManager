@@ -1,5 +1,4 @@
 {
-  "fetchViaCommits": true,
   "categories": [
     {
       "title": "🚀 Features",
@@ -7,7 +6,7 @@
     },
     {
       "title": "🐛 Fixes",
-      "labels": ["fix"]
+      "labels": ["fix", "bug"]
     },
     {
       "title": "🧪 Tests",
@@ -24,48 +23,29 @@
     {
       "title": "🧱 Refactoring",
       "labels": ["refactor"]
+    },
+    {
+      "title": "🧹 Chore",
+      "labels": ["chore", "style", "perf", "revert"]
+    },
+    {
+      "title": "📦 Other",
+      "labels": []
     }
   ],
   "ignore_labels": ["ignore"],
   "sort": "ASC",
-  "template": "${{CHANGELOG}}",
-  "pr_template": "- ${{TITLE}} @${{AUTHOR}}",
+  "template": "#{{CHANGELOG}}",
+  "pr_template": "- #{{TITLE}} @#{{AUTHOR}}",
+  "commit_template": "- #{{TITLE}} @#{{AUTHOR}}",
   "empty_template": "No significant changes in this release.",
   "label_extractor": [
     {
-      "pattern": "^feat.+",
-      "target": "feat",
-      "flag": "i"
-    },
-    {
-      "pattern": "^fix.+",
-      "target": "fix",
-      "flag": "i"
-    },
-    {
-      "pattern": "^test.+",
-      "target": "test",
-      "flag": "i"
-    },
-    {
-      "pattern": "^build.+",
-      "target": "build",
-      "flag": "i"
-    },
-    {
-      "pattern": "^ci.+",
-      "target": "ci",
-      "flag": "i"
-    },
-    {
-      "pattern": "^docs.+",
-      "target": "docs",
-      "flag": "i"
-    },
-    {
-      "pattern": "^refactor.+",
-      "target": "refactor",
-      "flag": "i"
+      "pattern": "^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\\([\\w\\-\\.]+\\))?(!)?: ([\\w ])+([\\s\\S]*)",
+      "on_property": "title",
+      "target": "$1",
+      "flags": "iu",
+      "method": "replace"
     }
   ],
   "max_pull_requests": 1000,
