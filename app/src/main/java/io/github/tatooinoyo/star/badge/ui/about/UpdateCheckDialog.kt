@@ -71,6 +71,13 @@ fun UpdateCheckDialog(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                        if (result.fellBackFromWorker) {
+                            Text(
+                                stringResource(R.string.update_fallback_github),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        }
                         if (result.info.releaseNotes.isNotBlank()) {
                             Text(
                                 result.info.releaseNotes.take(500),
@@ -88,6 +95,18 @@ fun UpdateCheckDialog(
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                        Text(
+                            stringResource(sourceLabelRes(result.source)),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        if (result.fellBackFromWorker) {
+                            Text(
+                                stringResource(R.string.update_fallback_github),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        }
                     }
                     result is UpdateCheckResult.Failed -> {
                         Text(

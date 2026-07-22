@@ -3,8 +3,10 @@ package io.github.tatooinoyo.star.badge.utils
 import android.content.Context
 import android.content.SharedPreferences
 import android.content.res.Configuration
+import android.content.res.Resources
 import android.os.Build
 import android.util.Log
+import io.github.tatooinoyo.star.badge.utils.update.UpdateChecker
 import java.util.Locale
 
 class LanguageManager private constructor(private val context: Context) {
@@ -23,13 +25,28 @@ class LanguageManager private constructor(private val context: Context) {
             }
             return INSTANCE!!
         }
+
+        /** 设备系统语言（不受 App 内 updateConfiguration 影响） */
+        fun getSystemLocale(): Locale {
+            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                Resources.getSystem().configuration.locales[0]
+            } else {
+                @Suppress("DEPRECATION")
+                Resources.getSystem().configuration.locale
+            }
+        }
     }
     
     fun setLanguage(languageCode: String) {
         Log.d(TAG, "setLanguage: $languageCode")
+        val previous = getCurrentLanguage()
         // 使用 commit() 而不是 apply() 确保同步保存，在重启前完成
         val success = prefs.edit().putString(KEY_LANGUAGE, languageCode).commit()
         Log.d(TAG, "setLanguage saved: $success, value: ${prefs.getString(KEY_LANGUAGE, "NOT_FOUND")}")
+        if (previous != languageCode) {
+            UpdateChecker.clearCache(context)
+            Log.d(TAG, "update checker cache cleared after language change")
+        }
         updateLanguage(context, languageCode)
     }
     
@@ -42,12 +59,9 @@ class LanguageManager private constructor(private val context: Context) {
             LanguageUtils.LANGUAGE_ENGLISH -> Locale.ENGLISH
             LanguageUtils.LANGUAGE_CHINESE -> Locale.SIMPLIFIED_CHINESE
             LanguageUtils.LANGUAGE_CHINESE_TRADITIONAL -> Locale.TRADITIONAL_CHINESE
-            else -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                context.resources.configuration.locales[0]
-            } else {
-                @Suppress("DEPRECATION")
-                context.resources.configuration.locale
-            }
+            // auto：必须读系统 locale。applicationContext.resources 可能已被
+            // updateConfiguration 改成上次所选语言（如 English），不能再依赖它。
+            else -> getSystemLocale()
         }
     }
     

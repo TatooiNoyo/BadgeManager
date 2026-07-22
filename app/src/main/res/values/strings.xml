@@ -192,5 +192,6 @@
     <string name="update_open_releases">Open download page</string>
     <string name="update_source_github">Source: GitHub Releases</string>
     <string name="update_source_pgyer">Source: PGYER</string>
+    <string name="update_fallback_github">PGYER proxy unreachable; fell back to GitHub.</string>
     <string name="confirm">Confirm</string>
 </resources>

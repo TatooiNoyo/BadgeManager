@@ -193,5 +193,6 @@
     <string name="update_open_releases">打開下載頁</string>
     <string name="update_source_github">來源: GitHub Releases</string>
     <string name="update_source_pgyer">來源: 蒲公英</string>
+    <string name="update_fallback_github">蒲公英代理不可達，已回退到 GitHub。</string>
     <string name="confirm">確定</string>
 </resources>
