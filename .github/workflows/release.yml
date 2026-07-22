@@ -68,6 +68,28 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # 使用 GitHub 提供的访问令牌
 
-      # Step 9: Clean Sensitive Files (Optional)
+      # Step 9: Resolve release APK path for PGYER upload
+      - name: Resolve APK path
+        id: apk
+        run: |
+          APK=$(ls app/build/outputs/apk/release/BadgeManager_*.apk | head -n 1)
+          if [ -z "$APK" ] || [ ! -f "$APK" ]; then
+            echo "Release APK not found"
+            exit 1
+          fi
+          echo "path=$APK" >> "$GITHUB_OUTPUT"
+          echo "Using APK: $APK"
+
+      # Step 10: Upload to PGYER
+      # 需在仓库 Settings → Secrets 配置 PGYER_API_KEY（蒲公英账号 API Key）
+      - name: Upload to PGYER
+        uses: PGYER/pgyer-upload-app-action@v1.3
+        with:
+          _api_key: ${{ secrets.PGYER_API_KEY }}
+          appFilePath: ${{ steps.apk.outputs.path }}
+          buildUpdateDescription: ${{ steps.github_release.outputs.changelog }}
+
+      # Step 11: Clean Sensitive Files
       - name: Clean Up
-        run: rm app.jks
+        if: always()
+        run: rm -f app.jks
