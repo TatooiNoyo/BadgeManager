@@ -17,6 +17,11 @@ import io.github.tatooinoyo.star.badge.data.BadgeRepository
 import io.github.tatooinoyo.star.badge.data.PresetBadges
 import io.github.tatooinoyo.star.badge.utils.SkExtractException
 import io.github.tatooinoyo.star.badge.utils.SkExtractor
+import io.github.tatooinoyo.star.badge.utils.export.BadgeShareCrypto
+import io.github.tatooinoyo.star.badge.utils.export.BadgeShareError
+import io.github.tatooinoyo.star.badge.utils.export.BadgeShareExporter
+import io.github.tatooinoyo.star.badge.utils.export.BadgeShareFormat
+import io.github.tatooinoyo.star.badge.utils.export.BadgeShareText
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -31,6 +36,7 @@ import java.io.IOException
 // 定义 UI 状态
 data class BadgeUiState(
     val badges: List<Badge> = emptyList(),
+    val allBadgesUnfiltered: List<Badge> = emptyList(),
     val editingBadge: Badge? = null, // 如果不为空，则显示详情/编辑页
     // 添加模式下的输入状态
     val addTitle: String = "",
@@ -49,13 +55,37 @@ data class BadgeUiState(
     val isFunctionAreaExpanded: Boolean = true, // 记录功能区是否展开
     val selectedTag: String? = null,
     val addTags: List<String> = emptyList(), // 当前新增徽章的标签
-    val allTags: List<String> = emptyList()
+    val allTags: List<String> = emptyList(),
+    // 分享相关
+    val isShareSelecting: Boolean = false,
+    val shareSelectedIds: Set<String> = emptySet(),
+    val pendingShareCode: String? = null,
+    val shareFormat: BadgeShareFormat = BadgeShareFormat.TEXT,
+    val pendingImportUri: android.net.Uri? = null,
+    val functionTabIndex: Int = 0,
 )
 
 // 定义一次性 UI 事件
 sealed class BadgeUiEvent {
     data class ShowToast(val message: String) : BadgeUiEvent()
+    data class LaunchShareFile(
+        val uri: android.net.Uri,
+        val code: String,
+        val mimeType: String,
+    ) : BadgeUiEvent()
+
+    data class CopyTextToClipboard(
+        val text: String,
+        val toastMessage: String,
+    ) : BadgeUiEvent()
 }
+
+private data class BadgeListFilterResult(
+    val filteredBadges: List<Badge>,
+    val allBadges: List<Badge>,
+    val allTags: List<String>,
+    val selectedTag: String?,
+)
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -85,14 +115,15 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     allBadges.filter { it.tags.contains(selectedTag) }
                 }
 
-                // 返回一个数据类或 Triple 供 collect 使用
-                Triple(filteredBadges, allTags, selectedTag)
-            }.collect { (filteredBadges, allTags, currentTag) ->
+                // 返回过滤结果供 collect 使用
+                BadgeListFilterResult(filteredBadges, allBadges, allTags, selectedTag)
+            }.collect { result ->
                 _uiState.update {
                     it.copy(
-                        badges = filteredBadges, // UI 只展示过滤后的列表
-                        allTags = allTags,       // 筛选栏展示所有可用标签
-                        selectedTag = currentTag // 同步选中状态
+                        badges = result.filteredBadges,
+                        allBadgesUnfiltered = result.allBadges,
+                        allTags = result.allTags,
+                        selectedTag = result.selectedTag,
                     )
                 }
             }
@@ -106,6 +137,228 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun setFunctionAreaExpanded(expanded: Boolean) {
         if (_uiState.value.isFunctionAreaExpanded == expanded) return
         _uiState.update { it.copy(isFunctionAreaExpanded = expanded) }
+    }
+
+    fun setFunctionTabIndex(index: Int) {
+        _uiState.update { it.copy(functionTabIndex = index) }
+    }
+
+    // === 分享选择模式 ===
+
+    fun enterShareSelection() {
+        _uiState.update {
+            it.copy(
+                isShareSelecting = true,
+                isFunctionAreaExpanded = false,
+            )
+        }
+    }
+
+    fun cancelShareSelection() {
+        _uiState.update {
+            it.copy(
+                isShareSelecting = false,
+                shareSelectedIds = emptySet(),
+            )
+        }
+    }
+
+    fun toggleShareSelection(badgeId: String) {
+        _uiState.update { state ->
+            val updated = state.shareSelectedIds.toMutableSet()
+            if (updated.contains(badgeId)) {
+                updated.remove(badgeId)
+            } else {
+                updated.add(badgeId)
+            }
+            state.copy(shareSelectedIds = updated)
+        }
+    }
+
+    fun selectAllVisibleForShare() {
+        _uiState.update { state ->
+            state.copy(shareSelectedIds = state.badges.map { it.id }.toSet())
+        }
+    }
+
+    fun finishShareSelection() {
+        if (_uiState.value.shareSelectedIds.isEmpty()) return
+        _uiState.update {
+            it.copy(
+                isShareSelecting = false,
+                isFunctionAreaExpanded = true,
+                functionTabIndex = 2,
+            )
+        }
+    }
+
+    fun clearPendingShareCode() {
+        _uiState.update { it.copy(pendingShareCode = null) }
+    }
+
+    fun setShareFormat(format: BadgeShareFormat) {
+        _uiState.update { it.copy(shareFormat = format) }
+    }
+
+    fun dismissShareImport() {
+        _uiState.update {
+            it.copy(
+                pendingImportUri = null,
+            )
+        }
+    }
+
+    fun receiveShareImport(uri: android.net.Uri) {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val context = getApplication<Application>()
+                val stableUri = BadgeShareExporter.copyIncomingShareToCache(context, uri)
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    _uiState.update {
+                        it.copy(
+                            pendingImportUri = stableUri,
+                            isFunctionAreaExpanded = true,
+                            functionTabIndex = 0,
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("HomeViewModel", "Failed to receive shared file", e)
+                _uiEvent.emit(
+                    BadgeUiEvent.ShowToast(
+                        getApplication<Application>().getString(R.string.share_import_failed)
+                    )
+                )
+            }
+        }
+    }
+
+    fun prepareShareExport() {
+        val state = _uiState.value
+        val selectedIds = state.shareSelectedIds
+        if (selectedIds.isEmpty()) return
+
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val allBadges = BadgeRepository.badges.value
+                val toShare = allBadges.filter { it.id in selectedIds }
+                if (toShare.isEmpty()) return@launch
+
+                when (state.shareFormat) {
+                    BadgeShareFormat.TEXT -> {
+                        val entries = BadgeShareText.toEntries(toShare)
+                        if (entries.isEmpty()) {
+                            _uiEvent.emit(
+                                BadgeUiEvent.ShowToast(
+                                    getApplication<Application>().getString(
+                                        R.string.share_text_no_entries
+                                    )
+                                )
+                            )
+                            return@launch
+                        }
+                        val text = BadgeShareText.formatPlain(toShare)
+                        val toast = getApplication<Application>().getString(
+                            R.string.share_copied_to_clipboard,
+                            text.length,
+                        )
+                        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                            _uiState.update { it.copy(pendingShareCode = null) }
+                            _uiEvent.emit(BadgeUiEvent.CopyTextToClipboard(text, toast))
+                        }
+                    }
+                    BadgeShareFormat.ENCRYPTED_FILE -> {
+                        val code = BadgeShareCrypto.generateShareCode()
+                        val context = getApplication<Application>()
+                        val export = BadgeShareExporter.writeEncryptedFile(context, toShare, code)
+                        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                            _uiState.update { it.copy(pendingShareCode = code) }
+                            _uiEvent.emit(
+                                BadgeUiEvent.LaunchShareFile(
+                                    export.uri,
+                                    export.code,
+                                    export.mimeType,
+                                )
+                            )
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("HomeViewModel", "Share export failed", e)
+                _uiEvent.emit(
+                    BadgeUiEvent.ShowToast(
+                        getApplication<Application>().getString(R.string.share_export_failed)
+                    )
+                )
+            }
+        }
+    }
+
+    fun importSharedBadges(
+        context: android.content.Context,
+        uri: android.net.Uri,
+        code: String,
+        onResult: (Int) -> Unit,
+    ) {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                    ?: run {
+                        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                            onResult(-1)
+                        }
+                        return@launch
+                    }
+
+                val result = BadgeShareCrypto.decrypt(bytes, code)
+                if (result.isFailure) {
+                    val error = result.exceptionOrNull()
+                    val msgRes = when (error) {
+                        is BadgeShareError.WrongPassword -> R.string.share_import_wrong_password
+                        is BadgeShareError.InvalidFile,
+                        is BadgeShareError.UnsupportedVersion -> R.string.share_import_invalid_file
+                        is BadgeShareError.EmptyPayload -> R.string.share_import_empty
+                        else -> R.string.share_import_failed
+                    }
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        _uiEvent.emit(
+                            BadgeUiEvent.ShowToast(
+                                getApplication<Application>().getString(msgRes)
+                            )
+                        )
+                        onResult(-1)
+                    }
+                    return@launch
+                }
+                val envelope = result.getOrThrow()
+
+                var imported = 0
+                for (badge in envelope.badges) {
+                    BadgeRepository.addBadge(
+                        title = badge.title,
+                        remark = badge.remark,
+                        link = badge.link,
+                        channel = badge.channel,
+                        tags = badge.tags,
+                    )
+                    imported++
+                }
+
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    onResult(imported)
+                }
+            } catch (e: Exception) {
+                Log.e("HomeViewModel", "Share import failed", e)
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    _uiEvent.emit(
+                        BadgeUiEvent.ShowToast(
+                            getApplication<Application>().getString(R.string.share_import_failed)
+                        )
+                    )
+                    onResult(-1)
+                }
+            }
+        }
     }
 
     // === 列表/添加页面的操作 ===

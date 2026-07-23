@@ -1,6 +1,8 @@
 package io.github.tatooinoyo.star.badge.ui.home
 
+import android.content.ClipData
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -67,10 +69,12 @@ import io.github.tatooinoyo.star.badge.ui.about.UpdateCheckDialog
 import io.github.tatooinoyo.star.badge.ui.home.badge_sync.BadgeSyncViewModel
 import io.github.tatooinoyo.star.badge.ui.home.component.BadgeFunctionArea
 import io.github.tatooinoyo.star.badge.ui.home.component.BadgeReorderList
+import io.github.tatooinoyo.star.badge.ui.home.component.ShareImportDialog
 import io.github.tatooinoyo.star.badge.ui.home.component.TagFilterBar
 import io.github.tatooinoyo.star.badge.ui.home.component.TagManageDialog
 import io.github.tatooinoyo.star.badge.ui.state.SyncState
 import io.github.tatooinoyo.star.badge.ui.theme.PeachTheme
+import io.github.tatooinoyo.star.badge.utils.export.BadgeShareFormat
 import io.github.tatooinoyo.star.badge.utils.update.UpdateCheckResult
 import io.github.tatooinoyo.star.badge.utils.update.UpdateChecker
 import kotlinx.coroutines.delay
@@ -120,6 +124,28 @@ fun HomeScreen(
                     // 自动录入成功后，清除输入框焦点
                     focusManager.clearFocus()
                 }
+                is BadgeUiEvent.LaunchShareFile -> {
+                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                        type = event.mimeType
+                        putExtra(Intent.EXTRA_STREAM, event.uri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        clipData = ClipData.newUri(
+                            context.contentResolver,
+                            "badge_share",
+                            event.uri,
+                        )
+                    }
+                    context.startActivity(
+                        Intent.createChooser(
+                            shareIntent,
+                            context.getString(R.string.share_chooser_title),
+                        )
+                    )
+                }
+                is BadgeUiEvent.CopyTextToClipboard -> {
+                    clipboardManager.setText(AnnotatedString(event.text))
+                    Toast.makeText(context, event.toastMessage, Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
@@ -134,7 +160,13 @@ fun HomeScreen(
             onInputChannelChange = { viewModelInstance.updateAddInput(channel = it) },
             onFastModeChange = viewModelInstance::toggleFastMode,
             onAddClick = { viewModelInstance.addBadge() },
-            onItemClick = { badge -> viewModelInstance.selectBadge(badge) },
+            onItemClick = { badge ->
+                if (uiState.isShareSelecting) {
+                    viewModelInstance.toggleShareSelection(badge.id)
+                } else {
+                    viewModelInstance.selectBadge(badge)
+                }
+            },
             onToggleFunctionArea = { viewModelInstance.toggleFunctionArea() },
             onSetFunctionAreaExpanded = { viewModelInstance.setFunctionAreaExpanded(it) },
             onExtractSkClick = { link -> viewModelInstance.extractSkFromLink(link) },
@@ -154,6 +186,20 @@ fun HomeScreen(
             onExport = { ctx, uri, onResult ->
                 viewModelInstance.exportBadgesToUri(ctx, uri, onResult)
             },
+            onShareSelectBadges = { viewModelInstance.enterShareSelection() },
+            onShareExport = { viewModelInstance.prepareShareExport() },
+            onShareFormatChange = { viewModelInstance.setShareFormat(it) },
+            onCopyShareCode = { code ->
+                clipboardManager.setText(AnnotatedString(code))
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.msg_copy_success),
+                    Toast.LENGTH_SHORT,
+                ).show()
+            },
+            onCancelShareSelection = { viewModelInstance.cancelShareSelection() },
+            onSelectAllForShare = { viewModelInstance.selectAllVisibleForShare() },
+            onFinishShareSelection = { viewModelInstance.finishShareSelection() },
             // 导航相关
             onSettingsClick = onNavigateToSettings,
             onAboutClick = onNavigateToAbout,
@@ -225,6 +271,16 @@ fun HomeScreen(
             },
         )
     }
+
+    uiState.pendingImportUri?.let { uri ->
+        ShareImportDialog(
+            uri = uri,
+            onDismiss = { viewModelInstance.dismissShareImport() },
+            onImportSharedBadges = { ctx, importUri, code, onResult ->
+                viewModelInstance.importSharedBadges(ctx, importUri, code, onResult)
+            },
+        )
+    }
 }
 
 @Composable
@@ -253,11 +309,22 @@ fun BadgeListContent(
     onStopReceiver: () -> Unit,
     onImport: (Context, Uri, (Boolean) -> Unit) -> Unit,
     onExport: (Context, Uri, (Boolean) -> Unit) -> Unit,
+    onShareSelectBadges: () -> Unit = {},
+    onShareExport: () -> Unit = {},
+    onShareFormatChange: (BadgeShareFormat) -> Unit = {},
+    onCopyShareCode: (String) -> Unit = {},
+    onCancelShareSelection: () -> Unit = {},
+    onSelectAllForShare: () -> Unit = {},
+    onFinishShareSelection: () -> Unit = {},
     // 导航相关
     onSettingsClick: () -> Unit,
     onAboutClick: () -> Unit,
     onUnrecordedBadgesClick: () -> Unit,
 ) {
+
+    BackHandler(enabled = uiState.isShareSelecting) {
+        onCancelShareSelection()
+    }
 
     Column(
         modifier = Modifier
@@ -266,29 +333,42 @@ fun BadgeListContent(
 //            .padding(16.dp)
             .safeDrawingPadding()
     ) {
-        // 1. 顶部功能区 (录入、备份、同步)
-        BadgeFunctionArea(
-            uiState = uiState,
-            syncState = syncState,
-            onInputTitleChange = onInputTitleChange,
-            onInputRemarkChange = onInputRemarkChange,
-            onInputLinkChange = onInputLinkChange,
-            onInputChannelChange = onInputChannelChange,
-            onFastModeChange = onFastModeChange,
-            onAddClick = onAddClick,
-            onToggleExpanded = onToggleFunctionArea,
-            onExtractSkClick = onExtractSkClick,
-            onTagsChange = onTagsChange,
-            onStartSender = onStartSender,
-            onStopSender = onStopSender,
-            onStartReceiver = onStartReceiver,
-            onStopReceiver = onStopReceiver,
-            onImport = onImport,
-            onExport = onExport,
-            onSettingsClick = onSettingsClick,
-            onAboutClick = onAboutClick,
-            onUnrecordedBadgesClick = onUnrecordedBadgesClick
-        )
+        // 1. 顶部功能区 (录入、备份、分享、同步)
+        if (uiState.isShareSelecting) {
+            ShareSelectionTopBar(
+                selectedCount = uiState.shareSelectedIds.size,
+                onCancel = onCancelShareSelection,
+                onSelectAll = onSelectAllForShare,
+            )
+        } else {
+            BadgeFunctionArea(
+                uiState = uiState,
+                syncState = syncState,
+                onInputTitleChange = onInputTitleChange,
+                onInputRemarkChange = onInputRemarkChange,
+                onInputLinkChange = onInputLinkChange,
+                onInputChannelChange = onInputChannelChange,
+                onFastModeChange = onFastModeChange,
+                onAddClick = onAddClick,
+                onToggleExpanded = onToggleFunctionArea,
+                onExtractSkClick = onExtractSkClick,
+                onTagsChange = onTagsChange,
+                onStartSender = onStartSender,
+                onStopSender = onStopSender,
+                onStartReceiver = onStartReceiver,
+                onStopReceiver = onStopReceiver,
+                onImport = onImport,
+                onExport = onExport,
+                allBadges = uiState.allBadgesUnfiltered,
+                onShareSelectBadges = onShareSelectBadges,
+                onShareExport = onShareExport,
+                onShareFormatChange = onShareFormatChange,
+                onCopyShareCode = onCopyShareCode,
+                onSettingsClick = onSettingsClick,
+                onAboutClick = onAboutClick,
+                onUnrecordedBadgesClick = onUnrecordedBadgesClick,
+            )
+        }
 
         // 标签筛选栏
         // 放在列表上方
@@ -298,7 +378,6 @@ fun BadgeListContent(
             onTagSelected = onTagSelected
         )
 
-        // 2. 列表区域
         BadgeReorderList(
             badges = uiState.badges,
             onItemClick = onItemClick,
@@ -307,10 +386,63 @@ fun BadgeListContent(
             listState = listState,
             isFunctionAreaExpanded = uiState.isFunctionAreaExpanded,
             onSetFunctionAreaExpanded = onSetFunctionAreaExpanded,
-            modifier = Modifier.weight(1f)
+            isShareSelecting = uiState.isShareSelecting,
+            shareSelectedIds = uiState.shareSelectedIds,
+            modifier = Modifier.weight(1f),
         )
 
+        if (uiState.isShareSelecting) {
+            ShareSelectionBottomBar(
+                selectedCount = uiState.shareSelectedIds.size,
+                onNext = onFinishShareSelection,
+            )
+        }
+    }
+}
 
+@Composable
+private fun ShareSelectionTopBar(
+    selectedCount: Int,
+    onCancel: () -> Unit,
+    onSelectAll: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        TextButton(onClick = onCancel) {
+            Text(stringResource(R.string.cancel))
+        }
+        Text(
+            text = stringResource(R.string.share_selected_count, selectedCount),
+            style = MaterialTheme.typography.titleSmall,
+        )
+        TextButton(onClick = onSelectAll) {
+            Text(stringResource(R.string.share_select_all_visible))
+        }
+    }
+}
+
+@Composable
+private fun ShareSelectionBottomBar(
+    selectedCount: Int,
+    onNext: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.End,
+    ) {
+        Button(
+            onClick = onNext,
+            enabled = selectedCount > 0,
+        ) {
+            Text(stringResource(R.string.share_next_step))
+        }
     }
 }
 

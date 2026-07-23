@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">徽章管理器</string>
-    <string name="tab_input">徽章录入</string>
-    <string name="tab_backup">备份还原</string>
+    <string name="tab_input">录入</string>
+    <string name="tab_backup">备份</string>
     <string name="btn_add_badge">添加徽章</string>
     <string name="msg_copy_success">已复制到剪贴板</string>
     <string name="btn_confirm">确定</string>
@@ -24,7 +24,35 @@
     <string name="toast_export_fail">导出失败</string>
     <string name="toast_import_success">数据还原成功</string>
     <string name="toast_import_fail">导入失败，文件格式可能错误</string>
-    <string name="tab_syncdata">同网互传</string>
+    <string name="tab_syncdata">同网</string>
+    <string name="tab_share">分享</string>
+    <string name="share_tab_desc">选徽章后可复制文本，或分享加密文件。</string>
+    <string name="share_select_badges">选择徽章</string>
+    <string name="share_reselect">重新选择</string>
+    <string name="share_generate_and_send">生成并分享</string>
+    <string name="share_selected_count">已选 %1$d 个</string>
+    <string name="share_selected_more">…还有 %1$d 个</string>
+    <string name="share_verification_code">验证码</string>
+    <string name="share_copy_code">复制验证码</string>
+    <string name="share_send_code_hint">请将验证码与文件一并发送给对方。</string>
+    <string name="share_select_all_visible">全选当前</string>
+    <string name="share_next_step">下一步</string>
+    <string name="share_chooser_title">分享加密徽章</string>
+    <string name="share_export_failed">创建分享文件失败</string>
+    <string name="share_import_dialog_title">输入验证码</string>
+    <string name="share_import_external_desc">收到分享的徽章文件，请输入发送方提供的 6 位验证码以导入。</string>
+    <string name="share_import_success">已导入 %1$d 个徽章</string>
+    <string name="share_import_failed">导入失败</string>
+    <string name="share_import_wrong_password">验证码错误</string>
+    <string name="share_import_invalid_file">分享文件无效或已损坏</string>
+    <string name="share_import_empty">文件中没有徽章数据</string>
+    <string name="share_format_label">分享格式</string>
+    <string name="share_format_text">文本</string>
+    <string name="share_format_file">加密文件</string>
+    <string name="share_text_hint">复制「标题 + 完整链接」到剪贴板。</string>
+    <string name="share_text_no_entries">没有可导出的徽章。</string>
+    <string name="share_copy_to_clipboard">复制到剪贴板</string>
+    <string name="share_copied_to_clipboard">已复制（%1$d 字符）</string>
     <string name="about">关于</string>
     <string name="collapse">收起</string>
     <string name="expand">展开</string>

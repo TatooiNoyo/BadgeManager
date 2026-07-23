@@ -32,10 +32,11 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,8 +46,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import io.github.tatooinoyo.star.badge.R
 import io.github.tatooinoyo.star.badge.data.BadgeChannel
 import io.github.tatooinoyo.star.badge.ui.home.BadgeUiState
@@ -72,6 +75,11 @@ fun BadgeFunctionArea(
     onStopReceiver: () -> Unit,
     onImport: (Context, Uri, (Boolean) -> Unit) -> Unit,
     onExport: (Context, Uri, (Boolean) -> Unit) -> Unit,
+    allBadges: List<io.github.tatooinoyo.star.badge.data.Badge> = emptyList(),
+    onShareSelectBadges: () -> Unit = {},
+    onShareExport: () -> Unit = {},
+    onShareFormatChange: (io.github.tatooinoyo.star.badge.utils.export.BadgeShareFormat) -> Unit = {},
+    onCopyShareCode: (String) -> Unit = {},
     onSettingsClick: () -> Unit, // 点击设置菜单项
     onAboutClick: () -> Unit, // 点击帮助菜单项
     onUnrecordedBadgesClick: () -> Unit // 点击"未录入徽章"菜单项
@@ -79,10 +87,21 @@ fun BadgeFunctionArea(
     val tabs = listOf(
         stringResource(R.string.tab_input),
         stringResource(R.string.tab_backup),
+        stringResource(R.string.tab_share),
         stringResource(R.string.tab_syncdata)
     )
-    val pagerState = rememberPagerState(pageCount = { tabs.size })
+    val pagerState = rememberPagerState(
+        initialPage = uiState.functionTabIndex.coerceIn(0, tabs.lastIndex),
+        pageCount = { tabs.size },
+    )
     val scope = rememberCoroutineScope()
+
+    LaunchedEffect(uiState.functionTabIndex) {
+        val target = uiState.functionTabIndex.coerceIn(0, tabs.lastIndex)
+        if (pagerState.currentPage != target) {
+            pagerState.animateScrollToPage(target)
+        }
+    }
 
     // 可折叠的功能面板区域
     AnimatedVisibility(
@@ -99,12 +118,11 @@ fun BadgeFunctionArea(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Box(modifier = Modifier.weight(1f)) {
-                    ScrollableTabRow(
+                    TabRow(
                         selectedTabIndex = pagerState.currentPage,
                         containerColor = Color.Transparent,
                         contentColor = MaterialTheme.colorScheme.onSurface,
-                        edgePadding = 0.dp, // 这里的 padding 设为 0 保持左对齐
-                        divider = {}
+                        divider = {},
                     ) {
                         tabs.forEachIndexed { index, title ->
                             Tab(
@@ -116,9 +134,13 @@ fun BadgeFunctionArea(
                                     Text(
                                         text = title,
                                         maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
+                                        overflow = TextOverflow.Ellipsis,
+                                        textAlign = TextAlign.Center,
+                                        style = MaterialTheme.typography.labelLarge.copy(
+                                            fontSize = 13.sp,
+                                        ),
                                     )
-                                }
+                                },
                             )
                         }
                     }
@@ -157,7 +179,15 @@ fun BadgeFunctionArea(
                         )
 
                         1 -> BackupRestorePanel(onImport = onImport, onExport = onExport)
-                        2 -> SyncDataPanel(
+                        2 -> ShareBadgesPanel(
+                            uiState = uiState,
+                            allBadges = allBadges,
+                            onSelectBadges = onShareSelectBadges,
+                            onShareExport = onShareExport,
+                            onShareFormatChange = onShareFormatChange,
+                            onCopyCode = onCopyShareCode,
+                        )
+                        3 -> SyncDataPanel(
                             syncState = syncState,
                             onStartSender = onStartSender,
                             onStopSender = onStopSender,

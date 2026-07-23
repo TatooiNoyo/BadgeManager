@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -41,6 +42,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -76,7 +78,7 @@ fun BadgeInputPanel(
     onFastModeChange: (Boolean) -> Unit,
     onAddClick: () -> Unit,
     onExtractSkClick: (String) -> Unit,
-    onTagsChange: (List<String>) -> Unit
+    onTagsChange: (List<String>) -> Unit,
 ) {
     Column(Modifier.padding(horizontal = 16.dp)) {
         BadgeInputForm(
@@ -94,7 +96,6 @@ fun BadgeInputPanel(
             onExtractSkClick = onExtractSkClick,
             isFastMode = uiState.isFastMode
         )
-
 
         Spacer(modifier = Modifier.height(8.dp))
 

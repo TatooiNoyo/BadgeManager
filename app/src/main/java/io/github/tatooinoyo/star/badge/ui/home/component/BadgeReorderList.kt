@@ -31,6 +31,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -111,12 +112,14 @@ fun BadgeReorderList(
     listState: LazyListState = rememberLazyListState(),
     isFunctionAreaExpanded: Boolean = true,
     onSetFunctionAreaExpanded: (Boolean) -> Unit = {},
+    isShareSelecting: Boolean = false,
+    shareSelectedIds: Set<String> = emptySet(),
     modifier: Modifier = Modifier,
 ) {
     val isExpandedState = rememberUpdatedState(isFunctionAreaExpanded)
     val onSetExpandedState = rememberUpdatedState(onSetFunctionAreaExpanded)
     val reorderState = rememberMultiTouchReorderState(listState, onMove, onSaveOrder)
-    val isDraggingState = rememberUpdatedState(reorderState.isDragging)
+    val isDraggingState = rememberUpdatedState(reorderState.isDragging && !isShareSelecting)
 
     // 拖拽中从列表暂隐被拖项，下方自动补位；落点下标相对此展示列表
     val displayBadges = remember(badges, reorderState.draggingKey, reorderState.isDragging) {
@@ -259,19 +262,30 @@ fun BadgeReorderList(
                     badge = badge,
                     elevated = false,
                     onClick = { onItemClick(badge) },
-                    clickEnabled = !reorderState.isDragging,
+                    clickEnabled = !reorderState.isDragging || isShareSelecting,
+                    isShareSelecting = isShareSelecting,
+                    isShareSelected = badge.id in shareSelectedIds,
                     modifier = Modifier.animateItem(
                         fadeInSpec = null,
                         fadeOutSpec = null,
                         placementSpec = tween(REORDER_PLACEMENT_MS),
                     ),
-                    dragHandle = {
-                        val fullIndex = badges.indexOfFirst { it.id == badge.id }
-                        DragHandle(
-                            badge = badge,
-                            index = fullIndex,
-                            reorderState = reorderState,
-                        )
+                    dragHandle = if (isShareSelecting) {
+                        {
+                            Checkbox(
+                                checked = badge.id in shareSelectedIds,
+                                onCheckedChange = { onItemClick(badge) },
+                            )
+                        }
+                    } else {
+                        {
+                            val fullIndex = badges.indexOfFirst { it.id == badge.id }
+                            DragHandle(
+                                badge = badge,
+                                index = fullIndex,
+                                reorderState = reorderState,
+                            )
+                        }
                     },
                 )
             }
@@ -371,6 +385,8 @@ private fun BadgeListCard(
     elevated: Boolean,
     onClick: () -> Unit,
     clickEnabled: Boolean,
+    isShareSelecting: Boolean = false,
+    isShareSelected: Boolean = false,
     modifier: Modifier = Modifier,
     dragHandle: @Composable () -> Unit,
 ) {
@@ -382,12 +398,14 @@ private fun BadgeListCard(
         elevation = CardDefaults.cardElevation(
             defaultElevation = if (elevated) 8.dp else 2.dp
         ),
-        colors = if (elevated) {
-            CardDefaults.cardColors(
+        colors = when {
+            elevated -> CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant
             )
-        } else {
-            CardDefaults.cardColors()
+            isShareSelecting && isShareSelected -> CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+            )
+            else -> CardDefaults.cardColors()
         },
     ) {
         Row(

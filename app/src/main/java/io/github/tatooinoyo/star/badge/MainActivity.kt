@@ -99,9 +99,11 @@ class MainActivity : ComponentActivity() {
             startFloatingService()
         }
 
-        // 处理如果是通过 NFC 标签启动 App 的情况
+        // 处理冷启动：NFC / 分享 / 打开文件
         if (isNfcSupported && NfcAdapter.ACTION_NDEF_DISCOVERED == intent.action) {
             handleNfcIntent(intent)
+        } else {
+            handleIncomingIntent(intent)
         }
     }
 
@@ -144,6 +146,7 @@ class MainActivity : ComponentActivity() {
     // 处理新的 Intent (当在 Activity 处于前台时触碰 NFC)
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        setIntent(intent)
         // 扩展判断条件，处理 TAG_DISCOVERED 和 TECH_DISCOVERED
         if (isNfcSupported && (
                     NfcAdapter.ACTION_NDEF_DISCOVERED == intent.action ||
@@ -152,7 +155,9 @@ class MainActivity : ComponentActivity() {
                     )
         ) {
             handleNfcIntent(intent)
+            return
         }
+        handleIncomingIntent(intent)
     }
 
     // 解析 NFC 数据的方法
@@ -304,6 +309,27 @@ class MainActivity : ComponentActivity() {
     private fun startFloatingService() {
         val intent = Intent(this, FloatingButtonService::class.java)
         startService(intent)
+    }
+
+    private fun handleIncomingIntent(intent: Intent?) {
+        if (intent == null || !::homeViewModel.isInitialized) return
+
+        when (intent.action) {
+            Intent.ACTION_SEND -> {
+                val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
+                } else {
+                    @Suppress("DEPRECATION")
+                    intent.getParcelableExtra(Intent.EXTRA_STREAM)
+                } ?: return
+
+                homeViewModel.receiveShareImport(uri)
+            }
+            Intent.ACTION_VIEW -> {
+                val uri = intent.data ?: return
+                homeViewModel.receiveShareImport(uri)
+            }
+        }
     }
 
     // 可选：Activity 销毁时是否要关闭悬浮窗？
