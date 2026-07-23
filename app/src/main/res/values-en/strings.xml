@@ -34,7 +34,8 @@
     <string name="share_selected_more">…and %1$d more</string>
     <string name="share_verification_code">Verification code</string>
     <string name="share_copy_code">Copy code</string>
-    <string name="share_send_code_hint">Send this code together with the file to the recipient.</string>
+    <string name="share_code_copied">Verification code copied to clipboard</string>
+    <string name="share_send_code_hint">The code is copied automatically; send it with the file to the recipient.</string>
     <string name="share_select_all_visible">Select all visible</string>
     <string name="share_next_step">Next</string>
     <string name="share_chooser_title">Share encrypted badges</string>

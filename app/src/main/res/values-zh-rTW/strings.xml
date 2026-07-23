@@ -34,7 +34,8 @@
     <string name="share_selected_more">…還有 %1$d 個</string>
     <string name="share_verification_code">驗證碼</string>
     <string name="share_copy_code">複製驗證碼</string>
-    <string name="share_send_code_hint">請將驗證碼與檔案一併傳送給對方。</string>
+    <string name="share_code_copied">驗證碼已複製到剪貼簿</string>
+    <string name="share_send_code_hint">驗證碼已自動複製，可與檔案一併傳送給對方。</string>
     <string name="share_select_all_visible">全選目前</string>
     <string name="share_next_step">下一步</string>
     <string name="share_chooser_title">分享加密徽章</string>

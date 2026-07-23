@@ -125,6 +125,12 @@ fun HomeScreen(
                     focusManager.clearFocus()
                 }
                 is BadgeUiEvent.LaunchShareFile -> {
+                    clipboardManager.setText(AnnotatedString(event.code))
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.share_code_copied),
+                        Toast.LENGTH_SHORT,
+                    ).show()
                     val shareIntent = Intent(Intent.ACTION_SEND).apply {
                         type = event.mimeType
                         putExtra(Intent.EXTRA_STREAM, event.uri)
