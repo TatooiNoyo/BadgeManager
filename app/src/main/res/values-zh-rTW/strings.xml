@@ -57,6 +57,8 @@
     <string name="collapse">收合</string>
     <string name="expand">展開</string>
     <string name="continuous_entry">連續錄入</string>
+    <string name="continuous_entry_help_title">連續錄入說明</string>
+    <string name="continuous_entry_help_desc">勾選後：\n• 點擊連結輸入框時，若剪貼簿有連結會自動貼上；\n• 填入連結後自動新增徽章並清空表單，方便連續快速錄入。</string>
     <string name="close">關閉</string>
     <string name="stop_sharing">停止分享</string>
     <string name="cancel_sync">取消同步</string>

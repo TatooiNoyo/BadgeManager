@@ -24,6 +24,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
@@ -37,13 +38,16 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,6 +60,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.tatooinoyo.star.badge.R
@@ -80,6 +85,8 @@ fun BadgeInputPanel(
     onExtractSkClick: (String) -> Unit,
     onTagsChange: (List<String>) -> Unit,
 ) {
+    var showContinuousHelp by remember { mutableStateOf(false) }
+
     Column(Modifier.padding(horizontal = 16.dp)) {
         BadgeInputForm(
             title = uiState.addTitle,
@@ -97,40 +104,64 @@ fun BadgeInputPanel(
             isFastMode = uiState.isFastMode
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-        // 修改底部操作栏：左侧放开关，右侧放添加按钮
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            // === 左侧：连续录入开关 ===
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(start = 8.dp) // 稍微留点边距
+            // 左侧紧凑靠左：连续录入 + 说明
+            CompositionLocalProvider(
+                LocalMinimumInteractiveComponentSize provides Dp.Unspecified,
             ) {
-                Checkbox(
-                    checked = uiState.isFastMode,
-                    onCheckedChange = onFastModeChange
-                )
-                Text(
-                    text = stringResource(R.string.continuous_entry), // 或者 "快速模式"
-                    maxLines = 1,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(start = 4.dp)
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    Checkbox(
+                        checked = uiState.isFastMode,
+                        onCheckedChange = onFastModeChange,
+                    )
+                    Text(
+                        text = stringResource(R.string.continuous_entry),
+                        maxLines = 1,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    IconButton(
+                        onClick = { showContinuousHelp = true },
+                        modifier = Modifier.size(28.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.HelpOutline,
+                            contentDescription = stringResource(R.string.continuous_entry_help_title),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                }
             }
 
-            // === 右侧：添加按钮 ===
-            Button(
-                onClick = onAddClick,
-            ) {
+            Spacer(modifier = Modifier.weight(1f))
+
+            Button(onClick = onAddClick) {
                 Icon(Icons.Default.Add, contentDescription = null)
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(text = stringResource(R.string.btn_add_badge), maxLines = 1)
             }
         }
+    }
+
+    if (showContinuousHelp) {
+        AlertDialog(
+            onDismissRequest = { showContinuousHelp = false },
+            title = { Text(stringResource(R.string.continuous_entry_help_title)) },
+            text = { Text(stringResource(R.string.continuous_entry_help_desc)) },
+            confirmButton = {
+                TextButton(onClick = { showContinuousHelp = false }) {
+                    Text(stringResource(R.string.btn_confirm))
+                }
+            },
+        )
     }
 }
 

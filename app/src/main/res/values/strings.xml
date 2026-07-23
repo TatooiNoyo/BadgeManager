@@ -56,6 +56,8 @@
     <string name="collapse">Collapse</string>
     <string name="expand">Expand</string>
     <string name="continuous_entry">Continuous Entry</string>
+    <string name="continuous_entry_help_title">About continuous entry</string>
+    <string name="continuous_entry_help_desc">When enabled:\n• Focusing the link field pastes a link from the clipboard (if any).\n• After a link is filled in, the badge is added automatically and the form is cleared for the next one.</string>
     <string name="close">Close</string>
     <string name="stop_sharing">Stop Sharing</string>
     <string name="cancel_sync">Cancel Sync</string>
