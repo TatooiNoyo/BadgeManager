@@ -102,7 +102,7 @@ fun ShareBadgesPanel(
         Text(
             text = when (uiState.shareFormat) {
                 BadgeShareFormat.TEXT -> stringResource(R.string.share_text_hint)
-                BadgeShareFormat.ENCRYPTED_FILE -> stringResource(R.string.share_send_code_hint)
+                BadgeShareFormat.ENCRYPTED_FILE -> stringResource(R.string.share_file_hint)
             },
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,

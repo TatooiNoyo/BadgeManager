@@ -50,6 +50,7 @@
     <string name="share_format_text">Text</string>
     <string name="share_format_file">Encrypted file</string>
     <string name="share_text_hint">Copies title + full link to the clipboard.</string>
+    <string name="share_file_hint">The recipient can open the encrypted file with this app and enter the verification code to add badges.</string>
     <string name="share_text_no_entries">No badges to export as text.</string>
     <string name="share_copy_to_clipboard">Copy to clipboard</string>
     <string name="share_copied_to_clipboard">Copied (%1$d chars)</string>

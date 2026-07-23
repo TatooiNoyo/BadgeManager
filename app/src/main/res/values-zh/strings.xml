@@ -51,6 +51,7 @@
     <string name="share_format_text">文本</string>
     <string name="share_format_file">加密文件</string>
     <string name="share_text_hint">复制「标题 + 完整链接」到剪贴板。</string>
+    <string name="share_file_hint">对方可用本应用打开加密文件，输入验证码后添加徽章。</string>
     <string name="share_text_no_entries">没有可导出的徽章。</string>
     <string name="share_copy_to_clipboard">复制到剪贴板</string>
     <string name="share_copied_to_clipboard">已复制（%1$d 字符）</string>
