@@ -21,6 +21,12 @@ object BadgeShareCrypto {
 
     fun generateShareCode(): String = (100_000..999_999).random().toString()
 
+    /** True when bytes look like a BadgeManager encrypted share (BMEN header). */
+    fun looksLikeEncryptedShare(data: ByteArray): Boolean {
+        if (data.size < HEADER_SIZE + 12 + 16) return false
+        return data.copyOfRange(0, MAGIC.size).contentEquals(MAGIC)
+    }
+
     fun encrypt(badges: List<Badge>, code: String): ByteArray {
         require(code.length == 6 && code.all { it.isDigit() }) { "Share code must be 6 digits" }
         val envelope = BadgeShareEnvelope(badges = badges)
@@ -34,10 +40,7 @@ object BadgeShareCrypto {
     }
 
     fun decrypt(data: ByteArray, code: String): Result<BadgeShareEnvelope> {
-        if (data.size < HEADER_SIZE + 12 + 16) {
-            return Result.failure(BadgeShareError.InvalidFile)
-        }
-        if (!data.copyOfRange(0, MAGIC.size).contentEquals(MAGIC)) {
+        if (!looksLikeEncryptedShare(data)) {
             return Result.failure(BadgeShareError.InvalidFile)
         }
 

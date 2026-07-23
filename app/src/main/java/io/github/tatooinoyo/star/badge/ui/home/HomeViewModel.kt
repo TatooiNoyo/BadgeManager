@@ -222,6 +222,13 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                         )
                     }
                 }
+            } catch (e: BadgeShareError.InvalidFile) {
+                Log.w("HomeViewModel", "Incoming share is not a badgeenc file", e)
+                _uiEvent.emit(
+                    BadgeUiEvent.ShowToast(
+                        getApplication<Application>().getString(R.string.share_import_invalid_file)
+                    )
+                )
             } catch (e: Exception) {
                 Log.e("HomeViewModel", "Failed to receive shared file", e)
                 _uiEvent.emit(

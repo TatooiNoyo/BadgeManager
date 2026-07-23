@@ -35,6 +35,11 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="application/x-badgeenc" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/octet-stream" />
+            </intent-filter>
 
             <!-- Open .badgeenc: custom MIME (when provider reports it) -->
             <intent-filter>
@@ -47,7 +52,7 @@
                 <data android:mimeType="application/x-badgeenc" />
             </intent-filter>
 
-            <!-- Open .badgeenc: file managers often use octet-stream / */* + path -->
+            <!-- Downloads / file managers often use octet-stream with no filename in the URI -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -56,11 +61,9 @@
                 <data android:scheme="file" />
                 <data android:host="*" />
                 <data android:mimeType="application/octet-stream" />
-                <data android:pathPattern=".*\\.badgeenc" />
-                <data android:pathPattern=".*\\..*\\.badgeenc" />
-                <data android:pathPattern=".*\\..*\\..*\\.badgeenc" />
-                <data android:pathPattern=".*\\..*\\..*\\..*\\.badgeenc" />
             </intent-filter>
+
+            <!-- Open by extension: .badgeenc or .badgeenc.bin (some ROMs append .bin) -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -73,6 +76,10 @@
                 <data android:pathPattern=".*\\..*\\.badgeenc" />
                 <data android:pathPattern=".*\\..*\\..*\\.badgeenc" />
                 <data android:pathPattern=".*\\..*\\..*\\..*\\.badgeenc" />
+                <data android:pathPattern=".*\\.badgeenc\\.bin" />
+                <data android:pathPattern=".*\\..*\\.badgeenc\\.bin" />
+                <data android:pathPattern=".*\\..*\\..*\\.badgeenc\\.bin" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\.badgeenc\\.bin" />
             </intent-filter>
         </activity>
 

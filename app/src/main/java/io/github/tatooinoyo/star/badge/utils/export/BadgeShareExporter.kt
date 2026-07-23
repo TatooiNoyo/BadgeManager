@@ -48,6 +48,9 @@ object BadgeShareExporter {
         val dir = File(context.cacheDir, "$EXPORT_DIR/incoming").apply { mkdirs() }
         val bytes = context.contentResolver.openInputStream(sourceUri)?.use { it.readBytes() }
             ?: throw IllegalArgumentException("Cannot read shared content")
+        if (!BadgeShareCrypto.looksLikeEncryptedShare(bytes)) {
+            throw BadgeShareError.InvalidFile
+        }
         val file = File(dir, "import_${System.currentTimeMillis()}$FILE_EXT")
         file.writeBytes(bytes)
         return FileProvider.getUriForFile(
