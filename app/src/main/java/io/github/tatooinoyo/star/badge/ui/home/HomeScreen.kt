@@ -28,7 +28,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -72,6 +71,7 @@ import io.github.tatooinoyo.star.badge.ui.home.component.BadgeReorderList
 import io.github.tatooinoyo.star.badge.ui.home.component.ShareImportDialog
 import io.github.tatooinoyo.star.badge.ui.home.component.TagFilterBar
 import io.github.tatooinoyo.star.badge.ui.home.component.TagManageDialog
+import io.github.tatooinoyo.star.badge.ui.icons.BadgeIcons
 import io.github.tatooinoyo.star.badge.ui.state.SyncState
 import io.github.tatooinoyo.star.badge.ui.theme.PeachTheme
 import io.github.tatooinoyo.star.badge.utils.export.BadgeShareFormat
@@ -762,26 +762,34 @@ fun BadgeInputForm(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp),
+                    .padding(vertical = 8.dp)
+                    .then(
+                        if (selectedTags.isEmpty()) {
+                            Modifier.clickable { showTagDialog = true }
+                        } else {
+                            Modifier
+                        }
+                    ),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // 1. 管理按钮
                 IconButton(onClick = { showTagDialog = true }) {
                     Icon(
-                        // 标签筛选图标（使用 icons-core 中的 List）
-                        imageVector = Icons.Default.List,
+                        imageVector = BadgeIcons.Label,
                         contentDescription = stringResource(R.string.manage_tags),
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
 
-                // 2. 显示标签
-                if (allTags.isEmpty()) {
+                // 2. 显示当前已选标签；未选时提示并可整行点击打开管理弹窗
+                if (selectedTags.isEmpty()) {
                     Text(
                         text = stringResource(R.string.add_tags),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                        modifier = Modifier.padding(start = 4.dp)
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(start = 4.dp)
                     )
                 } else {
                     LazyRow(
