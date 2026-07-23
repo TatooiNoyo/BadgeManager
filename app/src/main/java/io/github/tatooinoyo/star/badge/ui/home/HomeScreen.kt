@@ -26,9 +26,9 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -768,8 +768,8 @@ fun BadgeInputForm(
                 // 1. 管理按钮
                 IconButton(onClick = { showTagDialog = true }) {
                     Icon(
-                        // 如果没有 Icons.Default.Label，请使用 Icons.Default.Sell 或导入扩展库
-                        imageVector = Icons.AutoMirrored.Default.Label,
+                        // 标签筛选图标（使用 icons-core 中的 List）
+                        imageVector = Icons.Default.List,
                         contentDescription = stringResource(R.string.manage_tags),
                         tint = MaterialTheme.colorScheme.primary
                     )

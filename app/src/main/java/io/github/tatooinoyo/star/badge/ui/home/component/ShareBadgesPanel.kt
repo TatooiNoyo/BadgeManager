@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -167,7 +166,7 @@ fun ShareBadgesPanel(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Icon(
-                    imageVector = if (isTextFormat) Icons.Default.ContentCopy else Icons.Default.Share,
+                    imageVector = Icons.Default.Share,
                     contentDescription = null,
                     modifier = Modifier.size(18.dp),
                 )
@@ -211,7 +210,7 @@ fun ShareBadgesPanel(
                         )
                         OutlinedButton(onClick = { onCopyCode(code) }) {
                             Icon(
-                                imageVector = Icons.Default.ContentCopy,
+                                imageVector = Icons.Default.Share,
                                 contentDescription = null,
                                 modifier = Modifier.size(16.dp),
                             )

@@ -1,21 +1,44 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# Keep line numbers for crash reports
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Gson / reflection models
+-keepattributes Signature
+-keepattributes *Annotation*
+-keepclassmembers,allowobfuscation class * {
+  @com.google.gson.annotations.SerializedName <fields>;
+}
+-keepclassmembers class * {
+  @com.google.gson.annotations.Expose <fields>;
+}
+-keep class io.github.tatooinoyo.star.badge.data.** { *; }
+-keep class io.github.tatooinoyo.star.badge.utils.export.BadgeShareEnvelope { *; }
+-keep class io.github.tatooinoyo.star.badge.utils.update.** { *; }
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Room
+-keep class * extends androidx.room.RoomDatabase
+-keep @androidx.room.Entity class *
+-dontwarn androidx.room.paging.**
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# Coroutines
+-keepnames class kotlinx.coroutines.internal.MainDispatcherFactory {}
+-keepnames class kotlinx.coroutines.CoroutineExceptionHandler {}
+-keepclassmembers class kotlinx.coroutines.** {
+    volatile <fields>;
+}
+
+# BouncyCastle (LAN sync crypto)
+-keep class org.bouncycastle.** { *; }
+-dontwarn org.bouncycastle.**
+
+# Compose / ViewModel
+-dontwarn androidx.compose.**
+-keep class * extends androidx.lifecycle.ViewModel {
+    <init>(...);
+}
+
+# Enums used across serialization / channels
+-keepclassmembers enum * {
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+}

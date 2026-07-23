@@ -21,7 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Handshake
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -261,7 +261,7 @@ fun MenuButton(
                 },
                 leadingIcon = {
                     Icon(
-                        imageVector = Icons.Default.Handshake,
+                        imageVector = Icons.Default.Favorite,
                         contentDescription = null
                     )
                 }
