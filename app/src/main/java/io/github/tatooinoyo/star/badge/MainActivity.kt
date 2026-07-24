@@ -30,9 +30,16 @@ import io.github.tatooinoyo.star.badge.navigation.AppNavigation
 import io.github.tatooinoyo.star.badge.service.FloatingButtonService
 import io.github.tatooinoyo.star.badge.ui.home.HomeViewModel
 import io.github.tatooinoyo.star.badge.utils.LanguageManager
+import io.github.tatooinoyo.star.badge.utils.preset.PresetRemoteStore
 import java.nio.charset.StandardCharsets
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+
     // 创建一个全局状态来持有读取到的 NFC 数据
     // 使用 mutableStateOf 让 Compose 可以感知变化
     private var scannedNfcData by mutableStateOf<String?>(null)
@@ -71,6 +78,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         // 初始化数据库
         BadgeRepository.initialize(applicationContext)
+        PresetRemoteStore.initialize(applicationContext)
+        applicationScope.launch {
+            PresetRemoteStore.refresh(applicationContext)
+        }
         // 初始化 NFC Adapter
         nfcAdapter = NfcAdapter.getDefaultAdapter(this)
 

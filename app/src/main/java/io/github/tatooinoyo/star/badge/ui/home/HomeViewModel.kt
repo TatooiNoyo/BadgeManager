@@ -14,7 +14,7 @@ import io.github.tatooinoyo.star.badge.R
 import io.github.tatooinoyo.star.badge.data.Badge
 import io.github.tatooinoyo.star.badge.data.BadgeChannel
 import io.github.tatooinoyo.star.badge.data.BadgeRepository
-import io.github.tatooinoyo.star.badge.data.PresetBadges
+import io.github.tatooinoyo.star.badge.utils.preset.PresetResolver
 import io.github.tatooinoyo.star.badge.utils.SkExtractException
 import io.github.tatooinoyo.star.badge.utils.SkExtractor
 import io.github.tatooinoyo.star.badge.utils.export.BadgeShareCrypto
@@ -657,9 +657,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             val sk = SkExtractor.getSkFromLink(link)
             if (!sk.startsWith("SKY-")) return null
             val context = getApplication<Application>()
-            val presetTitle = PresetBadges.getTitle(context, sk)
+            val presetTitle = PresetResolver.getTitle(context, sk)
             if (presetTitle.isEmpty()) return null
-            presetTitle to PresetBadges.getRemark(context, sk)
+            presetTitle to PresetResolver.getRemark(context, sk)
         } catch (_: SkExtractException) {
             null
         }

@@ -14,6 +14,7 @@
 -keep class io.github.tatooinoyo.star.badge.data.** { *; }
 -keep class io.github.tatooinoyo.star.badge.utils.export.BadgeShareEnvelope { *; }
 -keep class io.github.tatooinoyo.star.badge.utils.update.** { *; }
+-keep class io.github.tatooinoyo.star.badge.utils.preset.** { *; }
 
 # Room
 -keep class * extends androidx.room.RoomDatabase

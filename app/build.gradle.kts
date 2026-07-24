@@ -47,6 +47,11 @@ android {
             "UPDATE_PROXY_URL",
             "\"https://badge.tatooinoyo.shop\""
         )
+        buildConfigField(
+            "String",
+            "PRESET_API_URL",
+            "\"https://badge-presets.tatooinoyo.shop\""
+        )
         buildConfigField("String", "GITHUB_REPO", "\"tatooinoyo/BadgeManager\"")
     }
 
