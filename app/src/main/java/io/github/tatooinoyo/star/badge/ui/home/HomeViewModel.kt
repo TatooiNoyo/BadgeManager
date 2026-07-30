@@ -14,6 +14,7 @@ import io.github.tatooinoyo.star.badge.R
 import io.github.tatooinoyo.star.badge.data.Badge
 import io.github.tatooinoyo.star.badge.data.BadgeChannel
 import io.github.tatooinoyo.star.badge.data.BadgeRepository
+import io.github.tatooinoyo.star.badge.utils.LanguageManager
 import io.github.tatooinoyo.star.badge.utils.preset.PresetResolver
 import io.github.tatooinoyo.star.badge.utils.SkExtractException
 import io.github.tatooinoyo.star.badge.utils.SkExtractor
@@ -415,7 +416,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             viewModelScope.launch {
                 _uiEvent.emit(
                     BadgeUiEvent.ShowToast(
-                        getApplication<Application>().getString(R.string.toast_auto_added, finalTitle)
+                        localizedContext().getString(R.string.toast_auto_added, finalTitle)
                     )
                 )
             }
@@ -651,12 +652,16 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     // === SK 提取逻辑 ===
 
+    /** Application Context 不带用户所选语言；预设标题等字符串需用 wrapContext。 */
+    private fun localizedContext() =
+        LanguageManager.getInstance(getApplication()).wrapContext(getApplication())
+
     /** 解析成功且命中预设时返回标题/备注；解析失败或未收录时返回 null（不向用户报错）。 */
     private fun tryFillPresetFromLink(link: String): Pair<String, String>? {
         return try {
             val sk = SkExtractor.getSkFromLink(link)
             if (!sk.startsWith("SKY-")) return null
-            val context = getApplication<Application>()
+            val context = localizedContext()
             val presetTitle = PresetResolver.getTitle(context, sk)
             if (presetTitle.isEmpty()) return null
             presetTitle to PresetResolver.getRemark(context, sk)
@@ -666,7 +671,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun skExtractErrorMessage(e: SkExtractException): String {
-        val context = getApplication<Application>()
+        val context = localizedContext()
         return when (e.reason) {
             SkExtractException.Reason.MISSING_S_PARAM ->
                 context.getString(R.string.sk_extract_missing_s)
