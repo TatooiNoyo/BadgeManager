@@ -89,6 +89,7 @@
     <string name="usage_help_title">使用帮助</string>
     <string name="usage_help_entry">• 录入：将 NFC 徽章贴到手机背面，或粘贴/输入链接</string>
     <string name="usage_help_share">• 分享：在「分享」中可选徽章并复制文本或生成加密文件；收到 .badgeenc 时用本应用打开，输入对方提供的验证码即可导入徽章</string>
+    <string name="usage_help_sync">• 同网：两台设备连同一 Wi‑Fi 后，发送方生成 6 位分享码，接收方输入该码开始同步；同步成功后接收方数据会被覆盖</string>
     <string name="usage_help_floating_menu">• 横屏游戏时,双击屏幕右侧边缘即可弹出菜单</string>
     <string name="usage_help_landscape_only">• 悬浮菜单仅在横屏模式下显示</string>
     <string name="badge_not_found_help">填入链接,标题未自动填充: 该徽章未录入! \n点击👆上方链接帮助完善该项目. \n💡 SK码在 徽章录入页 链接右侧.</string>

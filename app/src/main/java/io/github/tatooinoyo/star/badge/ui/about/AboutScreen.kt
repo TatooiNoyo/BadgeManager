@@ -118,6 +118,10 @@ fun AboutScreen(
                 style = MaterialTheme.typography.bodyMedium
             )
             Text(
+                text = stringResource(R.string.usage_help_sync),
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
                 text = stringResource(R.string.usage_help_floating_menu),
                 style = MaterialTheme.typography.bodyMedium
             )
