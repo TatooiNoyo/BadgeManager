@@ -60,7 +60,12 @@
     <string name="expand">Expand</string>
     <string name="continuous_entry">Continuous Entry</string>
     <string name="continuous_entry_help_title">About continuous entry</string>
-    <string name="continuous_entry_help_desc">When enabled:\n• Focusing the link field pastes a link from the clipboard (if any).\n• After a link is filled in, the badge is added automatically and the form is cleared for the next one.</string>
+    <string name="continuous_entry_help_desc">When enabled:\n• Tapping an NFC badge, pasting, or filling a link adds the badge and clears the form;\n• Focusing the link field pastes a link from the clipboard (if any);\n• Useful for entering multiple badges quickly.</string>
+    <string name="entry_nfc_hint">Tap an NFC badge on the back of your phone to fill the link, or paste/type it.</string>
+    <string name="entry_nfc_disabled_hint">NFC is off. Turn it on in system settings, or paste/type a link.</string>
+    <string name="entry_no_nfc_hint">This device has no NFC. Paste or type a link instead.</string>
+    <string name="open_nfc_settings">Open NFC settings</string>
+    <string name="badge_list_empty_hint">No badges yet. Open Entry, then tap an NFC badge or paste a link.</string>
     <string name="close">Close</string>
     <string name="stop_sharing">Stop Sharing</string>
     <string name="cancel_sync">Cancel Sync</string>
@@ -82,6 +87,7 @@
     <string name="sync_success_data_overwritten">Sync successful! Data has been overwritten.</string>
     <string name="about_badge_manager_desc">This is an open-source Sky Light badge management tool.</string>
     <string name="usage_help_title">Usage Guide</string>
+    <string name="usage_help_entry">• Entry: tap an NFC badge on the phone, or paste/type a link</string>
     <string name="usage_help_floating_menu">• In landscape mode during gameplay, double-tap the right edge to open the menu</string>
     <string name="usage_help_landscape_only">• The floating menu is only visible in landscape mode</string>
     <string name="badge_not_found_help">Fill in the link, if the title is not automatically filled: This badge is not recorded! \nClick the link above to help improve this project. \n💡 SK code is on the right side of the link on the badge entry page.</string>
@@ -129,7 +135,7 @@
         <string name="menu">Menu</string>
     <string name="complete">Complete</string>
     <string name="close_failed">Close (Failed)</string>
-    <string name="nfc_read_success">NFC read successful</string>
+    <string name="nfc_read_success">Link filled from NFC</string>
     <string name="nfc_card_detected">NFC card detected ID: %1$s</string>
     <string name="launch_failed">Launch failed: %1$s</string>
     <string name="channel_huawei">Huawei</string>
@@ -154,7 +160,7 @@
     <string name="remark">Remark</string>
     <string name="remark_placeholder">Remark (e.g. 15-minute cooldown, lasting 20 minutes)</string>
     <string name="link">Link</string>
-    <string name="link_placeholder">Link (e.g. https://...)</string>
+    <string name="link_placeholder">Link (tap NFC or paste https://...)</string>
     <string name="add_tags">Add Tags...</string>
     <string name="manage_tags">Manage Tags</string>
     <string name="remove">Remove</string>

@@ -60,7 +60,12 @@
     <string name="expand">展开</string>
     <string name="continuous_entry">连续录入</string>
     <string name="continuous_entry_help_title">连续录入说明</string>
-    <string name="continuous_entry_help_desc">勾选后：\n• 点击链接输入框时，若剪贴板有链接会自动粘贴；\n• 填入链接后自动添加徽章并清空表单，方便连续快速录入。</string>
+    <string name="continuous_entry_help_desc">勾选后：\n• 贴 NFC 徽章、粘贴或填入链接后，会自动添加徽章并清空表单；\n• 点击链接输入框时，若剪贴板有链接会自动粘贴；\n• 方便连续快速录入多枚徽章。</string>
+    <string name="entry_nfc_hint">可将 NFC 徽章贴到手机背面自动填入链接，也可粘贴或手动输入。</string>
+    <string name="entry_nfc_disabled_hint">NFC 已关闭。可在系统设置中开启，或直接粘贴/输入链接。</string>
+    <string name="entry_no_nfc_hint">本机不支持 NFC，请粘贴或手动输入链接。</string>
+    <string name="open_nfc_settings">开启 NFC</string>
+    <string name="badge_list_empty_hint">还没有徽章。打开「录入」后，可贴 NFC 徽章或粘贴链接添加。</string>
     <string name="close">关闭</string>
     <string name="stop_sharing">停止分享</string>
     <string name="cancel_sync">取消同步</string>
@@ -82,6 +87,7 @@
     <string name="sync_success_data_overwritten">同步成功！数据已覆盖。</string>
     <string name="about_badge_manager_desc">这是一个开源的光遇徽章管理工具。</string>
     <string name="usage_help_title">使用帮助</string>
+    <string name="usage_help_entry">• 录入：将 NFC 徽章贴到手机背面，或粘贴/输入链接</string>
     <string name="usage_help_floating_menu">• 横屏游戏时,双击屏幕右侧边缘即可弹出菜单</string>
     <string name="usage_help_landscape_only">• 悬浮菜单仅在横屏模式下显示</string>
     <string name="badge_not_found_help">填入链接,标题未自动填充: 该徽章未录入! \n点击👆上方链接帮助完善该项目. \n💡 SK码在 徽章录入页 链接右侧.</string>
@@ -129,7 +135,7 @@
         <string name="menu">菜单</string>
     <string name="complete">完成</string>
     <string name="close_failed">关闭 (失败)</string>
-    <string name="nfc_read_success">NFC读取成功</string>
+    <string name="nfc_read_success">已从 NFC 填入链接</string>
     <string name="nfc_card_detected">检测到NFC卡片 ID: %1$s</string>
     <string name="launch_failed">启动失败: %1$s</string>
     <string name="channel_huawei">华为</string>
@@ -154,7 +160,7 @@
     <string name="remark">备注</string>
     <string name="remark_placeholder">备注 (如: 15分钟冷却，持续20分钟)</string>
     <string name="link">链接</string>
-    <string name="link_placeholder">链接 (如: https://...)</string>
+    <string name="link_placeholder">链接（可贴 NFC 或粘贴 https://...）</string>
     <string name="add_tags">添加标签...</string>
     <string name="manage_tags">管理标签</string>
     <string name="remove">移除</string>

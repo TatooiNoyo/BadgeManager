@@ -110,6 +110,10 @@ fun AboutScreen(
                 color = MaterialTheme.colorScheme.primary
             )
             Text(
+                text = stringResource(R.string.usage_help_entry),
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
                 text = stringResource(R.string.usage_help_floating_menu),
                 style = MaterialTheme.typography.bodyMedium
             )

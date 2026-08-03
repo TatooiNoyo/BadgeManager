@@ -59,10 +59,12 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import io.github.tatooinoyo.star.badge.R
 import io.github.tatooinoyo.star.badge.data.Badge
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
@@ -257,6 +259,18 @@ fun BadgeReorderList(
                 .padding(horizontal = 16.dp),
             contentPadding = PaddingValues(vertical = 8.dp)
         ) {
+            if (displayBadges.isEmpty()) {
+                item {
+                    Text(
+                        text = stringResource(R.string.badge_list_empty_hint),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 32.dp, horizontal = 8.dp),
+                    )
+                }
+            }
             itemsIndexed(displayBadges, key = { _, badge -> badge.id }) { _, badge ->
                 BadgeListCard(
                     badge = badge,

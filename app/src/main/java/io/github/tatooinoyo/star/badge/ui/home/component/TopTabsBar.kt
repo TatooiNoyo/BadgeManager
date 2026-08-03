@@ -87,7 +87,7 @@ fun BadgeInputPanel(
 ) {
     var showContinuousHelp by remember { mutableStateOf(false) }
 
-    Column(Modifier.padding(horizontal = 16.dp)) {
+    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
         BadgeInputForm(
             title = uiState.addTitle,
             onTitleChange = onInputTitleChange,
