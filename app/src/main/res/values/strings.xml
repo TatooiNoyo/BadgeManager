@@ -87,6 +87,7 @@
     <string name="about_badge_manager_desc">This is an open-source Sky Light badge management tool.</string>
     <string name="usage_help_title">Usage Guide</string>
     <string name="usage_help_entry">• Entry: tap an NFC badge on the phone, or paste/type a link</string>
+    <string name="usage_help_share">• Share: in Share, select badges to copy as text or create an encrypted file; to receive, open a .badgeenc file with this app and enter the sender\'s verification code</string>
     <string name="usage_help_floating_menu">• In landscape mode during gameplay, double-tap the right edge to open the menu</string>
     <string name="usage_help_landscape_only">• The floating menu is only visible in landscape mode</string>
     <string name="badge_not_found_help">Fill in the link, if the title is not automatically filled: This badge is not recorded! \nClick the link above to help improve this project. \n💡 SK code is on the right side of the link on the badge entry page.</string>
