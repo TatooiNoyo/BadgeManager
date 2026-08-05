@@ -1,7 +1,6 @@
 package io.github.tatooinoyo.star.badge.ui.home.badge_sync
 
 import android.util.Log
-import com.google.gson.Gson
 import org.json.JSONObject
 import java.io.IOException
 import java.io.InputStream
@@ -67,9 +66,13 @@ class SecureChannel(
 
         sendExecutor.submit {
             try {
-                val gson = Gson()
-                val resultJson = gson.toJson(result)
-                val plaintext = resultJson.toByteArray(Charsets.UTF_8)
+                // Avoid Gson here: R8 can rename BaseResult fields and break wire keys.
+                val envelope = JSONObject().apply {
+                    put("type", result.type)
+                    if (result.data != null) put("data", result.data)
+                    if (result.reason != null) put("reason", result.reason)
+                }
+                val plaintext = envelope.toString().toByteArray(Charsets.UTF_8)
                 val payload = CryptoUtil.aesGcmEncrypt(sessionKey, plaintext)
                 Log.d("SecureChannel::sendData", "payload size: ${payload.size}")
                 val header = ByteBuffer.allocate(4).putInt(payload.size).array()
