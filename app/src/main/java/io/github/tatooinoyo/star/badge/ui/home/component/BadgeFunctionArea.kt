@@ -73,6 +73,8 @@ fun BadgeFunctionArea(
     onStopSender: () -> Unit,
     onStartReceiver: (String) -> Unit,
     onStopReceiver: () -> Unit,
+    onConfirmImport: () -> Unit = {},
+    onCancelImport: () -> Unit = {},
     onImport: (Context, Uri, (Boolean) -> Unit) -> Unit,
     onExport: (Context, Uri, (Boolean) -> Unit) -> Unit,
     allBadges: List<io.github.tatooinoyo.star.badge.data.Badge> = emptyList(),
@@ -192,7 +194,9 @@ fun BadgeFunctionArea(
                             onStartSender = onStartSender,
                             onStopSender = onStopSender,
                             onStartReceiver = onStartReceiver,
-                            onStopReceiver = onStopReceiver
+                            onStopReceiver = onStopReceiver,
+                            onConfirmImport = onConfirmImport,
+                            onCancelImport = onCancelImport,
                         )
                     }
                 }

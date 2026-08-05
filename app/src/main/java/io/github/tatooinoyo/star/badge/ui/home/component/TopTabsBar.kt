@@ -59,6 +59,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -283,6 +284,8 @@ fun SyncDataPanel(
     onStopSender: () -> Unit,
     onStartReceiver: (String) -> Unit,
     onStopReceiver: () -> Unit,
+    onConfirmImport: () -> Unit = {},
+    onCancelImport: () -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -327,32 +330,56 @@ fun SyncDataPanel(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // 统一的底部按钮，根据状态改变文案和行为
-                val (buttonText, buttonColor, buttonAction) = when (syncState) {
-                    is SyncState.Receiver.Success -> Triple(
-                        stringResource(R.string.complete),
-                        MaterialTheme.colorScheme.primary,
-                        onStopReceiver
-                    )
+                when (syncState) {
+                    is SyncState.Receiver.Confirming -> {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(0.9f),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            OutlinedButton(
+                                onClick = onCancelImport,
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                Text(stringResource(R.string.cancel))
+                            }
+                            Button(
+                                onClick = onConfirmImport,
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                Text(stringResource(R.string.sync_confirm_import))
+                            }
+                        }
+                    }
 
-                    is SyncState.Receiver.Error -> Triple(
-                        stringResource(R.string.close_failed),
-                        MaterialTheme.colorScheme.error,
-                        onStopReceiver // 失败后点击也是重置回空闲状态，如果想重试需传入重试逻辑
-                    )
+                    else -> {
+                        val (buttonText, buttonColor, buttonAction) = when (syncState) {
+                            is SyncState.Receiver.Success -> Triple(
+                                stringResource(R.string.complete),
+                                MaterialTheme.colorScheme.primary,
+                                onStopReceiver,
+                            )
 
-                    else -> Triple(
-                        stringResource(R.string.cancel_sync),
-                        MaterialTheme.colorScheme.error,
-                        onStopReceiver
-                    )
-                }
+                            is SyncState.Receiver.Error -> Triple(
+                                stringResource(R.string.close_failed),
+                                MaterialTheme.colorScheme.error,
+                                onStopReceiver,
+                            )
 
-                Button(
-                    onClick = buttonAction,
-                    colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
-                    modifier = Modifier.fillMaxWidth(0.6f)
-                ) {
-                    Text(buttonText)
+                            else -> Triple(
+                                stringResource(R.string.cancel_sync),
+                                MaterialTheme.colorScheme.error,
+                                onStopReceiver,
+                            )
+                        }
+
+                        Button(
+                            onClick = buttonAction,
+                            colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
+                            modifier = Modifier.fillMaxWidth(0.6f),
+                        ) {
+                            Text(buttonText)
+                        }
+                    }
                 }
             }
         }
@@ -488,6 +515,21 @@ fun ReceiverStatusView(state: SyncState.Receiver) {
                 Text(stringResource(R.string.receiving_data, state.senderIp))
                 Spacer(modifier = Modifier.height(16.dp))
                 LinearProgressIndicator(modifier = Modifier.fillMaxWidth(0.8f))
+            }
+
+            is SyncState.Receiver.Confirming -> {
+                Icon(
+                    Icons.Default.Info,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(48.dp),
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = stringResource(R.string.sync_confirm_overwrite, state.badgeCount),
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                )
             }
 
             is SyncState.Receiver.Success -> {

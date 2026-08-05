@@ -186,6 +186,8 @@ fun HomeScreen(
             onStopSender = { badgeSyncViewModel.stopSenderMode() },
             onStartReceiver = { code -> badgeSyncViewModel.startReceiverMode(code) },
             onStopReceiver = { badgeSyncViewModel.stopReceiverMode() },
+            onConfirmImport = { badgeSyncViewModel.confirmImport() },
+            onCancelImport = { badgeSyncViewModel.cancelImport() },
             onImport = { ctx, uri, onResult ->
                 viewModelInstance.importBadgesFromUri(ctx, uri, onResult)
             },
@@ -313,6 +315,8 @@ fun BadgeListContent(
     onStopSender: () -> Unit,
     onStartReceiver: (String) -> Unit,
     onStopReceiver: () -> Unit,
+    onConfirmImport: () -> Unit = {},
+    onCancelImport: () -> Unit = {},
     onImport: (Context, Uri, (Boolean) -> Unit) -> Unit,
     onExport: (Context, Uri, (Boolean) -> Unit) -> Unit,
     onShareSelectBadges: () -> Unit = {},
@@ -363,6 +367,8 @@ fun BadgeListContent(
                 onStopSender = onStopSender,
                 onStartReceiver = onStartReceiver,
                 onStopReceiver = onStopReceiver,
+                onConfirmImport = onConfirmImport,
+                onCancelImport = onCancelImport,
                 onImport = onImport,
                 onExport = onExport,
                 allBadges = uiState.allBadgesUnfiltered,
