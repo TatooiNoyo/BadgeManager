@@ -37,8 +37,8 @@ android {
         applicationId = "io.github.tatooinoyo.star.badge"
         minSdk = 29
         targetSdk = 35
-        versionCode = 25
-        versionName = "1.11.0"
+        versionCode = 26
+        versionName = "1.12.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
