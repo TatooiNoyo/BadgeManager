@@ -25,7 +25,7 @@ class TcpServer(
     fun start(
         onServerReady: (port: Int) -> Unit,
         onChannelReady: (SecureChannel) -> Unit,
-        onError: (String) -> Unit,
+        onError: (code: String, cause: Throwable?) -> Unit,
     ) {
         if (running) return
         running = true
@@ -35,7 +35,7 @@ class TcpServer(
             try {
                 serverSocket = ServerSocket(0)
             } catch (e: Exception) {
-                onError(SyncErrorCode.NETWORK_UNAVAILABLE.name)
+                onError(SyncErrorCode.NETWORK_UNAVAILABLE.name, e)
                 running = false
                 return@Thread
             }
@@ -63,6 +63,7 @@ class TcpServer(
                             } else {
                                 clientSocket.close()
                                 val failures = handshakeFailures.incrementAndGet()
+                                val cause = IllegalStateException("Handshake returned null session key")
                                 if (failures >= SyncProtocol.MAX_HANDSHAKE_FAILURES) {
                                     running = false
                                     try {
@@ -70,9 +71,9 @@ class TcpServer(
                                     } catch (_: Exception) {
                                     }
                                     serverSocket = null
-                                    onError(ERROR_TOO_MANY_HANDSHAKE_FAILURES)
+                                    onError(ERROR_TOO_MANY_HANDSHAKE_FAILURES, cause)
                                 } else {
-                                    onError(ERROR_HANDSHAKE_FAILED)
+                                    onError(ERROR_HANDSHAKE_FAILED, cause)
                                 }
                             }
                         } catch (e: Exception) {
@@ -89,9 +90,9 @@ class TcpServer(
                                 } catch (_: Exception) {
                                 }
                                 serverSocket = null
-                                onError(ERROR_TOO_MANY_HANDSHAKE_FAILURES)
+                                onError(ERROR_TOO_MANY_HANDSHAKE_FAILURES, e)
                             } else {
-                                onError(ERROR_HANDSHAKE_FAILED)
+                                onError(ERROR_HANDSHAKE_FAILED, e)
                             }
                         }
                     }.start()
@@ -103,12 +104,15 @@ class TcpServer(
             } catch (e: SocketException) {
                 if (running) {
                     Log.e("TcpServer", "Accept failed", e)
-                    onError(ERROR_LISTENER_DISCONNECTED)
+                    onError(ERROR_LISTENER_DISCONNECTED, e)
                 } else {
                     Log.d("TcpServer", "Server stopped normally")
                 }
             } catch (e: Exception) {
                 Log.e("TcpServer", "Accept error", e)
+                if (running) {
+                    onError(ERROR_LISTENER_DISCONNECTED, e)
+                }
             } finally {
                 running = false
             }

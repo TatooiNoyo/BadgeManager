@@ -8,7 +8,11 @@ sealed interface SyncState {
         data class Handshaking(val shareCode: String, val targetIp: String) : Sender
         data class Sending(val shareCode: String) : Sender
         data class Success(val shareCode: String) : Sender
-        data class Error(val shareCode: String, val message: String) : Sender
+        data class Error(
+            val shareCode: String,
+            val message: String,
+            val detail: String? = null,
+        ) : Sender
     }
 
     sealed interface Receiver : SyncState {
@@ -16,6 +20,6 @@ sealed interface SyncState {
         data class Receiving(val senderIp: String) : Receiver
         data class Confirming(val badgeCount: Int) : Receiver
         data object Success : Receiver
-        data class Error(val message: String) : Receiver
+        data class Error(val message: String, val detail: String? = null) : Receiver
     }
 }

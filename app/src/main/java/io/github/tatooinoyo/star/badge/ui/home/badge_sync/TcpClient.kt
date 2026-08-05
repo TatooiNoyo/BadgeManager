@@ -7,6 +7,11 @@ import java.net.InetSocketAddress
 import java.net.Socket
 import java.net.SocketTimeoutException
 
+sealed interface ConnectResult {
+    data class Ok(val channel: SecureChannel) : ConnectResult
+    data class Fail(val code: SyncErrorCode, val cause: Throwable?) : ConnectResult
+}
+
 class TcpClient(
     private val targetIP: String,
     private val targetPort: Int = 6000,
@@ -14,7 +19,7 @@ class TcpClient(
 ) {
     private var socket: Socket? = null
 
-    suspend fun connectAndGetChannel(): SecureChannel? =
+    suspend fun connectAndGetChannel(): ConnectResult =
         withContext(Dispatchers.IO) {
             try {
                 val sock = Socket()
@@ -28,18 +33,21 @@ class TcpClient(
                 val sessionKey = HandshakeManager.handleClientSide(sock, psk6)
                 if (sessionKey != null) {
                     sock.soTimeout = 0
-                    return@withContext SecureChannel(sock, sessionKey)
+                    return@withContext ConnectResult.Ok(SecureChannel(sock, sessionKey))
                 }
                 sock.close()
-                return@withContext null
+                return@withContext ConnectResult.Fail(
+                    SyncErrorCode.HANDSHAKE_FAILED,
+                    IllegalStateException("Handshake returned null session key"),
+                )
             } catch (e: SocketTimeoutException) {
                 Log.e("TcpClient", "connect/handshake timeout", e)
                 socket?.close()
-                return@withContext null
+                return@withContext ConnectResult.Fail(SyncErrorCode.CONNECT_TIMEOUT, e)
             } catch (e: Exception) {
                 Log.e("TcpClient", "connectAndGetChannel failed", e)
                 socket?.close()
-                return@withContext null
+                return@withContext ConnectResult.Fail(SyncErrorCode.TRANSFER_INTERRUPTED, e)
             }
         }
 

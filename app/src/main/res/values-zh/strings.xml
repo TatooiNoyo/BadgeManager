@@ -144,7 +144,9 @@
     <string name="sync_error_too_many_handshakes">验证码错误次数过多，请重新输入分享码</string>
     <string name="sync_confirm_import">确认导入</string>
     <string name="sync_confirm_overwrite">将覆盖本机 %1$d 枚徽章数据，是否继续？</string>
-        <string name="close_menu">关闭菜单</string>
+    <string name="sync_copy_error_detail">复制错误详情</string>
+    <string name="sync_error_detail_copied">已复制错误详情</string>
+    <string name="close_menu">关闭菜单</string>
         <string name="menu">菜单</string>
     <string name="complete">完成</string>
     <string name="close_failed">关闭 (失败)</string>

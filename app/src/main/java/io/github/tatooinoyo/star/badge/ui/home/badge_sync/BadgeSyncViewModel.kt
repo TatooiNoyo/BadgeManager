@@ -39,6 +39,14 @@ class BadgeSyncViewModel(
     private fun str(resId: Int, vararg args: Any): String =
         getApplication<Application>().getString(resId, *args)
 
+    private fun detailOf(e: Throwable): String = buildString {
+        append(e::class.java.name)
+        append(": ")
+        appendLine(e.message ?: "")
+        appendLine()
+        append(Log.getStackTraceString(e))
+    }
+
     private fun mapSyncError(code: SyncErrorCode): String = when (code) {
         SyncErrorCode.PORT_IN_USE -> str(R.string.sync_error_port_in_use)
         SyncErrorCode.NETWORK_UNAVAILABLE -> str(R.string.sync_error_network)
@@ -59,8 +67,15 @@ class BadgeSyncViewModel(
         TcpServer.ERROR_LISTENER_DISCONNECTED -> str(R.string.sync_listener_disconnected)
         TcpServer.ERROR_TOO_MANY_HANDSHAKE_FAILURES ->
             mapSyncError(SyncErrorCode.TOO_MANY_HANDSHAKE_FAILURES)
+        SyncErrorCode.NETWORK_UNAVAILABLE.name -> mapSyncError(SyncErrorCode.NETWORK_UNAVAILABLE)
         else -> mapSyncError(SyncErrorCode.TRANSFER_INTERRUPTED)
     }
+
+    private fun isReceiverTerminal(state: SyncState): Boolean =
+        state is SyncState.Receiver.Success || state is SyncState.Receiver.Error
+
+    private fun isSenderTerminal(state: SyncState): Boolean =
+        state is SyncState.Sender.Success || state is SyncState.Sender.Error
 
     private fun generateShareCode(): String {
         val n = SecureRandom().nextInt(900_000) + 100_000
@@ -89,68 +104,112 @@ class BadgeSyncViewModel(
                         senderConnectJob = viewModelScope.launch {
                             val client = TcpClient(ip, targetPort = targetPort, psk6 = code)
                             tcpClient = client
-                            val channel = client.connectAndGetChannel()
-                            if (channel == null) {
-                                _syncState.value = SyncState.Sender.Error(
-                                    code,
-                                    mapSyncError(SyncErrorCode.CONNECT_TIMEOUT),
-                                )
-                                stopSenderConn()
-                                return@launch
-                            }
-
-                            tcpChannel = channel
-                            udpListener?.stop()
-                            udpListener = null
-                            _syncState.value = SyncState.Sender.Sending(code)
-
-                            var ackReceived = false
-                            channel.startReceiving(
-                                onData = { /* sender only expects ack */ },
-                                onAck = { ok ->
-                                    ackTimeoutJob?.cancel()
-                                    ackReceived = true
-                                    if (ok) {
-                                        _syncState.value = SyncState.Sender.Success(code)
-                                    } else {
-                                        _syncState.value = SyncState.Sender.Error(
-                                            code,
-                                            mapSyncError(SyncErrorCode.ACK_REJECTED),
-                                        )
-                                    }
-                                    channel.disconnect(notifyPeer = false)
-                                },
-                                onDisconnect = {
-                                    if (!ackReceived && _syncState.value is SyncState.Sender.Sending) {
-                                        _syncState.value = SyncState.Sender.Error(
-                                            code,
-                                            mapSyncError(SyncErrorCode.PEER_DISCONNECTED),
-                                        )
-                                    }
-                                },
-                                onError = { err ->
-                                    ackTimeoutJob?.cancel()
-                                    if (!ackReceived) {
-                                        val message = when (err) {
-                                            is SyncProtocolException -> mapSyncError(err.code)
-                                            else -> mapSyncError(SyncErrorCode.TRANSFER_INTERRUPTED)
-                                        }
-                                        _syncState.value = SyncState.Sender.Error(code, message)
-                                    }
-                                    Log.w(TAG, "Sender receive error", err)
-                                },
-                            )
-
-                            channel.sendData(badgeJson)
-
-                            ackTimeoutJob = viewModelScope.launch {
-                                delay(SyncProtocol.ACK_TIMEOUT_MS.toLong())
-                                if (!ackReceived && _syncState.value is SyncState.Sender.Sending) {
+                            when (val result = client.connectAndGetChannel()) {
+                                is ConnectResult.Fail -> {
                                     _syncState.value = SyncState.Sender.Error(
                                         code,
-                                        mapSyncError(SyncErrorCode.ACK_TIMEOUT),
+                                        mapSyncError(result.code),
+                                        result.cause?.let { detailOf(it) },
                                     )
                                     stopSenderConn()
+                                    return@launch
+                                }
+                                is ConnectResult.Ok -> {
+                                    val channel = result.channel
+                                    tcpChannel = channel
+                                    udpListener?.stop()
+                                    udpListener = null
+                                    _syncState.value = SyncState.Sender.Sending(code)
+
+                                    var ackReceived = false
+                                    var payloadAcked = false
+                                    channel.startReceiving(
+                                        onData = { /* sender only expects received/ack */ },
+                                        onPayloadReceived = {
+                                            payloadAcked = true
+                                            ackTimeoutJob?.cancel()
+                                            ackTimeoutJob = viewModelScope.launch {
+                                                delay(SyncProtocol.CONFIRM_TIMEOUT_MS.toLong())
+                                                if (!ackReceived &&
+                                                    _syncState.value is SyncState.Sender.Sending
+                                                ) {
+                                                    _syncState.value = SyncState.Sender.Error(
+                                                        code,
+                                                        mapSyncError(SyncErrorCode.ACK_TIMEOUT),
+                                                    )
+                                                    stopSenderConn()
+                                                }
+                                            }
+                                        },
+                                        onAck = { ok ->
+                                            ackTimeoutJob?.cancel()
+                                            ackReceived = true
+                                            if (ok) {
+                                                _syncState.value = SyncState.Sender.Success(code)
+                                            } else {
+                                                _syncState.value = SyncState.Sender.Error(
+                                                    code,
+                                                    mapSyncError(SyncErrorCode.ACK_REJECTED),
+                                                )
+                                            }
+                                            channel.disconnect(
+                                                reason = if (ok) "transfer_ok" else "ack_rejected",
+                                                notifyPeer = true,
+                                            )
+                                        },
+                                        onDisconnect = {
+                                            if (!ackReceived &&
+                                                _syncState.value is SyncState.Sender.Sending
+                                            ) {
+                                                _syncState.value = SyncState.Sender.Error(
+                                                    code,
+                                                    mapSyncError(SyncErrorCode.PEER_DISCONNECTED),
+                                                )
+                                            }
+                                        },
+                                        onError = { err ->
+                                            ackTimeoutJob?.cancel()
+                                            if (!ackReceived && !isSenderTerminal(_syncState.value)) {
+                                                val message = when (err) {
+                                                    is SyncProtocolException -> mapSyncError(err.code)
+                                                    else -> mapSyncError(SyncErrorCode.TRANSFER_INTERRUPTED)
+                                                }
+                                                _syncState.value = SyncState.Sender.Error(
+                                                    code,
+                                                    message,
+                                                    detailOf(err),
+                                                )
+                                            }
+                                            Log.w(TAG, "Sender receive error", err)
+                                        },
+                                    )
+
+                                    channel.sendData(
+                                        badgeJson,
+                                        onSendError = { err ->
+                                            if (!ackReceived && !isSenderTerminal(_syncState.value)) {
+                                                _syncState.value = SyncState.Sender.Error(
+                                                    code,
+                                                    mapSyncError(SyncErrorCode.TRANSFER_INTERRUPTED),
+                                                    detailOf(err),
+                                                )
+                                                stopSenderConn()
+                                            }
+                                        },
+                                    )
+
+                                    ackTimeoutJob = viewModelScope.launch {
+                                        delay(SyncProtocol.ACK_TIMEOUT_MS.toLong())
+                                        if (!payloadAcked && !ackReceived &&
+                                            _syncState.value is SyncState.Sender.Sending
+                                        ) {
+                                            _syncState.value = SyncState.Sender.Error(
+                                                code,
+                                                mapSyncError(SyncErrorCode.ACK_TIMEOUT),
+                                            )
+                                            stopSenderConn()
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -169,6 +228,7 @@ class BadgeSyncViewModel(
                 _syncState.value = SyncState.Sender.Error(
                     code,
                     str(R.string.sync_send_error, e.message ?: ""),
+                    detailOf(e),
                 )
                 stopSenderConn()
             }
@@ -230,37 +290,49 @@ class BadgeSyncViewModel(
                         },
                         onAck = { /* receiver sends ack, does not expect one */ },
                         onDisconnect = {
-                            if (_syncState.value is SyncState.Receiver.Receiving) {
-                                _syncState.value = SyncState.Receiver.Error(
-                                    mapSyncError(SyncErrorCode.PEER_DISCONNECTED),
-                                )
+                            when (_syncState.value) {
+                                is SyncState.Receiver.Receiving,
+                                is SyncState.Receiver.Confirming,
+                                -> {
+                                    _syncState.value = SyncState.Receiver.Error(
+                                        mapSyncError(SyncErrorCode.PEER_DISCONNECTED),
+                                    )
+                                }
+                                else -> Unit
                             }
-                        },
-                        onFirstFrame = {
-                            // Receiving state is set when data arrives; keep Searching until then
                         },
                         onError = { err ->
-                            val message = when (err) {
-                                is SyncProtocolException -> mapSyncError(err.code)
-                                else -> mapSyncError(SyncErrorCode.TRANSFER_INTERRUPTED)
-                            }
-                            _syncState.value = SyncState.Receiver.Error(message)
                             Log.w(TAG, "Receiver channel error", err)
-                            stopReceiverConn()
+                            if (!isReceiverTerminal(_syncState.value)) {
+                                val message = when (err) {
+                                    is SyncProtocolException -> mapSyncError(err.code)
+                                    else -> mapSyncError(SyncErrorCode.TRANSFER_INTERRUPTED)
+                                }
+                                _syncState.value = SyncState.Receiver.Error(message, detailOf(err))
+                                stopReceiverConn()
+                            }
                         },
                     )
                 },
-                onError = { errMsg ->
+                onError = { errMsg, cause ->
                     when (errMsg) {
                         TcpServer.ERROR_HANDSHAKE_FAILED -> {
-                            Log.w(TAG, "Handshake failed, waiting for another attempt")
+                            Log.w(TAG, "Handshake failed, waiting for another attempt", cause)
                         }
                         TcpServer.ERROR_TOO_MANY_HANDSHAKE_FAILURES -> {
-                            _syncState.value = SyncState.Receiver.Error(mapTcpServerError(errMsg))
+                            _syncState.value = SyncState.Receiver.Error(
+                                mapTcpServerError(errMsg),
+                                cause?.let { detailOf(it) },
+                            )
                             stopReceiverConn()
                         }
                         else -> {
-                            _syncState.value = SyncState.Receiver.Error(mapTcpServerError(errMsg))
+                            if (!isReceiverTerminal(_syncState.value)) {
+                                _syncState.value = SyncState.Receiver.Error(
+                                    mapTcpServerError(errMsg),
+                                    cause?.let { detailOf(it) },
+                                )
+                            }
                             stopReceiverConn()
                         }
                     }
@@ -270,8 +342,21 @@ class BadgeSyncViewModel(
     }
 
     private suspend fun handleIncomingPayload(badgeJsonStr: String) {
+        val channel = tcpChannel ?: return
         val count = parseBadgeCount(badgeJsonStr)
         pendingImportJson = badgeJsonStr
+        channel.sendPayloadReceived(
+            onSendError = { err ->
+                Log.w(TAG, "Failed to send payload-received ack", err)
+                if (!isReceiverTerminal(_syncState.value)) {
+                    _syncState.value = SyncState.Receiver.Error(
+                        mapSyncError(SyncErrorCode.TRANSFER_INTERRUPTED),
+                        detailOf(err),
+                    )
+                    stopReceiverConn()
+                }
+            },
+        )
         _syncState.value = SyncState.Receiver.Confirming(count)
     }
 
@@ -284,16 +369,30 @@ class BadgeSyncViewModel(
                 backupLocalBadgesToCache()
                 val success = importBadgesFromJson(json)
                 if (success) {
-                    channel.sendAck(true)
-                    _syncState.value = SyncState.Receiver.Success
+                    channel.sendAck(
+                        ok = true,
+                        onSendSuccess = {
+                            _syncState.value = SyncState.Receiver.Success
+                        },
+                        onSendError = { err ->
+                            Log.e(TAG, "Failed to send import ack", err)
+                            // Local import already succeeded; still show success for receiver.
+                            _syncState.value = SyncState.Receiver.Success
+                        },
+                    )
                 } else {
                     channel.sendAck(false)
-                    _syncState.value = SyncState.Receiver.Error(mapSyncError(SyncErrorCode.IMPORT_FAILED))
+                    _syncState.value = SyncState.Receiver.Error(
+                        mapSyncError(SyncErrorCode.IMPORT_FAILED),
+                    )
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "confirmImport failed", e)
                 channel.sendAck(false)
-                _syncState.value = SyncState.Receiver.Error(mapSyncError(SyncErrorCode.IMPORT_FAILED))
+                _syncState.value = SyncState.Receiver.Error(
+                    mapSyncError(SyncErrorCode.IMPORT_FAILED),
+                    detailOf(e),
+                )
             } finally {
                 pendingImportJson = null
             }
@@ -303,8 +402,19 @@ class BadgeSyncViewModel(
     fun cancelImport() {
         val channel = tcpChannel
         pendingImportJson = null
-        channel?.sendAck(false)
         _syncState.value = SyncState.Receiver.Error(mapSyncError(SyncErrorCode.ACK_REJECTED))
+        if (channel == null) {
+            stopReceiverConn()
+            return
+        }
+        channel.sendAck(
+            ok = false,
+            onSendSuccess = { stopReceiverConn() },
+            onSendError = { err ->
+                Log.w(TAG, "Failed to send cancel ack", err)
+                stopReceiverConn()
+            },
+        )
     }
 
     fun stopReceiverMode() {

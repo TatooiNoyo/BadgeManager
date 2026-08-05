@@ -144,6 +144,8 @@
     <string name="sync_error_too_many_handshakes">Too many wrong codes. Re-enter the share code.</string>
     <string name="sync_confirm_import">Confirm import</string>
     <string name="sync_confirm_overwrite">This will overwrite %1$d local badge(s). Continue?</string>
+    <string name="sync_copy_error_detail">Copy error details</string>
+    <string name="sync_error_detail_copied">Error details copied</string>
     <string name="close_menu">Close Menu</string>
         <string name="menu">Menu</string>
     <string name="complete">Complete</string>

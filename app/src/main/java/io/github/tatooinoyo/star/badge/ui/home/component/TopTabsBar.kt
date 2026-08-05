@@ -55,8 +55,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -493,6 +495,10 @@ fun SenderStatusView(state: SyncState.Sender) {
                         color = MaterialTheme.colorScheme.error
                     )
                     Text(stringResource(R.string.code_label, state.shareCode))
+                    SyncErrorDetailPanel(
+                        message = state.message,
+                        detail = state.detail,
+                    )
                 }
             }
         }
@@ -557,28 +563,55 @@ fun ReceiverStatusView(state: SyncState.Receiver) {
                     overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.error
                 )
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(0.9f)
-                        .heightIn(max = 120.dp) // 限制最高 120dp，避免顶掉底部的“关闭”按钮
-                        .verticalScroll(rememberScrollState())
-                        .background(
-                            MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f),
-                            MaterialTheme.shapes.small
-                        )
-                        .padding(8.dp)
-                ) {
-                    SelectionContainer {
-                        Text(
-                            text = state.message,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onErrorContainer,
-                            lineHeight = 18.sp
-                        )
-                    }
-                }
-
+                SyncErrorDetailPanel(
+                    message = state.message,
+                    detail = state.detail,
+                )
             }
         }
+    }
+}
+
+@Composable
+private fun SyncErrorDetailPanel(
+    message: String,
+    detail: String?,
+) {
+    val clipboard = LocalClipboardManager.current
+    val context = LocalContext.current
+    val body = if (detail.isNullOrBlank()) message else "$message\n\n$detail"
+
+    Spacer(modifier = Modifier.height(8.dp))
+    Box(
+        modifier = Modifier
+            .fillMaxWidth(0.9f)
+            .heightIn(max = 240.dp)
+            .verticalScroll(rememberScrollState())
+            .background(
+                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f),
+                MaterialTheme.shapes.small,
+            )
+            .padding(8.dp),
+    ) {
+        SelectionContainer {
+            Text(
+                text = body,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onErrorContainer,
+                lineHeight = 18.sp,
+            )
+        }
+    }
+    TextButton(
+        onClick = {
+            clipboard.setText(AnnotatedString(body))
+            Toast.makeText(
+                context,
+                context.getString(R.string.sync_error_detail_copied),
+                Toast.LENGTH_SHORT,
+            ).show()
+        },
+    ) {
+        Text(stringResource(R.string.sync_copy_error_detail))
     }
 }

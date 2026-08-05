@@ -27,6 +27,7 @@ class SecureChannel(
     fun startReceiving(
         onData: (String) -> Unit,
         onAck: (Boolean) -> Unit = {},
+        onPayloadReceived: () -> Unit = {},
         onDisconnect: (String?) -> Unit = {},
         onFirstFrame: (() -> Unit)? = null,
         onError: (Exception) -> Unit = {},
@@ -58,6 +59,7 @@ class SecureChannel(
                     when (obj.getString("type")) {
                         "data" -> onData(obj.getString("data"))
                         "ack" -> onAck(obj.getBoolean("ok"))
+                        "received" -> onPayloadReceived()
                         "disconnect" -> {
                             Log.d("SecureChannel", "Peer disconnect: ${obj.optString("reason")}")
                             onDisconnect(obj.optString("reason"))
@@ -82,35 +84,47 @@ class SecureChannel(
         }
     }
 
-    fun sendData(data: String, onSendSuccess: () -> Unit = {}) {
+    fun sendData(data: String, onSendSuccess: () -> Unit = {}, onSendError: (Exception) -> Unit = {}) {
         val envelope = SyncProtocol.buildEnvelope("data") { put("data", data) }
-        sendEnvelope(envelope, onSendSuccess)
+        sendEnvelope(envelope, onSendSuccess, onSendError)
     }
 
-    fun sendAck(ok: Boolean, onSendSuccess: () -> Unit = {}) {
+    fun sendAck(ok: Boolean, onSendSuccess: () -> Unit = {}, onSendError: (Exception) -> Unit = {}) {
         val envelope = SyncProtocol.buildEnvelope("ack") { put("ok", ok) }
-        sendEnvelope(envelope, onSendSuccess)
+        sendEnvelope(envelope, onSendSuccess, onSendError)
     }
 
-    private fun sendEnvelope(envelope: JSONObject, onSendSuccess: () -> Unit = {}) {
-        if (!running) return
+    fun sendPayloadReceived(onSendSuccess: () -> Unit = {}, onSendError: (Exception) -> Unit = {}) {
+        val envelope = SyncProtocol.buildEnvelope("received")
+        sendEnvelope(envelope, onSendSuccess, onSendError)
+    }
+
+    private fun sendEnvelope(
+        envelope: JSONObject,
+        onSendSuccess: () -> Unit = {},
+        onSendError: (Exception) -> Unit = {},
+    ) {
+        if (!running) {
+            onSendError(IOException("Channel already closed"))
+            return
+        }
 
         sendExecutor.submit {
             try {
-                val plaintext = envelope.toString().toByteArray(Charsets.UTF_8)
-                val lengthHeader = ByteBuffer.allocate(4).putInt(plaintext.size).array()
-                val payload = CryptoUtil.aesGcmEncrypt(sessionKey, plaintext, lengthHeader)
-
+                val frame = buildEncryptedFrame(envelope)
                 synchronized(output) {
                     if (!socket.isClosed && running) {
-                        output.write(lengthHeader)
-                        output.write(payload)
+                        output.write(frame.lengthHeader)
+                        output.write(frame.payload)
                         output.flush()
                         onSendSuccess()
+                    } else {
+                        onSendError(IOException("Socket closed before send"))
                     }
                 }
             } catch (e: Exception) {
                 Log.w("SecureChannel", "Send failed", e)
+                onSendError(e)
             }
         }
     }
@@ -142,13 +156,11 @@ class SecureChannel(
         if (notifyPeer && !socket.isClosed) {
             try {
                 val envelope = SyncProtocol.buildEnvelope("disconnect") { put("reason", reason) }
-                val plaintext = envelope.toString().toByteArray(Charsets.UTF_8)
-                val lengthHeader = ByteBuffer.allocate(4).putInt(plaintext.size).array()
-                val payload = CryptoUtil.aesGcmEncrypt(sessionKey, plaintext, lengthHeader)
+                val frame = buildEncryptedFrame(envelope)
                 synchronized(output) {
                     if (!socket.isClosed) {
-                        output.write(lengthHeader)
-                        output.write(payload)
+                        output.write(frame.lengthHeader)
+                        output.write(frame.payload)
                         output.flush()
                     }
                 }
@@ -159,6 +171,21 @@ class SecureChannel(
         closeResources()
     }
 
+    /**
+     * Wire frame: [4-byte ciphertext length][IV||ciphertext||tag].
+     * Length AAD must match the on-wire length field (ciphertext blob size, not plaintext).
+     */
+    private fun buildEncryptedFrame(envelope: JSONObject): EncryptedFrame {
+        val plaintext = envelope.toString().toByteArray(Charsets.UTF_8)
+        val cipherLen = plaintext.size + GCM_OVERHEAD_BYTES
+        val lengthHeader = ByteBuffer.allocate(4).putInt(cipherLen).array()
+        val payload = CryptoUtil.aesGcmEncrypt(sessionKey, plaintext, lengthHeader)
+        if (payload.size != cipherLen) {
+            throw IOException("Encrypted payload size mismatch: expected $cipherLen, got ${payload.size}")
+        }
+        return EncryptedFrame(lengthHeader, payload)
+    }
+
     private fun readFully(input: InputStream, buffer: ByteArray, length: Int) {
         var offset = 0
         while (offset < length) {
@@ -166,5 +193,12 @@ class SecureChannel(
             if (read == -1) throw IOException("Stream closed")
             offset += read
         }
+    }
+
+    private data class EncryptedFrame(val lengthHeader: ByteArray, val payload: ByteArray)
+
+    companion object {
+        /** AES-GCM: 12-byte IV + 16-byte auth tag. */
+        private const val GCM_OVERHEAD_BYTES = 12 + 16
     }
 }

@@ -8,7 +8,10 @@ object SyncProtocol {
     const val MAX_FRAME_BYTES = 16 * 1024 * 1024
     const val CONNECT_TIMEOUT_MS = 5_000
     const val HANDSHAKE_TIMEOUT_MS = 10_000
+    /** Wait for receiver to acknowledge payload arrival (before user confirms import). */
     const val ACK_TIMEOUT_MS = 8_000
+    /** Wait for user to confirm/cancel import after payload was received. */
+    const val CONFIRM_TIMEOUT_MS = 120_000
     const val MAX_HANDSHAKE_FAILURES = 3
     const val PBKDF2_ITERATIONS = 100_000
 
