@@ -1,0 +1,16 @@
+package io.github.tatooinoyo.star.badge.ui.home.badge_sync
+
+enum class SyncErrorCode {
+    PORT_IN_USE,
+    NETWORK_UNAVAILABLE,
+    CONNECT_TIMEOUT,
+    HANDSHAKE_FAILED,
+    TRANSFER_INTERRUPTED,
+    PEER_DISCONNECTED,
+    IMPORT_FAILED,
+    VERSION_INCOMPATIBLE,
+    ACK_TIMEOUT,
+    ACK_REJECTED,
+    TOO_MANY_HANDSHAKE_FAILURES,
+    EMPTY_PAYLOAD,
+}

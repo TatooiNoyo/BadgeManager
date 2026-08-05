@@ -5,22 +5,22 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
-import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import io.github.tatooinoyo.star.badge.R
 import io.github.tatooinoyo.star.badge.data.Badge
 import io.github.tatooinoyo.star.badge.data.BadgeRepository
 import io.github.tatooinoyo.star.badge.ui.state.SyncState
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.io.File
+import java.security.SecureRandom
 
 class BadgeSyncViewModel(
-    application: Application
+    application: Application,
 ) : AndroidViewModel(application) {
-    // ===局域网同步状态 ===
     private val _syncState = MutableStateFlow<SyncState>(SyncState.Idle)
     val syncState = _syncState.asStateFlow()
 
@@ -29,124 +29,288 @@ class BadgeSyncViewModel(
     private var tcpClient: TcpClient? = null
     private var tcpServer: TcpServer? = null
     private var tcpChannel: SecureChannel? = null
+    private var senderConnectJob: Job? = null
+    private var ackTimeoutJob: Job? = null
 
-    private fun str(resId: Int, vararg args: Any): String {
-        return getApplication<Application>().getString(resId, *args)
+    private var pendingImportJson: String? = null
+    private var currentShareCode: String? = null
+    private var receiverShareCode: String? = null
+
+    private fun str(resId: Int, vararg args: Any): String =
+        getApplication<Application>().getString(resId, *args)
+
+    private fun mapSyncError(code: SyncErrorCode): String = when (code) {
+        SyncErrorCode.PORT_IN_USE -> str(R.string.sync_error_port_in_use)
+        SyncErrorCode.NETWORK_UNAVAILABLE -> str(R.string.sync_error_network)
+        SyncErrorCode.CONNECT_TIMEOUT -> str(R.string.sync_error_connect_timeout)
+        SyncErrorCode.HANDSHAKE_FAILED -> str(R.string.sync_handshake_failed)
+        SyncErrorCode.TRANSFER_INTERRUPTED -> str(R.string.sync_error_transfer)
+        SyncErrorCode.PEER_DISCONNECTED -> str(R.string.sync_error_peer_disconnected)
+        SyncErrorCode.IMPORT_FAILED -> str(R.string.sync_import_failed)
+        SyncErrorCode.VERSION_INCOMPATIBLE -> str(R.string.sync_error_version)
+        SyncErrorCode.ACK_TIMEOUT -> str(R.string.sync_error_ack_timeout)
+        SyncErrorCode.ACK_REJECTED -> str(R.string.sync_error_ack_rejected)
+        SyncErrorCode.TOO_MANY_HANDSHAKE_FAILURES -> str(R.string.sync_error_too_many_handshakes)
+        SyncErrorCode.EMPTY_PAYLOAD -> str(R.string.share_import_empty)
     }
 
-    private fun mapSyncError(codeOrMessage: String): String {
-        return when (codeOrMessage) {
-            TcpServer.ERROR_HANDSHAKE_FAILED -> str(R.string.sync_handshake_failed)
-            TcpServer.ERROR_LISTENER_DISCONNECTED -> str(R.string.sync_listener_disconnected)
-            else -> codeOrMessage
-        }
+    private fun mapTcpServerError(codeOrMessage: String): String = when (codeOrMessage) {
+        TcpServer.ERROR_HANDSHAKE_FAILED -> mapSyncError(SyncErrorCode.HANDSHAKE_FAILED)
+        TcpServer.ERROR_LISTENER_DISCONNECTED -> str(R.string.sync_listener_disconnected)
+        TcpServer.ERROR_TOO_MANY_HANDSHAKE_FAILURES ->
+            mapSyncError(SyncErrorCode.TOO_MANY_HANDSHAKE_FAILURES)
+        else -> mapSyncError(SyncErrorCode.TRANSFER_INTERRUPTED)
     }
 
-    // === 局域网同步 ===
-
-    // 生成 6 位随机分享码
     private fun generateShareCode(): String {
-        return (100000..999999).random().toString()
+        val n = SecureRandom().nextInt(900_000) + 100_000
+        return n.toString()
     }
 
-    // === 发送端逻辑 (安全版) ===
     fun startSenderMode() {
-        viewModelScope.launch(Dispatchers.IO) {
-            // 1. 生成 6 位分享码
+        viewModelScope.launch {
             val code = generateShareCode()
+            currentShareCode = code
             try {
                 _syncState.value = SyncState.Sender.Ready(code)
-                // 2. 准备数据
                 val badgeJson = exportBadgesToJson()
+                val expectedFp = SyncProtocol.discoveryFingerprint(code)
 
-                // 3. 开启UDP监听
-                udpListener = UdpListener(onDeviceFound = { ip, targetPort ->
-                    _syncState.value = SyncState.Sender.Handshaking(code, ip)
-                    Log.d("startSenderMode", "onDeviceFound: $ip:$targetPort")
-
-
-                    val tcpClient = TcpClient(ip, targetPort = targetPort, psk6 = code)
-                    this@BadgeSyncViewModel.tcpClient = tcpClient
-
-                    CoroutineScope(Dispatchers.IO).launch {
-                        val channel = tcpClient.connectAndGetChannel()
-                        if (channel != null) {
-                            this@BadgeSyncViewModel.tcpChannel = channel
-
-                            val payload = SecureChannel.BaseResult("data", badgeJson, null)
-                            channel.sendData(payload) {
-                                _syncState.value = SyncState.Sender.Success(code)
-                            }
-                        } else {
-                            _syncState.value =
-                                SyncState.Sender.Error(code, str(R.string.sync_connect_failed))
-                            stopSenderConn()
+                udpListener = UdpListener(
+                    expectedFingerprint = expectedFp,
+                    onDeviceFound = { ip, targetPort ->
+                        if (_syncState.value !is SyncState.Sender.Ready) {
+                            return@UdpListener
                         }
-                    }
-                })
+                        _syncState.value = SyncState.Sender.Handshaking(code, ip)
+                        Log.d(TAG, "onDeviceFound: $ip:$targetPort")
+
+                        senderConnectJob?.cancel()
+                        senderConnectJob = viewModelScope.launch {
+                            val client = TcpClient(ip, targetPort = targetPort, psk6 = code)
+                            tcpClient = client
+                            val channel = client.connectAndGetChannel()
+                            if (channel == null) {
+                                _syncState.value = SyncState.Sender.Error(
+                                    code,
+                                    mapSyncError(SyncErrorCode.CONNECT_TIMEOUT),
+                                )
+                                stopSenderConn()
+                                return@launch
+                            }
+
+                            tcpChannel = channel
+                            udpListener?.stop()
+                            udpListener = null
+                            _syncState.value = SyncState.Sender.Sending(code)
+
+                            var ackReceived = false
+                            channel.startReceiving(
+                                onData = { /* sender only expects ack */ },
+                                onAck = { ok ->
+                                    ackTimeoutJob?.cancel()
+                                    ackReceived = true
+                                    if (ok) {
+                                        _syncState.value = SyncState.Sender.Success(code)
+                                    } else {
+                                        _syncState.value = SyncState.Sender.Error(
+                                            code,
+                                            mapSyncError(SyncErrorCode.ACK_REJECTED),
+                                        )
+                                    }
+                                    channel.disconnect(notifyPeer = false)
+                                },
+                                onDisconnect = {
+                                    if (!ackReceived && _syncState.value is SyncState.Sender.Sending) {
+                                        _syncState.value = SyncState.Sender.Error(
+                                            code,
+                                            mapSyncError(SyncErrorCode.PEER_DISCONNECTED),
+                                        )
+                                    }
+                                },
+                                onError = { err ->
+                                    ackTimeoutJob?.cancel()
+                                    if (!ackReceived) {
+                                        val message = when (err) {
+                                            is SyncProtocolException -> mapSyncError(err.code)
+                                            else -> mapSyncError(SyncErrorCode.TRANSFER_INTERRUPTED)
+                                        }
+                                        _syncState.value = SyncState.Sender.Error(code, message)
+                                    }
+                                    Log.w(TAG, "Sender receive error", err)
+                                },
+                            )
+
+                            channel.sendData(badgeJson)
+
+                            ackTimeoutJob = viewModelScope.launch {
+                                delay(SyncProtocol.ACK_TIMEOUT_MS.toLong())
+                                if (!ackReceived && _syncState.value is SyncState.Sender.Sending) {
+                                    _syncState.value = SyncState.Sender.Error(
+                                        code,
+                                        mapSyncError(SyncErrorCode.ACK_TIMEOUT),
+                                    )
+                                    stopSenderConn()
+                                }
+                            }
+                        }
+                    },
+                    onError = { errCode ->
+                        _syncState.value = SyncState.Sender.Error(
+                            currentShareCode ?: code,
+                            mapSyncError(errCode),
+                        )
+                        stopSenderConn()
+                    },
+                )
                 udpListener?.start()
-
-
             } catch (e: Exception) {
-                _syncState.value =
-                    SyncState.Sender.Error(code, str(R.string.sync_send_error, e.message ?: ""))
-                Log.w("startSenderMode", "send error: ${e.message}")
+                Log.w(TAG, "startSenderMode failed", e)
+                _syncState.value = SyncState.Sender.Error(
+                    code,
+                    str(R.string.sync_send_error, e.message ?: ""),
+                )
                 stopSenderConn()
             }
         }
     }
 
     fun stopSenderConn() {
+        ackTimeoutJob?.cancel()
+        ackTimeoutJob = null
+        senderConnectJob?.cancel()
+        senderConnectJob = null
+
         udpListener?.stop()
         udpListener = null
 
         tcpChannel?.disconnect("closed")
         tcpChannel = null
 
+        tcpClient?.close()
         tcpClient = null
     }
 
     fun stopSenderMode() {
         stopSenderConn()
+        currentShareCode = null
         _syncState.value = SyncState.Idle
     }
 
-    // === 接收端逻辑 (安全版) ===
     fun startReceiverMode(inputCode: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            udpBroadcaster = UdpBroadcaster()
+        receiverShareCode = inputCode
+        viewModelScope.launch {
+            pendingImportJson = null
+            udpBroadcaster = UdpBroadcaster(
+                shareCode = inputCode,
+                onError = { code ->
+                    if (_syncState.value is SyncState.Receiver.Searching) {
+                        _syncState.value = SyncState.Receiver.Error(mapSyncError(code))
+                        stopReceiverConn()
+                    }
+                },
+            )
             tcpServer = TcpServer(inputCode)
             _syncState.value = SyncState.Receiver.Searching
-            tcpServer?.start({
-                // 只有在tcp server开始监听后, 才能获取绑定的端口号
-                udpBroadcaster?.start(it.toString())
-            }, { channel ->
-                this@BadgeSyncViewModel.tcpChannel = channel
 
-                udpBroadcaster?.stop()
-                channel.startReceiving({ badgeJsonStr ->
-                    viewModelScope.launch(Dispatchers.IO) {
-                        importBadgesFromJson(badgeJsonStr) { success ->
-                            if (success) {
-                                _syncState.value = SyncState.Receiver.Success
-                            } else {
-                                _syncState.value =
-                                    SyncState.Receiver.Error(str(R.string.sync_import_failed))
+            tcpServer?.start(
+                onServerReady = { port ->
+                    udpBroadcaster?.start(port)
+                },
+                onChannelReady = { channel ->
+                    tcpChannel = channel
+                    udpBroadcaster?.stop()
+                    udpBroadcaster = null
+                    _syncState.value = SyncState.Receiver.Receiving(channel.remoteAddress)
+                    channel.startReceiving(
+                        onData = { badgeJsonStr ->
+                            viewModelScope.launch {
+                                handleIncomingPayload(badgeJsonStr)
                             }
+                        },
+                        onAck = { /* receiver sends ack, does not expect one */ },
+                        onDisconnect = {
+                            if (_syncState.value is SyncState.Receiver.Receiving) {
+                                _syncState.value = SyncState.Receiver.Error(
+                                    mapSyncError(SyncErrorCode.PEER_DISCONNECTED),
+                                )
+                            }
+                        },
+                        onFirstFrame = {
+                            // Receiving state is set when data arrives; keep Searching until then
+                        },
+                        onError = { err ->
+                            val message = when (err) {
+                                is SyncProtocolException -> mapSyncError(err.code)
+                                else -> mapSyncError(SyncErrorCode.TRANSFER_INTERRUPTED)
+                            }
+                            _syncState.value = SyncState.Receiver.Error(message)
+                            Log.w(TAG, "Receiver channel error", err)
+                            stopReceiverConn()
+                        },
+                    )
+                },
+                onError = { errMsg ->
+                    when (errMsg) {
+                        TcpServer.ERROR_HANDSHAKE_FAILED -> {
+                            Log.w(TAG, "Handshake failed, waiting for another attempt")
+                        }
+                        TcpServer.ERROR_TOO_MANY_HANDSHAKE_FAILURES -> {
+                            _syncState.value = SyncState.Receiver.Error(mapTcpServerError(errMsg))
+                            stopReceiverConn()
+                        }
+                        else -> {
+                            _syncState.value = SyncState.Receiver.Error(mapTcpServerError(errMsg))
+                            stopReceiverConn()
                         }
                     }
-                }, { err ->
-                    _syncState.value = SyncState.Receiver.Error(err.stackTraceToString())
-                })
-            }, { errMsg ->
-                _syncState.value = SyncState.Receiver.Error(mapSyncError(errMsg))
-            })
-
+                },
+            )
         }
+    }
+
+    private suspend fun handleIncomingPayload(badgeJsonStr: String) {
+        val count = parseBadgeCount(badgeJsonStr)
+        pendingImportJson = badgeJsonStr
+        _syncState.value = SyncState.Receiver.Confirming(count)
+    }
+
+    fun confirmImport() {
+        val json = pendingImportJson ?: return
+        val channel = tcpChannel ?: return
+
+        viewModelScope.launch {
+            try {
+                backupLocalBadgesToCache()
+                val success = importBadgesFromJson(json)
+                if (success) {
+                    channel.sendAck(true)
+                    _syncState.value = SyncState.Receiver.Success
+                } else {
+                    channel.sendAck(false)
+                    _syncState.value = SyncState.Receiver.Error(mapSyncError(SyncErrorCode.IMPORT_FAILED))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "confirmImport failed", e)
+                channel.sendAck(false)
+                _syncState.value = SyncState.Receiver.Error(mapSyncError(SyncErrorCode.IMPORT_FAILED))
+            } finally {
+                pendingImportJson = null
+            }
+        }
+    }
+
+    fun cancelImport() {
+        val channel = tcpChannel
+        pendingImportJson = null
+        channel?.sendAck(false)
+        _syncState.value = SyncState.Receiver.Error(mapSyncError(SyncErrorCode.ACK_REJECTED))
     }
 
     fun stopReceiverMode() {
         stopReceiverConn()
+        receiverShareCode = null
+        pendingImportJson = null
         _syncState.value = SyncState.Idle
     }
 
@@ -161,37 +325,61 @@ class BadgeSyncViewModel(
         tcpServer = null
     }
 
+    override fun onCleared() {
+        stopSenderConn()
+        stopReceiverConn()
+        super.onCleared()
+    }
 
     private suspend fun exportBadgesToJson(): String {
         val badges = BadgeRepository.getAllBadgesSnapshot()
-        val gson = GsonBuilder().setPrettyPrinting().create()
-        return gson.toJson(badges)
+        return Gson().toJson(badges)
     }
 
-    /**
-     * 从 JSON 字符串还原数据 (供局域网同步使用)
-     */
-    private suspend fun importBadgesFromJson(jsonStr: String, onResult: (Boolean) -> Unit) {
+    private suspend fun backupLocalBadgesToCache() {
         try {
-            if (jsonStr.isBlank()) {
-                onResult(false)
-                return
-            }
-
-            val gson = Gson()
-            val type = object : TypeToken<List<Badge>>() {}.type
-            val badges: List<Badge> = gson.fromJson(jsonStr, type)
-
-            if (badges.isNotEmpty()) {
-                BadgeRepository.restoreBadges(badges)
-                onResult(true)
-            } else {
-                onResult(false)
-            }
+            val badges = BadgeRepository.getAllBadgesSnapshot()
+            val json = Gson().toJson(badges)
+            val file = File(
+                getApplication<Application>().cacheDir,
+                "lan_sync_backup_${System.currentTimeMillis()}.json",
+            )
+            file.writeText(json)
+            Log.d(TAG, "Local backup saved: ${file.absolutePath}")
         } catch (e: Exception) {
-            e.printStackTrace()
-            onResult(false)
+            Log.w(TAG, "Failed to backup before import", e)
         }
     }
 
+    private fun parseBadgeCount(jsonStr: String): Int {
+        return try {
+            if (jsonStr.isBlank()) return 0
+            val type = object : TypeToken<List<Badge>>() {}.type
+            val badges: List<Badge> = Gson().fromJson(jsonStr, type) ?: emptyList()
+            badges.size
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to parse badge count", e)
+            0
+        }
+    }
+
+    private suspend fun importBadgesFromJson(jsonStr: String): Boolean {
+        return try {
+            if (jsonStr.isBlank()) {
+                BadgeRepository.restoreBadges(emptyList())
+                return true
+            }
+            val type = object : TypeToken<List<Badge>>() {}.type
+            val badges: List<Badge> = Gson().fromJson(jsonStr, type) ?: emptyList()
+            BadgeRepository.restoreBadges(badges)
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "importBadgesFromJson failed", e)
+            false
+        }
+    }
+
+    companion object {
+        private const val TAG = "BadgeSyncViewModel"
+    }
 }

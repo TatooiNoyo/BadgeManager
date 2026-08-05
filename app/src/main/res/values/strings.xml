@@ -132,6 +132,17 @@
     <string name="sync_import_failed">Import failed</string>
     <string name="sync_handshake_failed">Handshake failed</string>
     <string name="sync_listener_disconnected">Listener disconnected unexpectedly</string>
+    <string name="sync_error_port_in_use">UDP port is in use. Close other sync sessions and retry.</string>
+    <string name="sync_error_network">Network unavailable. Check your Wi‑Fi connection.</string>
+    <string name="sync_error_connect_timeout">Connection timed out. Ensure same Wi‑Fi and correct share code.</string>
+    <string name="sync_error_transfer">Transfer interrupted. Please retry.</string>
+    <string name="sync_error_peer_disconnected">Peer disconnected</string>
+    <string name="sync_error_version">Incompatible protocol version. Both devices must upgrade.</string>
+    <string name="sync_error_ack_timeout">Timed out waiting for receiver confirmation</string>
+    <string name="sync_error_ack_rejected">Receiver cancelled import</string>
+    <string name="sync_error_too_many_handshakes">Too many wrong codes. Re-enter the share code.</string>
+    <string name="sync_confirm_import">Confirm import</string>
+    <string name="sync_confirm_overwrite">This will overwrite %1$d local badge(s). Continue?</string>
     <string name="close_menu">Close Menu</string>
         <string name="menu">Menu</string>
     <string name="complete">Complete</string>

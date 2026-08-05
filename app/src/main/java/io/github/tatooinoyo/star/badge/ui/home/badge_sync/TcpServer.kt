@@ -3,7 +3,7 @@ package io.github.tatooinoyo.star.badge.ui.home.badge_sync
 import android.util.Log
 import java.net.ServerSocket
 import java.net.SocketException
-
+import java.util.concurrent.atomic.AtomicInteger
 
 class TcpServer(
     private val psk6: String,
@@ -11,29 +11,32 @@ class TcpServer(
     companion object {
         const val ERROR_HANDSHAKE_FAILED = "HANDSHAKE_FAILED"
         const val ERROR_LISTENER_DISCONNECTED = "LISTENER_DISCONNECTED"
+        const val ERROR_TOO_MANY_HANDSHAKE_FAILURES = "TOO_MANY_HANDSHAKE_FAILURES"
     }
+
     @Volatile
     private var running = false
     private var serverSocket: ServerSocket? = null
+    private val handshakeFailures = AtomicInteger(0)
 
-    // 新增属性：获取实际监听的端口
-    // 如果 serverSocket 还没启动，返回 -1
     val listeningPort: Int
         get() = serverSocket?.localPort ?: -1
-
 
     fun start(
         onServerReady: (port: Int) -> Unit,
         onChannelReady: (SecureChannel) -> Unit,
-        onError: (String) -> Unit
+        onError: (String) -> Unit,
     ) {
         if (running) return
         running = true
+        handshakeFailures.set(0)
+
         Thread {
             try {
                 serverSocket = ServerSocket(0)
             } catch (e: Exception) {
-                onError(e.stackTraceToString())
+                onError(SyncErrorCode.NETWORK_UNAVAILABLE.name)
+                running = false
                 return@Thread
             }
             onServerReady(listeningPort)
@@ -42,49 +45,82 @@ class TcpServer(
                 while (running) {
                     val clientSocket = server.accept()
                     Log.d("TcpServer", "Client connected: $clientSocket")
-                    // 启动 handshake 管理器在单独线程处理
+                    clientSocket.soTimeout = SyncProtocol.HANDSHAKE_TIMEOUT_MS
+
                     Thread {
                         try {
                             val sessionKey = HandshakeManager.handleServerSide(clientSocket, psk6)
                             if (sessionKey != null) {
-                                // 2. 创建 Channel
-                                val channel = SecureChannel(clientSocket, sessionKey)
-                                onChannelReady(channel)
+                                clientSocket.soTimeout = 0
+                                handshakeFailures.set(0)
+                                running = false
+                                try {
+                                    server.close()
+                                } catch (_: Exception) {
+                                }
+                                serverSocket = null
+                                onChannelReady(SecureChannel(clientSocket, sessionKey))
                             } else {
-                                onError(TcpServer.ERROR_HANDSHAKE_FAILED)
                                 clientSocket.close()
+                                val failures = handshakeFailures.incrementAndGet()
+                                if (failures >= SyncProtocol.MAX_HANDSHAKE_FAILURES) {
+                                    running = false
+                                    try {
+                                        server.close()
+                                    } catch (_: Exception) {
+                                    }
+                                    serverSocket = null
+                                    onError(ERROR_TOO_MANY_HANDSHAKE_FAILURES)
+                                } else {
+                                    onError(ERROR_HANDSHAKE_FAILED)
+                                }
                             }
                         } catch (e: Exception) {
-                            onError(e.stackTraceToString())
-                            Log.e("TcpServer", e.stackTraceToString())
-                            clientSocket.close()
+                            Log.e("TcpServer", "Handshake error", e)
+                            try {
+                                clientSocket.close()
+                            } catch (_: Exception) {
+                            }
+                            val failures = handshakeFailures.incrementAndGet()
+                            if (failures >= SyncProtocol.MAX_HANDSHAKE_FAILURES) {
+                                running = false
+                                try {
+                                    server.close()
+                                } catch (_: Exception) {
+                                }
+                                serverSocket = null
+                                onError(ERROR_TOO_MANY_HANDSHAKE_FAILURES)
+                            } else {
+                                onError(ERROR_HANDSHAKE_FAILED)
+                            }
                         }
                     }.start()
                 }
-                server.close()
+                try {
+                    server.close()
+                } catch (_: Exception) {
+                }
             } catch (e: SocketException) {
-                // 4. 优雅退出：当调用 stop() 关闭 socket 时，accept 会抛出此异常
                 if (running) {
-                    // 如果 running 还是 true，说明是异常关闭
                     Log.e("TcpServer", "Accept failed", e)
-                    onError(TcpServer.ERROR_LISTENER_DISCONNECTED)
+                    onError(ERROR_LISTENER_DISCONNECTED)
                 } else {
-                    // 如果 running 是 false，说明是用户主动 stop()，属于正常退出流程
                     Log.d("TcpServer", "Server stopped normally")
                 }
             } catch (e: Exception) {
                 Log.e("TcpServer", "Accept error", e)
+            } finally {
+                running = false
             }
         }.start()
     }
-
 
     fun stop() {
         running = false
         try {
             serverSocket?.close()
-        } catch (e: Exception) {
-            e.printStackTrace()
+        } catch (_: Exception) {
         }
+        serverSocket = null
     }
 }

@@ -12,7 +12,7 @@
   @com.google.gson.annotations.Expose <fields>;
 }
 -keep class io.github.tatooinoyo.star.badge.data.** { *; }
--keep class io.github.tatooinoyo.star.badge.ui.home.badge_sync.SecureChannel$BaseResult { *; }
+-keep class io.github.tatooinoyo.star.badge.ui.home.badge_sync.** { *; }
 -keep class io.github.tatooinoyo.star.badge.utils.export.BadgeShareEnvelope { *; }
 -keep class io.github.tatooinoyo.star.badge.utils.update.** { *; }
 -keep class io.github.tatooinoyo.star.badge.utils.preset.** { *; }

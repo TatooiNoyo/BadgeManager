@@ -133,6 +133,17 @@
     <string name="sync_import_failed">导入失败</string>
     <string name="sync_handshake_failed">握手失败</string>
     <string name="sync_listener_disconnected">监听服务异常断开</string>
+    <string name="sync_error_port_in_use">UDP 端口被占用，请关闭其他同步会话后重试</string>
+    <string name="sync_error_network">网络不可用，请检查 Wi‑Fi 连接</string>
+    <string name="sync_error_connect_timeout">连接超时，请确认双方在同一 Wi‑Fi 且分享码正确</string>
+    <string name="sync_error_transfer">传输中断，请重试</string>
+    <string name="sync_error_peer_disconnected">对端已断开连接</string>
+    <string name="sync_error_version">协议版本不兼容，请双方升级到最新版本</string>
+    <string name="sync_error_ack_timeout">等待对方确认超时</string>
+    <string name="sync_error_ack_rejected">对方已取消导入</string>
+    <string name="sync_error_too_many_handshakes">验证码错误次数过多，请重新输入分享码</string>
+    <string name="sync_confirm_import">确认导入</string>
+    <string name="sync_confirm_overwrite">将覆盖本机 %1$d 枚徽章数据，是否继续？</string>
         <string name="close_menu">关闭菜单</string>
         <string name="menu">菜单</string>
     <string name="complete">完成</string>

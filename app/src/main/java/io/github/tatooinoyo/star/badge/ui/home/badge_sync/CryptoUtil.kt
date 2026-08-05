@@ -1,9 +1,9 @@
 package io.github.tatooinoyo.star.badge.ui.home.badge_sync
 
-
 import android.util.Base64
 import org.bouncycastle.jcajce.spec.XDHParameterSpec
 import org.bouncycastle.jce.provider.BouncyCastleProvider
+import java.io.InputStream
 import java.security.KeyFactory
 import java.security.KeyPair
 import java.security.KeyPairGenerator
@@ -19,7 +19,6 @@ import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 
-
 object CryptoUtil {
     fun b64(bytes: ByteArray): String = Base64.encodeToString(bytes, Base64.NO_WRAP)
     fun d64(s: String): ByteArray = Base64.decode(s, Base64.NO_WRAP)
@@ -33,15 +32,12 @@ object CryptoUtil {
     }
 
     fun generateX25519KeyPair(): KeyPair {
-        // 使用 "XDH" 算法名称，并配合 X25519 的参数规范
         val kpg = KeyPairGenerator.getInstance("XDH", bcProvider)
         kpg.initialize(XDHParameterSpec("X25519"))
         return kpg.generateKeyPair()
     }
 
-
     fun computeX25519SharedSecret(privateKey: PrivateKey, peerPubBytes: ByteArray): ByteArray {
-
         val kf = KeyFactory.getInstance("XDH", bcProvider)
         val pubKeySpec = X509EncodedKeySpec(peerPubBytes)
         val pubK = kf.generatePublic(pubKeySpec)
@@ -51,23 +47,21 @@ object CryptoUtil {
         return ka.generateSecret()
     }
 
-
     fun derivePskKeyFromCode(
         code6: String,
-        salt: ByteArray = "fixed-salt".toByteArray()
+        salt: ByteArray,
+        iterations: Int = SyncProtocol.PBKDF2_ITERATIONS,
     ): ByteArray {
-        val spec = PBEKeySpec(code6.toCharArray(), salt, 10000, 256)
+        val spec = PBEKeySpec(code6.toCharArray(), salt, iterations, 256)
         val skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
         return skf.generateSecret(spec).encoded
     }
-
 
     fun hmacSha256(key: ByteArray, data: ByteArray): ByteArray {
         val mac = Mac.getInstance("HmacSHA256")
         mac.init(SecretKeySpec(key, "HmacSHA256"))
         return mac.doFinal(data)
     }
-
 
     fun hkdfSha256(ikm: ByteArray, salt: ByteArray?, info: ByteArray?, length: Int): ByteArray {
         val actualSalt = salt ?: ByteArray(32) { 0 }
@@ -91,26 +85,43 @@ object CryptoUtil {
         return okm
     }
 
-
-    fun aesGcmEncrypt(key: ByteArray, plain: ByteArray): ByteArray {
+    fun aesGcmEncrypt(key: ByteArray, plain: ByteArray, aad: ByteArray? = null): ByteArray {
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         val iv = ByteArray(12)
         SecureRandom().nextBytes(iv)
         val gcmSpec = GCMParameterSpec(128, iv)
         val sk = SecretKeySpec(key, "AES")
         cipher.init(Cipher.ENCRYPT_MODE, sk, gcmSpec)
+        if (aad != null) {
+            cipher.updateAAD(aad)
+        }
         val ct = cipher.doFinal(plain)
         return iv + ct
     }
 
-
-    fun aesGcmDecrypt(key: ByteArray, ivAndCipher: ByteArray): ByteArray {
+    fun aesGcmDecrypt(key: ByteArray, ivAndCipher: ByteArray, aad: ByteArray? = null): ByteArray {
         val iv = ivAndCipher.copyOfRange(0, 12)
         val cipherBytes = ivAndCipher.copyOfRange(12, ivAndCipher.size)
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         val gcmSpec = GCMParameterSpec(128, iv)
         val sk = SecretKeySpec(key, "AES")
         cipher.init(Cipher.DECRYPT_MODE, sk, gcmSpec)
+        if (aad != null) {
+            cipher.updateAAD(aad)
+        }
         return cipher.doFinal(cipherBytes)
+    }
+
+    /** Read bytes until LF without BufferedReader read-ahead. */
+    fun readLineFromStream(input: InputStream): String? {
+        val sb = StringBuilder()
+        while (true) {
+            val b = input.read()
+            if (b == -1) return if (sb.isEmpty()) null else sb.toString()
+            if (b == '\n'.code) return sb.toString()
+            if (b != '\r'.code) {
+                sb.append(b.toChar())
+            }
+        }
     }
 }

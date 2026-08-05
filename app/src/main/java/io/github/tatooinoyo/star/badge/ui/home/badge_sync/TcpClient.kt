@@ -3,7 +3,9 @@ package io.github.tatooinoyo.star.badge.ui.home.badge_sync
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.net.InetSocketAddress
 import java.net.Socket
+import java.net.SocketTimeoutException
 
 class TcpClient(
     private val targetIP: String,
@@ -12,38 +14,40 @@ class TcpClient(
 ) {
     private var socket: Socket? = null
 
-    /**
-     * 建立 TCP 连接并执行握手（协程版，非阻塞）
-     * 必须在子线程/协程中调用，禁止主线程执行
-     */
     suspend fun connectAndGetChannel(): SecureChannel? =
         withContext(Dispatchers.IO) {
             try {
-                socket = Socket(targetIP, targetPort)
+                val sock = Socket()
+                socket = sock
+                sock.connect(
+                    InetSocketAddress(targetIP, targetPort),
+                    SyncProtocol.CONNECT_TIMEOUT_MS,
+                )
+                sock.soTimeout = SyncProtocol.HANDSHAKE_TIMEOUT_MS
 
-                // 1. 在内部执行握手
-                val sessionKey = HandshakeManager.handleClientSide(socket!!, psk6)
-
+                val sessionKey = HandshakeManager.handleClientSide(sock, psk6)
                 if (sessionKey != null) {
-                    // 2. 握手成功，直接创建并返回 SecureChannel
-                    return@withContext SecureChannel(socket!!, sessionKey)
-                } else {
-                    socket?.close()
-                    return@withContext null
+                    sock.soTimeout = 0
+                    return@withContext SecureChannel(sock, sessionKey)
                 }
+                sock.close()
+                return@withContext null
+            } catch (e: SocketTimeoutException) {
+                Log.e("TcpClient", "connect/handshake timeout", e)
+                socket?.close()
+                return@withContext null
             } catch (e: Exception) {
-                Log.e("TcpClient", "connectAndGetChannel: ${e.stackTraceToString()}")
+                Log.e("TcpClient", "connectAndGetChannel failed", e)
                 socket?.close()
                 return@withContext null
             }
         }
 
-
-    /**
-     * 关闭 Socket 连接（线程安全，兜底释放资源）
-     */
-
     fun close() {
-        socket?.close()
+        try {
+            socket?.close()
+        } catch (_: Exception) {
+        }
+        socket = null
     }
 }
