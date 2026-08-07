@@ -1,52 +1,26 @@
 package io.github.tatooinoyo.star.badge.ui.icons
 
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathFillType
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.path
-import androidx.compose.ui.unit.dp
+import androidx.annotation.DrawableRes
+import io.github.tatooinoyo.star.badge.R
 
 /**
- * App-local icons that are not in material-icons-core (avoids pulling in icons-extended).
+ * Icons exported from Figma as VectorDrawables.
+ * Stroke paths use black (#FF000000) so Compose Icon tint works via SrcIn.
  */
 object BadgeIcons {
-    val Label: ImageVector
-        get() {
-            if (_label != null) return _label!!
-            _label = ImageVector.Builder(
-                name = "Label",
-                defaultWidth = 24.dp,
-                defaultHeight = 24.dp,
-                viewportWidth = 24f,
-                viewportHeight = 24f
-            ).apply {
-                // Material Design "Label" (filled) — price-tag shape with hole
-                path(
-                    fill = SolidColor(Color.Black),
-                    pathFillType = PathFillType.NonZero
-                ) {
-                    moveTo(17.63f, 5.84f)
-                    curveTo(17.27f, 5.33f, 16.67f, 5f, 16f, 5f)
-                    lineTo(5f, 5.01f)
-                    curveTo(3.9f, 5.01f, 3f, 5.9f, 3f, 7f)
-                    verticalLineToRelative(10f)
-                    curveToRelative(0f, 1.1f, 0.9f, 1.99f, 2f, 1.99f)
-                    lineTo(16f, 19f)
-                    curveToRelative(0.67f, 0f, 1.27f, -0.33f, 1.63f, -0.84f)
-                    lineTo(22f, 12f)
-                    lineTo(17.63f, 5.84f)
-                    close()
-                    moveTo(7f, 14f)
-                    curveToRelative(-1.1f, 0f, -2f, -0.9f, -2f, -2f)
-                    reflectiveCurveToRelative(0.9f, -2f, 2f, -2f)
-                    reflectiveCurveToRelative(2f, 0.9f, 2f, 2f)
-                    reflectiveCurveToRelative(-0.9f, 2f, -2f, 2f)
-                    close()
-                }
-            }.build()
-            return _label!!
-        }
-
-    private var _label: ImageVector? = null
+    @DrawableRes val IdCard: Int = R.drawable.ic_badge_id_card
+    @DrawableRes val Check: Int = R.drawable.ic_badge_check
+    @DrawableRes val Menu: Int = R.drawable.ic_badge_menu
+    @DrawableRes val ArrowLeft: Int = R.drawable.ic_badge_arrow_left
+    @DrawableRes val Share: Int = R.drawable.ic_badge_share
+    @DrawableRes val Download: Int = R.drawable.ic_badge_download
+    @DrawableRes val Upload: Int = R.drawable.ic_badge_upload
+    @DrawableRes val Settings: Int = R.drawable.ic_badge_settings
+    @DrawableRes val Heart: Int = R.drawable.ic_badge_heart
+    @DrawableRes val Info: Int = R.drawable.ic_badge_info
+    @DrawableRes val Label: Int = R.drawable.ic_badge_tag
+    @DrawableRes val Plus: Int = R.drawable.ic_badge_plus
+    @DrawableRes val Close: Int = R.drawable.ic_badge_close
+    @DrawableRes val ChevronDown: Int = R.drawable.ic_badge_chevron_down
+    @DrawableRes val DragCol: Int = R.drawable.ic_badge_drag_col
 }

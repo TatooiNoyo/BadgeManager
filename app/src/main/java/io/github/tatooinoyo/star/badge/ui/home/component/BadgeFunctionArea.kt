@@ -7,7 +7,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,20 +20,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -44,16 +34,17 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import io.github.tatooinoyo.star.badge.R
 import io.github.tatooinoyo.star.badge.data.BadgeChannel
+import io.github.tatooinoyo.star.badge.ui.component.BadgeMenuButton
+import io.github.tatooinoyo.star.badge.ui.component.CapsuleTab
 import io.github.tatooinoyo.star.badge.ui.home.BadgeUiState
+import io.github.tatooinoyo.star.badge.ui.icons.BadgeIcons
 import io.github.tatooinoyo.star.badge.ui.state.SyncState
+import io.github.tatooinoyo.star.badge.ui.theme.TextPrimary
 import kotlinx.coroutines.launch
 
 @Composable
@@ -67,7 +58,7 @@ fun BadgeFunctionArea(
     onFastModeChange: (Boolean) -> Unit,
     onAddClick: () -> Unit,
     onExtractSkClick: (String) -> Unit,
-    onToggleExpanded: () -> Unit, // 切换展开的回调
+    onToggleExpanded: () -> Unit,
     onTagsChange: (List<String>) -> Unit,
     onStartSender: () -> Unit,
     onStopSender: () -> Unit,
@@ -82,15 +73,15 @@ fun BadgeFunctionArea(
     onShareExport: () -> Unit = {},
     onShareFormatChange: (io.github.tatooinoyo.star.badge.utils.export.BadgeShareFormat) -> Unit = {},
     onCopyShareCode: (String) -> Unit = {},
-    onSettingsClick: () -> Unit, // 点击设置菜单项
-    onAboutClick: () -> Unit, // 点击帮助菜单项
-    onUnrecordedBadgesClick: () -> Unit // 点击"未录入徽章"菜单项
+    onSettingsClick: () -> Unit,
+    onAboutClick: () -> Unit,
+    onUnrecordedBadgesClick: () -> Unit,
 ) {
     val tabs = listOf(
         stringResource(R.string.tab_input),
         stringResource(R.string.tab_backup),
         stringResource(R.string.tab_share),
-        stringResource(R.string.tab_syncdata)
+        stringResource(R.string.tab_syncdata),
     )
     val pagerState = rememberPagerState(
         initialPage = uiState.functionTabIndex.coerceIn(0, tabs.lastIndex),
@@ -105,56 +96,39 @@ fun BadgeFunctionArea(
         }
     }
 
-    // 可折叠的功能面板区域
     AnimatedVisibility(
         visible = uiState.isFunctionAreaExpanded,
-        // 定义进入动画：仅垂直展开 + 渐显
         enter = expandVertically(expandFrom = Alignment.Top) + fadeIn(),
-        // 定义退出动画：仅垂直收缩 + 渐隐
-        exit = shrinkVertically(shrinkTowards = Alignment.Top) + fadeOut()
+        exit = shrinkVertically(shrinkTowards = Alignment.Top) + fadeOut(),
     ) {
-        Column(modifier = Modifier.padding(horizontal = 12.dp)) {
-            // Tab Row 和 帮助按钮
+        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             ) {
-                Box(modifier = Modifier.weight(1f)) {
-                    TabRow(
-                        selectedTabIndex = pagerState.currentPage,
-                        containerColor = Color.Transparent,
-                        contentColor = MaterialTheme.colorScheme.onSurface,
-                        divider = {},
-                    ) {
-                        tabs.forEachIndexed { index, title ->
-                            Tab(
-                                selected = pagerState.currentPage == index,
-                                onClick = {
-                                    scope.launch { pagerState.animateScrollToPage(index) }
-                                },
-                                text = {
-                                    Text(
-                                        text = title,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        textAlign = TextAlign.Center,
-                                        style = MaterialTheme.typography.labelLarge.copy(
-                                            fontSize = 13.sp,
-                                        ),
-                                    )
-                                },
-                            )
-                        }
+                Row(
+                    modifier = Modifier
+                        .weight(1f)
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    tabs.forEachIndexed { index, title ->
+                        CapsuleTab(
+                            text = title,
+                            selected = pagerState.currentPage == index,
+                            onClick = {
+                                scope.launch { pagerState.animateScrollToPage(index) }
+                            },
+                        )
                     }
                 }
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                // 菜单按钮
                 MenuButton(
                     onSettingsClick = onSettingsClick,
                     onAboutClick = onAboutClick,
-                    onUnrecordedBadgesClick = onUnrecordedBadgesClick
+                    onUnrecordedBadgesClick = onUnrecordedBadgesClick,
                 )
             }
 
@@ -164,7 +138,7 @@ fun BadgeFunctionArea(
                 state = pagerState,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(350.dp)
+                    .height(350.dp),
             ) { page ->
                 Box(modifier = Modifier.fillMaxSize()) {
                     when (page) {
@@ -203,87 +177,80 @@ fun BadgeFunctionArea(
             }
         }
     }
-
-    // 折叠/展开 按钮
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onToggleExpanded() },
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            imageVector = if (uiState.isFunctionAreaExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-            contentDescription = if (uiState.isFunctionAreaExpanded) stringResource(R.string.collapse) else stringResource(
-                R.string.expand
-            ),
-            tint = MaterialTheme.colorScheme.primary
-        )
-    }
 }
 
 @Composable
 fun MenuButton(
     onSettingsClick: () -> Unit,
     onAboutClick: () -> Unit,
-    onUnrecordedBadgesClick: () -> Unit
+    onUnrecordedBadgesClick: () -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
 
     Box {
-        IconButton(onClick = { expanded = true }) {
-            Icon(
-                imageVector = Icons.Default.Menu,
-                contentDescription = stringResource(R.string.menu),
-                tint = MaterialTheme.colorScheme.primary
-            )
-        }
+        BadgeMenuButton(onClick = { expanded = true })
 
         DropdownMenu(
             expanded = expanded,
-            onDismissRequest = { expanded = false }
+            onDismissRequest = { expanded = false },
         ) {
             DropdownMenuItem(
-                text = { Text(stringResource(R.string.settings)) },
+                text = {
+                    Text(
+                        stringResource(R.string.settings),
+                        color = TextPrimary,
+                    )
+                },
                 onClick = {
                     expanded = false
                     onSettingsClick()
                 },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Settings,
-                        contentDescription = null
+                        leadingIcon = {
+                            Icon(
+                                painter = painterResource(BadgeIcons.Settings),
+                                contentDescription = null,
+                                tint = TextPrimary,
+                            )
+                        },
                     )
-                }
-            )
-
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.help_us)) },
-                onClick = {
-                    expanded = false
-                    onUnrecordedBadgesClick()
-                },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Favorite,
-                        contentDescription = null
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                stringResource(R.string.help_us),
+                                color = TextPrimary,
+                            )
+                        },
+                        onClick = {
+                            expanded = false
+                            onUnrecordedBadgesClick()
+                        },
+                        leadingIcon = {
+                            Icon(
+                                painter = painterResource(BadgeIcons.Heart),
+                                contentDescription = null,
+                                tint = TextPrimary,
+                            )
+                        },
                     )
-                }
-            )
-
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.about)) },
-                onClick = {
-                    expanded = false
-                    onAboutClick()
-                },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = null
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                stringResource(R.string.about),
+                                color = TextPrimary,
+                            )
+                        },
+                        onClick = {
+                            expanded = false
+                            onAboutClick()
+                        },
+                        leadingIcon = {
+                            Icon(
+                                painter = painterResource(BadgeIcons.Info),
+                                contentDescription = null,
+                                tint = TextPrimary,
+                            )
+                        },
                     )
-                }
-            )
         }
     }
 }

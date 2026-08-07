@@ -26,16 +26,17 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import io.github.tatooinoyo.star.badge.ui.component.BadgeIconContainer
+import io.github.tatooinoyo.star.badge.ui.component.CategoryTag
+import io.github.tatooinoyo.star.badge.ui.component.DragHandle as DragHandleIcon
+import io.github.tatooinoyo.star.badge.ui.component.ServerTag
+import io.github.tatooinoyo.star.badge.ui.theme.BadgeTokens
+import io.github.tatooinoyo.star.badge.ui.theme.BorderDefault
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -46,8 +47,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color.Companion.Green
-import androidx.compose.ui.graphics.Color.Companion.White
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
@@ -85,21 +86,11 @@ fun BadgeTagList(tags: List<String>) {
     if (tags.isNotEmpty()) {
         FlowRow(
             modifier = Modifier.padding(start = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             tags.forEach { tag ->
-                Surface(
-                    shape = MaterialTheme.shapes.extraSmall,
-                    color = Green.copy(alpha = 0.8f),
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                ) {
-                    Text(
-                        text = tag,
-                        style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
-                    )
-                }
+                CategoryTag(text = tag)
             }
         }
     }
@@ -384,10 +375,7 @@ private fun FloatingDragBadge(
             onClick = {},
             clickEnabled = false,
             dragHandle = {
-                Icon(
-                    imageVector = Icons.Default.Menu,
-                    contentDescription = null,
-                )
+                DragHandleIcon()
             },
         )
     }
@@ -404,65 +392,63 @@ private fun BadgeListCard(
     modifier: Modifier = Modifier,
     dragHandle: @Composable () -> Unit,
 ) {
-    Card(
+    val cardColor = when {
+        elevated -> MaterialTheme.colorScheme.surfaceContainerLowest
+        isShareSelecting && isShareSelected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+        else -> BadgeTokens.badgeCardBackground
+    }
+    Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
-            .clickable(enabled = clickEnabled, onClick = onClick),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = if (elevated) 8.dp else 2.dp
-        ),
-        colors = when {
-            elevated -> CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
-            )
-            isShareSelecting && isShareSelected -> CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
-            )
-            else -> CardDefaults.cardColors()
-        },
+            .padding(vertical = 5.dp)
+            .clip(MaterialTheme.shapes.medium)
+            .background(cardColor)
+            .border(1.dp, BorderDefault, MaterialTheme.shapes.medium)
+            .clickable(enabled = clickEnabled, onClick = onClick)
+            .padding(12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+            BadgeIconContainer()
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
                     Text(
                         text = badge.title,
                         style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Box(
-                        modifier = Modifier
-                            .padding(4.dp)
-                            .background(
-                                MaterialTheme.colorScheme.primary,
-                                RoundedCornerShape(4.dp)
-                            ),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            badge.channel.getLabel(LocalContext.current),
-                            modifier = Modifier.padding(4.dp),
-                            color = White,
-                            style = MaterialTheme.typography.labelSmall,
-                        )
+                    ServerTag(text = badge.channel.getLabel(LocalContext.current))
+                    if (badge.tags.isNotEmpty()) {
+                        CategoryTag(text = badge.tags.first())
                     }
-                    BadgeTagList(tags = badge.tags)
                 }
-                if (badge.remark.isNotEmpty()) {
-                    Text(
-                        text = badge.remark,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                } else {
-                    Text(text = " ", style = MaterialTheme.typography.bodyMedium)
-                }
+                Text(
+                    text = badge.remark.ifEmpty { " " },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                )
             }
+        }
+        if (isShareSelecting) {
+            Checkbox(
+                checked = isShareSelected,
+                onCheckedChange = null,
+            )
+        } else {
             dragHandle()
         }
     }
@@ -477,9 +463,7 @@ private fun DragHandle(
     var handleCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
     val density = LocalDensity.current
 
-    Icon(
-        imageVector = Icons.Default.Menu,
-        contentDescription = "Drag to reorder",
+    DragHandleIcon(
         modifier = Modifier
             .onGloballyPositioned { handleCoordinates = it }
             .pointerInput(badge.id) {
