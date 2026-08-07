@@ -6,25 +6,39 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
@@ -51,40 +65,40 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.tatooinoyo.star.badge.R
 import io.github.tatooinoyo.star.badge.data.Badge
 import io.github.tatooinoyo.star.badge.data.BadgeChannel
 import io.github.tatooinoyo.star.badge.ui.about.UpdateCheckDialog
-import io.github.tatooinoyo.star.badge.ui.home.badge_sync.BadgeSyncViewModel
-import io.github.tatooinoyo.star.badge.ui.home.component.BadgeFunctionArea
-import io.github.tatooinoyo.star.badge.ui.home.component.BadgeReorderList
-import io.github.tatooinoyo.star.badge.ui.home.component.ShareImportDialog
-import io.github.tatooinoyo.star.badge.ui.home.component.TagFilterBar
-import io.github.tatooinoyo.star.badge.ui.home.component.TagManageDialog
-import androidx.compose.ui.draw.clip
-import io.github.tatooinoyo.star.badge.ui.icons.BadgeIcons
-import io.github.tatooinoyo.star.badge.ui.state.SyncState
-import androidx.compose.foundation.border
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.clip
-import io.github.tatooinoyo.star.badge.ui.component.BadgeBackButton
 import io.github.tatooinoyo.star.badge.ui.component.BadgeContentCard
 import io.github.tatooinoyo.star.badge.ui.component.LabeledInputField
 import io.github.tatooinoyo.star.badge.ui.component.OutlinedOrangeButton
 import io.github.tatooinoyo.star.badge.ui.component.PanelNotch
 import io.github.tatooinoyo.star.badge.ui.component.PrimaryOrangeButton
 import io.github.tatooinoyo.star.badge.ui.component.SecondaryScreenHeader
+import io.github.tatooinoyo.star.badge.ui.home.badge_sync.BadgeSyncViewModel
+import io.github.tatooinoyo.star.badge.ui.home.component.BadgeFunctionArea
+import io.github.tatooinoyo.star.badge.ui.home.component.BadgeReorderList
+import io.github.tatooinoyo.star.badge.ui.home.component.ShareImportDialog
+import io.github.tatooinoyo.star.badge.ui.home.component.TagFilterBar
+import io.github.tatooinoyo.star.badge.ui.home.component.TagManageDialog
+import io.github.tatooinoyo.star.badge.ui.icons.BadgeIcons
+import io.github.tatooinoyo.star.badge.ui.state.SyncState
 import io.github.tatooinoyo.star.badge.ui.theme.BorderDefault
 import io.github.tatooinoyo.star.badge.ui.theme.BrandOrange
 import io.github.tatooinoyo.star.badge.ui.theme.PeachTheme
@@ -346,16 +360,26 @@ fun BadgeListContent(
     onAboutClick: () -> Unit,
     onUnrecordedBadgesClick: () -> Unit,
 ) {
+    val listExpanded = uiState.isShareSelecting || !uiState.isFunctionAreaExpanded
+    val density = LocalDensity.current
 
-    BackHandler(enabled = uiState.isShareSelecting) {
-        onCancelShareSelection()
+    BackHandler(enabled = uiState.isShareSelecting || listExpanded) {
+        if (uiState.isShareSelecting) {
+            onCancelShareSelection()
+        } else {
+            onSetFunctionAreaExpanded(true)
+        }
     }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(PeachTheme)
-            .safeDrawingPadding(),
+            .windowInsetsPadding(
+                WindowInsets.safeDrawing.only(
+                    WindowInsetsSides.Top + WindowInsetsSides.Horizontal,
+                ),
+            ),
     ) {
         if (uiState.isShareSelecting) {
             ShareSelectionTopBar(
@@ -363,85 +387,131 @@ fun BadgeListContent(
                 onCancel = onCancelShareSelection,
                 onSelectAll = onSelectAllForShare,
             )
-        } else {
-            BadgeFunctionArea(
-                uiState = uiState,
-                syncState = syncState,
-                onInputTitleChange = onInputTitleChange,
-                onInputRemarkChange = onInputRemarkChange,
-                onInputLinkChange = onInputLinkChange,
-                onInputChannelChange = onInputChannelChange,
-                onFastModeChange = onFastModeChange,
-                onAddClick = onAddClick,
-                onToggleExpanded = onToggleFunctionArea,
-                onExtractSkClick = onExtractSkClick,
-                onTagsChange = onTagsChange,
-                onStartSender = onStartSender,
-                onStopSender = onStopSender,
-                onStartReceiver = onStartReceiver,
-                onStopReceiver = onStopReceiver,
-                onConfirmImport = onConfirmImport,
-                onCancelImport = onCancelImport,
-                onImport = onImport,
-                onExport = onExport,
-                allBadges = uiState.allBadgesUnfiltered,
-                onShareSelectBadges = onShareSelectBadges,
-                onShareExport = onShareExport,
-                onShareFormatChange = onShareFormatChange,
-                onCopyShareCode = onCopyShareCode,
-                onSettingsClick = onSettingsClick,
-                onAboutClick = onAboutClick,
-                onUnrecordedBadgesClick = onUnrecordedBadgesClick,
-            )
         }
 
-        Column(
+        BoxWithConstraints(
             modifier = Modifier
                 .weight(1f)
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-                .background(MaterialTheme.colorScheme.surface)
-                .border(
-                    width = 1.dp,
-                    color = BorderDefault,
-                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-                ),
+                .fillMaxWidth(),
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 20.dp, bottom = 16.dp)
-                    .clickable { onToggleFunctionArea() },
-                contentAlignment = Alignment.Center,
-            ) {
-                PanelNotch()
+            val fullHeightPx = constraints.maxHeight.toFloat()
+            // 折叠时把手以下铺满到底（含导航/手势条区域）
+            val bottomInsetPx = WindowInsets.safeDrawing.getBottom(density).toFloat()
+            val collapsedHeightPx =
+                with(density) { LIST_HANDLE_HEIGHT.toPx() } + bottomInsetPx
+            val collapsedHeightDp = with(density) { collapsedHeightPx.toDp() }
+            val sheetHeightPx by animateFloatAsState(
+                targetValue = if (listExpanded) fullHeightPx else collapsedHeightPx,
+                animationSpec = tween(
+                    durationMillis = LIST_SHEET_ANIM_MS,
+                    easing = FastOutSlowInEasing,
+                ),
+                label = "badgeListSheetHeight",
+            )
+            val sheetHeightDp = with(density) { sheetHeightPx.toDp() }
+            val showListContent =
+                sheetHeightPx > collapsedHeightPx + with(density) { 24.dp.toPx() }
+
+            // 功能区固定铺满底层，不随面板高度被挤压
+            if (!uiState.isShareSelecting) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(bottom = collapsedHeightDp)
+                        .zIndex(0f),
+                ) {
+                    BadgeFunctionArea(
+                        uiState = uiState,
+                        syncState = syncState,
+                        onInputTitleChange = onInputTitleChange,
+                        onInputRemarkChange = onInputRemarkChange,
+                        onInputLinkChange = onInputLinkChange,
+                        onInputChannelChange = onInputChannelChange,
+                        onFastModeChange = onFastModeChange,
+                        onAddClick = onAddClick,
+                        onExtractSkClick = onExtractSkClick,
+                        onTagsChange = onTagsChange,
+                        onStartSender = onStartSender,
+                        onStopSender = onStopSender,
+                        onStartReceiver = onStartReceiver,
+                        onStopReceiver = onStopReceiver,
+                        onConfirmImport = onConfirmImport,
+                        onCancelImport = onCancelImport,
+                        onImport = onImport,
+                        onExport = onExport,
+                        allBadges = uiState.allBadgesUnfiltered,
+                        onShareSelectBadges = onShareSelectBadges,
+                        onShareExport = onShareExport,
+                        onShareFormatChange = onShareFormatChange,
+                        onCopyShareCode = onCopyShareCode,
+                        onSettingsClick = onSettingsClick,
+                        onAboutClick = onAboutClick,
+                        onUnrecordedBadgesClick = onUnrecordedBadgesClick,
+                    )
+                }
             }
 
+            // 列表面板叠在功能区之上，从底部滑入覆盖
             Column(
                 modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 16.dp),
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(sheetHeightDp)
+                    .zIndex(1f)
+                    .background(
+                        color = MaterialTheme.colorScheme.surface,
+                        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+                    )
+                    .border(
+                        width = 1.dp,
+                        color = BorderDefault,
+                        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+                    )
+                    .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                    .clipToBounds(),
             ) {
-                TagFilterBar(
-                    allTags = uiState.allTags,
-                    selectedTag = uiState.selectedTag,
-                    onTagSelected = onTagSelected,
+                BadgeListDragHandle(
+                    listExpanded = listExpanded,
+                    onExpand = { onSetFunctionAreaExpanded(false) },
+                    onCollapse = { onSetFunctionAreaExpanded(true) },
                 )
 
-                Spacer(modifier = Modifier.height(10.dp))
+                if (showListContent) {
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .navigationBarsPadding()
+                            .padding(horizontal = 16.dp),
+                    ) {
+                        TagFilterBar(
+                            allTags = uiState.allTags,
+                            selectedTag = uiState.selectedTag,
+                            onTagSelected = onTagSelected,
+                        )
 
-                BadgeReorderList(
-                    badges = uiState.badges,
-                    onItemClick = onItemClick,
-                    onMove = onMove,
-                    onSaveOrder = onSaveOrder,
-                    listState = listState,
-                    isFunctionAreaExpanded = uiState.isFunctionAreaExpanded,
-                    onSetFunctionAreaExpanded = onSetFunctionAreaExpanded,
-                    isShareSelecting = uiState.isShareSelecting,
-                    shareSelectedIds = uiState.shareSelectedIds,
-                    modifier = Modifier.weight(1f),
-                )
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        BadgeReorderList(
+                            badges = uiState.badges,
+                            onItemClick = onItemClick,
+                            onMove = onMove,
+                            onSaveOrder = onSaveOrder,
+                            listState = listState,
+                            isShareSelecting = uiState.isShareSelecting,
+                            shareSelectedIds = uiState.shareSelectedIds,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                } else {
+                    // 折叠：把手下方用面板色铺满到底
+                    Spacer(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.surface),
+                    )
+                }
             }
         }
 
@@ -449,8 +519,48 @@ fun BadgeListContent(
             ShareSelectionBottomBar(
                 selectedCount = uiState.shareSelectedIds.size,
                 onNext = onFinishShareSelection,
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.surface)
+                    .navigationBarsPadding(),
             )
         }
+    }
+}
+
+/** 把手区域高度：上 16 + 条 4 + 下 16 */
+private val LIST_HANDLE_HEIGHT = 36.dp
+private const val LIST_SHEET_ANIM_MS = 1300
+private const val LIST_HANDLE_DRAG_THRESHOLD_PX = 80f
+
+@Composable
+private fun BadgeListDragHandle(
+    listExpanded: Boolean,
+    onExpand: () -> Unit,
+    onCollapse: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(LIST_HANDLE_HEIGHT)
+            .pointerInput(listExpanded) {
+                var totalDrag = 0f
+                detectVerticalDragGestures(
+                    onDragStart = { totalDrag = 0f },
+                    onVerticalDrag = { change, dragAmount ->
+                        change.consume()
+                        totalDrag += dragAmount
+                    },
+                    onDragEnd = {
+                        when {
+                            !listExpanded && totalDrag <= -LIST_HANDLE_DRAG_THRESHOLD_PX -> onExpand()
+                            listExpanded && totalDrag >= LIST_HANDLE_DRAG_THRESHOLD_PX -> onCollapse()
+                        }
+                    },
+                )
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        PanelNotch()
     }
 }
 
@@ -484,9 +594,10 @@ private fun ShareSelectionTopBar(
 private fun ShareSelectionBottomBar(
     selectedCount: Int,
     onNext: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.End,

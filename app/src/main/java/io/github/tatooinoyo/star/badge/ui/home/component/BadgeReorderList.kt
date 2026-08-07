@@ -46,13 +46,9 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
@@ -62,7 +58,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import io.github.tatooinoyo.star.badge.R
@@ -73,7 +68,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
-private const val FUNCTION_AREA_SCROLL_THRESHOLD = 80f
 private const val REORDER_PLACEMENT_MS = 250
 private const val FLOAT_APPEAR_MS = 180
 private const val INDICATOR_MOVE_MS = 120
@@ -103,14 +97,10 @@ fun BadgeReorderList(
     onMove: (Int, Int) -> Unit,
     onSaveOrder: () -> Unit,
     listState: LazyListState = rememberLazyListState(),
-    isFunctionAreaExpanded: Boolean = true,
-    onSetFunctionAreaExpanded: (Boolean) -> Unit = {},
     isShareSelecting: Boolean = false,
     shareSelectedIds: Set<String> = emptySet(),
     modifier: Modifier = Modifier,
 ) {
-    val isExpandedState = rememberUpdatedState(isFunctionAreaExpanded)
-    val onSetExpandedState = rememberUpdatedState(onSetFunctionAreaExpanded)
     val reorderState = rememberMultiTouchReorderState(listState, onMove, onSaveOrder)
     val isDraggingState = rememberUpdatedState(reorderState.isDragging && !isShareSelecting)
 
@@ -127,71 +117,6 @@ fun BadgeReorderList(
 
     val density = LocalDensity.current
     val indicatorHalfHeightPx = with(density) { 1.5.dp.toPx() }
-
-    val nestedScrollConnection = remember(listState) {
-        var collapseDrag = 0f
-        var expandDrag = 0f
-        var lockListUntilGestureEnd = false
-
-        fun resetGestureTracking() {
-            collapseDrag = 0f
-            expandDrag = 0f
-            lockListUntilGestureEnd = false
-        }
-
-        object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                if (isDraggingState.value || source != NestedScrollSource.Drag) {
-                    return Offset.Zero
-                }
-                if (lockListUntilGestureEnd) {
-                    return if (available.y != 0f) Offset(0f, available.y) else Offset.Zero
-                }
-                if (isExpandedState.value && available.y < 0f) {
-                    collapseDrag += -available.y
-                    if (collapseDrag >= FUNCTION_AREA_SCROLL_THRESHOLD) {
-                        onSetExpandedState.value(false)
-                        lockListUntilGestureEnd = true
-                        collapseDrag = 0f
-                    }
-                    return Offset(0f, available.y)
-                }
-                collapseDrag = 0f
-                return Offset.Zero
-            }
-
-            override fun onPostScroll(
-                consumed: Offset,
-                available: Offset,
-                source: NestedScrollSource
-            ): Offset {
-                if (isDraggingState.value || source != NestedScrollSource.Drag) {
-                    return Offset.Zero
-                }
-                if (lockListUntilGestureEnd) {
-                    return if (available.y != 0f) Offset(0f, available.y) else Offset.Zero
-                }
-                val atTop = listState.firstVisibleItemIndex == 0 &&
-                    listState.firstVisibleItemScrollOffset == 0
-                if (atTop && !isExpandedState.value && available.y > 0f) {
-                    expandDrag += available.y
-                    if (expandDrag >= FUNCTION_AREA_SCROLL_THRESHOLD) {
-                        onSetExpandedState.value(true)
-                        lockListUntilGestureEnd = true
-                        expandDrag = 0f
-                    }
-                    return Offset(0f, available.y)
-                }
-                expandDrag = 0f
-                return Offset.Zero
-            }
-
-            override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
-                resetGestureTracking()
-                return Velocity.Zero
-            }
-        }
-    }
 
     Box(
         modifier = modifier
@@ -246,7 +171,6 @@ fun BadgeReorderList(
             modifier = Modifier
                 .fillMaxSize()
                 .onGloballyPositioned { reorderState.listCoordinates = it }
-                .nestedScroll(nestedScrollConnection)
                 .padding(horizontal = 16.dp),
             contentPadding = PaddingValues(vertical = 8.dp)
         ) {

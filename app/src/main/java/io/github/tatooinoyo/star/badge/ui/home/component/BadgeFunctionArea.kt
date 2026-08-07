@@ -2,15 +2,11 @@ package io.github.tatooinoyo.star.badge.ui.home.component
 
 import android.content.Context
 import android.net.Uri
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -48,7 +44,7 @@ import io.github.tatooinoyo.star.badge.ui.theme.TextPrimary
 import kotlinx.coroutines.launch
 
 @Composable
-fun BadgeFunctionArea(
+fun ColumnScope.BadgeFunctionArea(
     uiState: BadgeUiState,
     syncState: SyncState,
     onInputTitleChange: (String) -> Unit,
@@ -58,7 +54,6 @@ fun BadgeFunctionArea(
     onFastModeChange: (Boolean) -> Unit,
     onAddClick: () -> Unit,
     onExtractSkClick: (String) -> Unit,
-    onToggleExpanded: () -> Unit,
     onTagsChange: (List<String>) -> Unit,
     onStartSender: () -> Unit,
     onStopSender: () -> Unit,
@@ -76,6 +71,7 @@ fun BadgeFunctionArea(
     onSettingsClick: () -> Unit,
     onAboutClick: () -> Unit,
     onUnrecordedBadgesClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val tabs = listOf(
         stringResource(R.string.tab_input),
@@ -96,83 +92,82 @@ fun BadgeFunctionArea(
         }
     }
 
-    AnimatedVisibility(
-        visible = uiState.isFunctionAreaExpanded,
-        enter = expandVertically(expandFrom = Alignment.Top) + fadeIn(),
-        exit = shrinkVertically(shrinkTowards = Alignment.Top) + fadeOut(),
+    Column(
+        modifier = modifier
+            .weight(1f)
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
     ) {
-        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .weight(1f)
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Row(
-                    modifier = Modifier
-                        .weight(1f)
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    tabs.forEachIndexed { index, title ->
-                        CapsuleTab(
-                            text = title,
-                            selected = pagerState.currentPage == index,
-                            onClick = {
-                                scope.launch { pagerState.animateScrollToPage(index) }
-                            },
-                        )
-                    }
+                tabs.forEachIndexed { index, title ->
+                    CapsuleTab(
+                        text = title,
+                        selected = pagerState.currentPage == index,
+                        onClick = {
+                            scope.launch { pagerState.animateScrollToPage(index) }
+                        },
+                    )
                 }
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                MenuButton(
-                    onSettingsClick = onSettingsClick,
-                    onAboutClick = onAboutClick,
-                    onUnrecordedBadgesClick = onUnrecordedBadgesClick,
-                )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.width(8.dp))
 
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(350.dp),
-            ) { page ->
-                Box(modifier = Modifier.fillMaxSize()) {
-                    when (page) {
-                        0 -> BadgeInputPanel(
-                            uiState = uiState,
-                            onInputTitleChange = onInputTitleChange,
-                            onInputRemarkChange = onInputRemarkChange,
-                            onInputLinkChange = onInputLinkChange,
-                            onInputChannelChange = onInputChannelChange,
-                            onFastModeChange = onFastModeChange,
-                            onAddClick = onAddClick,
-                            onExtractSkClick = onExtractSkClick,
-                            onTagsChange = onTagsChange,
-                        )
+            MenuButton(
+                onSettingsClick = onSettingsClick,
+                onAboutClick = onAboutClick,
+                onUnrecordedBadgesClick = onUnrecordedBadgesClick,
+            )
+        }
 
-                        1 -> BackupRestorePanel(onImport = onImport, onExport = onExport)
-                        2 -> ShareBadgesPanel(
-                            uiState = uiState,
-                            allBadges = allBadges,
-                            onSelectBadges = onShareSelectBadges,
-                            onShareExport = onShareExport,
-                            onShareFormatChange = onShareFormatChange,
-                            onCopyCode = onCopyShareCode,
-                        )
-                        3 -> SyncDataPanel(
-                            syncState = syncState,
-                            onStartSender = onStartSender,
-                            onStopSender = onStopSender,
-                            onStartReceiver = onStartReceiver,
-                            onStopReceiver = onStopReceiver,
-                            onConfirmImport = onConfirmImport,
-                            onCancelImport = onCancelImport,
-                        )
-                    }
+        Spacer(modifier = Modifier.height(16.dp))
+
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+        ) { page ->
+            Box(modifier = Modifier.fillMaxSize()) {
+                when (page) {
+                    0 -> BadgeInputPanel(
+                        uiState = uiState,
+                        onInputTitleChange = onInputTitleChange,
+                        onInputRemarkChange = onInputRemarkChange,
+                        onInputLinkChange = onInputLinkChange,
+                        onInputChannelChange = onInputChannelChange,
+                        onFastModeChange = onFastModeChange,
+                        onAddClick = onAddClick,
+                        onExtractSkClick = onExtractSkClick,
+                        onTagsChange = onTagsChange,
+                    )
+
+                    1 -> BackupRestorePanel(onImport = onImport, onExport = onExport)
+                    2 -> ShareBadgesPanel(
+                        uiState = uiState,
+                        allBadges = allBadges,
+                        onSelectBadges = onShareSelectBadges,
+                        onShareExport = onShareExport,
+                        onShareFormatChange = onShareFormatChange,
+                        onCopyCode = onCopyShareCode,
+                    )
+                    3 -> SyncDataPanel(
+                        syncState = syncState,
+                        onStartSender = onStartSender,
+                        onStopSender = onStopSender,
+                        onStartReceiver = onStartReceiver,
+                        onStopReceiver = onStopReceiver,
+                        onConfirmImport = onConfirmImport,
+                        onCancelImport = onCancelImport,
+                    )
                 }
             }
         }
@@ -205,52 +200,52 @@ fun MenuButton(
                     expanded = false
                     onSettingsClick()
                 },
-                        leadingIcon = {
-                            Icon(
-                                painter = painterResource(BadgeIcons.Settings),
-                                contentDescription = null,
-                                tint = TextPrimary,
-                            )
-                        },
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(BadgeIcons.Settings),
+                        contentDescription = null,
+                        tint = TextPrimary,
                     )
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                stringResource(R.string.help_us),
-                                color = TextPrimary,
-                            )
-                        },
-                        onClick = {
-                            expanded = false
-                            onUnrecordedBadgesClick()
-                        },
-                        leadingIcon = {
-                            Icon(
-                                painter = painterResource(BadgeIcons.Heart),
-                                contentDescription = null,
-                                tint = TextPrimary,
-                            )
-                        },
+                },
+            )
+            DropdownMenuItem(
+                text = {
+                    Text(
+                        stringResource(R.string.help_us),
+                        color = TextPrimary,
                     )
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                stringResource(R.string.about),
-                                color = TextPrimary,
-                            )
-                        },
-                        onClick = {
-                            expanded = false
-                            onAboutClick()
-                        },
-                        leadingIcon = {
-                            Icon(
-                                painter = painterResource(BadgeIcons.Info),
-                                contentDescription = null,
-                                tint = TextPrimary,
-                            )
-                        },
+                },
+                onClick = {
+                    expanded = false
+                    onUnrecordedBadgesClick()
+                },
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(BadgeIcons.Heart),
+                        contentDescription = null,
+                        tint = TextPrimary,
                     )
+                },
+            )
+            DropdownMenuItem(
+                text = {
+                    Text(
+                        stringResource(R.string.about),
+                        color = TextPrimary,
+                    )
+                },
+                onClick = {
+                    expanded = false
+                    onAboutClick()
+                },
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(BadgeIcons.Info),
+                        contentDescription = null,
+                        tint = TextPrimary,
+                    )
+                },
+            )
         }
     }
 }
