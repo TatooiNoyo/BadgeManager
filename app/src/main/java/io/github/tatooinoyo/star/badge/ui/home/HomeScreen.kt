@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.only
@@ -395,8 +396,8 @@ fun BadgeListContent(
                 .fillMaxWidth(),
         ) {
             val fullHeightPx = constraints.maxHeight.toFloat()
-            // 折叠时把手以下铺满到底（含导航/手势条区域）
-            val bottomInsetPx = WindowInsets.safeDrawing.getBottom(density).toFloat()
+            // 只用导航栏 inset，排除 IME，避免键盘弹出时折叠把手被顶起
+            val bottomInsetPx = WindowInsets.navigationBars.getBottom(density).toFloat()
             val collapsedHeightPx =
                 with(density) { LIST_HANDLE_HEIGHT.toPx() } + bottomInsetPx
             val collapsedHeightDp = with(density) { collapsedHeightPx.toDp() }
@@ -412,12 +413,13 @@ fun BadgeListContent(
             val showListContent =
                 sheetHeightPx > collapsedHeightPx + with(density) { 24.dp.toPx() }
 
-            // 功能区固定铺满底层，不随面板高度被挤压
+            // 功能区固定铺满底层，不随面板高度被挤压；imePadding 只作用于此，列表把手不受影响
             if (!uiState.isShareSelecting) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(bottom = collapsedHeightDp)
+                        .imePadding()
                         .zIndex(0f),
                 ) {
                     BadgeFunctionArea(

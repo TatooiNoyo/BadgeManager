@@ -14,11 +14,11 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import io.github.tatooinoyo.star.badge.data.Badge
 
 /**
- * 拖拽排序状态：拖动时从列表中暂隐被拖项（下方补位），悬浮层跟随手指；
+ * 拖拽排序状态：列表中保留被拖项半透明影子，悬浮层跟随手指；
  * 松手后按横杆落点一次性 onMove + onSaveOrder。
  *
- * 拖拽期间列表展示的是去掉被拖项后的序列，[dropInsertBeforeIndex] 即
- * MutableList.add(to, removeAt(from)) 中的 to。
+ * [dropInsertBeforeIndex] 相对「仍含被拖项」的完整列表；
+ * 提交时再换算为 MutableList.add(to, removeAt(from)) 的 to。
  */
 @Stable
 class MultiTouchReorderState(
@@ -47,7 +47,7 @@ class MultiTouchReorderState(
     var draggingItemHeight by mutableFloatStateOf(0f)
         private set
 
-    /** 落点：插入到「已去掉被拖项」列表的该下标（0..itemCount） */
+    /** 落点：插入到完整列表的该下标之前（0..itemCount） */
     var dropInsertBeforeIndex by mutableIntStateOf(-1)
         private set
 
@@ -55,7 +55,7 @@ class MultiTouchReorderState(
     var dropIndicatorY by mutableFloatStateOf(0f)
         private set
 
-    /** 当前列表展示条数（拖拽中为原数量 - 1） */
+    /** 当前列表条数（含被拖项影子） */
     var itemCount by mutableIntStateOf(0)
 
     var listCoordinates: LayoutCoordinates? = null
@@ -94,10 +94,18 @@ class MultiTouchReorderState(
         dropIndicatorY = resolved.indicatorY
     }
 
+    /** 将「完整列表 insertBefore」换算为 removeAt 之后的 add 下标 */
+    fun resolvedMoveToIndex(): Int {
+        val from = draggingIndex
+        val insertBefore = dropInsertBeforeIndex
+        if (from < 0 || insertBefore < 0) return from
+        return if (insertBefore > from) insertBefore - 1 else insertBefore
+    }
+
     fun onDragEnd() {
         if (!isDragging) return
         val from = draggingIndex
-        val to = dropInsertBeforeIndex
+        val to = resolvedMoveToIndex()
         isDragging = false
         draggingKey = null
         draggingBadge = null
@@ -106,7 +114,6 @@ class MultiTouchReorderState(
         dropInsertBeforeIndex = -1
         draggingItemHeight = 0f
 
-        // 展示列表已不含被拖项，to 直接对应 add(to, removeAt(from))；to == from 表示落回原位
         if (from >= 0 && to >= 0 && to != from) {
             onMove(from, to)
         }
@@ -143,7 +150,6 @@ class MultiTouchReorderState(
             itemCount: Int,
         ): DropTarget? {
             if (itemCount <= 0) {
-                // 仅剩被拖项时，落点在列表顶部
                 return DropTarget(0, 0f)
             }
             val items = listState.layoutInfo.visibleItemsInfo

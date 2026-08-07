@@ -42,7 +42,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -79,7 +78,6 @@ private const val FLOAT_ALPHA = 0.92f
 fun BadgeTagList(tags: List<String>) {
     if (tags.isNotEmpty()) {
         FlowRow(
-            modifier = Modifier.padding(start = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
@@ -102,18 +100,9 @@ fun BadgeReorderList(
     modifier: Modifier = Modifier,
 ) {
     val reorderState = rememberMultiTouchReorderState(listState, onMove, onSaveOrder)
-    val isDraggingState = rememberUpdatedState(reorderState.isDragging && !isShareSelecting)
 
-    // 拖拽中从列表暂隐被拖项，下方自动补位；落点下标相对此展示列表
-    val displayBadges = remember(badges, reorderState.draggingKey, reorderState.isDragging) {
-        val key = reorderState.draggingKey
-        if (reorderState.isDragging && key != null) {
-            badges.filter { it.id != key }
-        } else {
-            badges
-        }
-    }
-    reorderState.itemCount = displayBadges.size
+    // 拖拽中仍保留列表项作为半透明影子；落点下标相对完整列表
+    reorderState.itemCount = badges.size
 
     val density = LocalDensity.current
     val indicatorHalfHeightPx = with(density) { 1.5.dp.toPx() }
@@ -174,7 +163,7 @@ fun BadgeReorderList(
                 .padding(horizontal = 16.dp),
             contentPadding = PaddingValues(vertical = 8.dp)
         ) {
-            if (displayBadges.isEmpty()) {
+            if (badges.isEmpty()) {
                 item {
                     Text(
                         text = stringResource(R.string.badge_list_empty_hint),
@@ -186,12 +175,14 @@ fun BadgeReorderList(
                     )
                 }
             }
-            itemsIndexed(displayBadges, key = { _, badge -> badge.id }) { _, badge ->
+            itemsIndexed(badges, key = { _, badge -> badge.id }) { index, badge ->
+                val isGhost = reorderState.isDragging && badge.id == reorderState.draggingKey
                 BadgeListCard(
                     badge = badge,
                     elevated = false,
+                    isGhost = isGhost,
                     onClick = { onItemClick(badge) },
-                    clickEnabled = !reorderState.isDragging || isShareSelecting,
+                    clickEnabled = (!reorderState.isDragging || isShareSelecting) && !isGhost,
                     isShareSelecting = isShareSelecting,
                     isShareSelected = badge.id in shareSelectedIds,
                     modifier = Modifier.animateItem(
@@ -208,10 +199,9 @@ fun BadgeReorderList(
                         }
                     } else {
                         {
-                            val fullIndex = badges.indexOfFirst { it.id == badge.id }
                             DragHandle(
                                 badge = badge,
-                                index = fullIndex,
+                                index = index,
                                 reorderState = reorderState,
                             )
                         }
@@ -221,9 +211,10 @@ fun BadgeReorderList(
         }
 
         // 落点横杆（高于悬浮层，避免被挡住）
+        val moveTo = reorderState.resolvedMoveToIndex()
         val showDropIndicator = reorderState.isDragging &&
             reorderState.dropInsertBeforeIndex >= 0 &&
-            reorderState.dropInsertBeforeIndex != reorderState.draggingIndex
+            moveTo != reorderState.draggingIndex
         val animatedIndicatorY by animateFloatAsState(
             targetValue = reorderState.dropIndicatorY,
             animationSpec = tween(INDICATOR_MOVE_MS),
@@ -305,6 +296,7 @@ private fun FloatingDragBadge(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun BadgeListCard(
     badge: Badge,
@@ -313,18 +305,21 @@ private fun BadgeListCard(
     clickEnabled: Boolean,
     isShareSelecting: Boolean = false,
     isShareSelected: Boolean = false,
+    isGhost: Boolean = false,
     modifier: Modifier = Modifier,
     dragHandle: @Composable () -> Unit,
 ) {
     val cardColor = when {
         elevated -> MaterialTheme.colorScheme.surfaceContainerLowest
         isShareSelecting && isShareSelected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+        isGhost -> BadgeTokens.badgeCardBackground.copy(alpha = 0.35f)
         else -> BadgeTokens.badgeCardBackground
     }
     Row(
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 5.dp)
+            .graphicsLayer { if (isGhost) alpha = 0.4f }
             .clip(MaterialTheme.shapes.medium)
             .background(cardColor)
             .border(1.dp, BorderDefault, MaterialTheme.shapes.medium)
@@ -343,21 +338,21 @@ private fun BadgeListCard(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    Text(
-                        text = badge.title,
-                        style = MaterialTheme.typography.titleMedium,
-                        maxLines = 1,
-                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                    )
                     ServerTag(text = badge.channel.getLabel(LocalContext.current))
-                    if (badge.tags.isNotEmpty()) {
-                        CategoryTag(text = badge.tags.first())
+                    badge.tags.forEach { tag ->
+                        CategoryTag(text = tag)
                     }
                 }
+                Text(
+                    text = badge.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                )
                 Text(
                     text = badge.remark.ifEmpty { " " },
                     style = MaterialTheme.typography.bodySmall,
