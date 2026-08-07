@@ -55,6 +55,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
@@ -71,9 +72,23 @@ import io.github.tatooinoyo.star.badge.ui.home.component.BadgeReorderList
 import io.github.tatooinoyo.star.badge.ui.home.component.ShareImportDialog
 import io.github.tatooinoyo.star.badge.ui.home.component.TagFilterBar
 import io.github.tatooinoyo.star.badge.ui.home.component.TagManageDialog
+import androidx.compose.ui.draw.clip
 import io.github.tatooinoyo.star.badge.ui.icons.BadgeIcons
 import io.github.tatooinoyo.star.badge.ui.state.SyncState
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import io.github.tatooinoyo.star.badge.ui.component.BadgeBackButton
+import io.github.tatooinoyo.star.badge.ui.component.BadgeContentCard
+import io.github.tatooinoyo.star.badge.ui.component.LabeledInputField
+import io.github.tatooinoyo.star.badge.ui.component.OutlinedOrangeButton
+import io.github.tatooinoyo.star.badge.ui.component.PanelNotch
+import io.github.tatooinoyo.star.badge.ui.component.PrimaryOrangeButton
+import io.github.tatooinoyo.star.badge.ui.component.SecondaryScreenHeader
+import io.github.tatooinoyo.star.badge.ui.theme.BorderDefault
+import io.github.tatooinoyo.star.badge.ui.theme.BrandOrange
 import io.github.tatooinoyo.star.badge.ui.theme.PeachTheme
+import io.github.tatooinoyo.star.badge.ui.theme.TextSecondary
 import io.github.tatooinoyo.star.badge.utils.export.BadgeShareFormat
 import io.github.tatooinoyo.star.badge.utils.update.UpdateCheckResult
 import io.github.tatooinoyo.star.badge.utils.update.UpdateChecker
@@ -340,10 +355,8 @@ fun BadgeListContent(
         modifier = Modifier
             .fillMaxSize()
             .background(PeachTheme)
-//            .padding(16.dp)
-            .safeDrawingPadding()
+            .safeDrawingPadding(),
     ) {
-        // 1. 顶部功能区 (录入、备份、分享、同步)
         if (uiState.isShareSelecting) {
             ShareSelectionTopBar(
                 selectedCount = uiState.shareSelectedIds.size,
@@ -382,26 +395,55 @@ fun BadgeListContent(
             )
         }
 
-        // 标签筛选栏
-        // 放在列表上方
-        TagFilterBar(
-            allTags = uiState.allTags,
-            selectedTag = uiState.selectedTag,
-            onTagSelected = onTagSelected
-        )
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                .background(MaterialTheme.colorScheme.surface)
+                .border(
+                    width = 1.dp,
+                    color = BorderDefault,
+                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+                ),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 20.dp, bottom = 16.dp)
+                    .clickable { onToggleFunctionArea() },
+                contentAlignment = Alignment.Center,
+            ) {
+                PanelNotch()
+            }
 
-        BadgeReorderList(
-            badges = uiState.badges,
-            onItemClick = onItemClick,
-            onMove = onMove,
-            onSaveOrder = onSaveOrder,
-            listState = listState,
-            isFunctionAreaExpanded = uiState.isFunctionAreaExpanded,
-            onSetFunctionAreaExpanded = onSetFunctionAreaExpanded,
-            isShareSelecting = uiState.isShareSelecting,
-            shareSelectedIds = uiState.shareSelectedIds,
-            modifier = Modifier.weight(1f),
-        )
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 16.dp),
+            ) {
+                TagFilterBar(
+                    allTags = uiState.allTags,
+                    selectedTag = uiState.selectedTag,
+                    onTagSelected = onTagSelected,
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                BadgeReorderList(
+                    badges = uiState.badges,
+                    onItemClick = onItemClick,
+                    onMove = onMove,
+                    onSaveOrder = onSaveOrder,
+                    listState = listState,
+                    isFunctionAreaExpanded = uiState.isFunctionAreaExpanded,
+                    onSetFunctionAreaExpanded = onSetFunctionAreaExpanded,
+                    isShareSelecting = uiState.isShareSelecting,
+                    shareSelectedIds = uiState.shareSelectedIds,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
 
         if (uiState.isShareSelecting) {
             ShareSelectionBottomBar(
@@ -495,65 +537,85 @@ fun BadgeDetailContent(
         modifier = Modifier
             .fillMaxSize()
             .background(PeachTheme)
-            .padding(16.dp)
-            .safeDrawingPadding()
+            .safeDrawingPadding(),
     ) {
-        Text(
-            stringResource(R.string.edit_badge_details),
-            style = MaterialTheme.typography.headlineMedium
+        SecondaryScreenHeader(
+            title = stringResource(R.string.edit_badge_details),
+            onBack = onExitClick,
         )
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // 复用输入表单
-        BadgeInputForm(
-            title = title, onTitleChange = onTitleChange,
-            remark = remark, onRemarkChange = onRemarkChange,
-            link = link, onLinkChange = onLinkChange,
-            channel = channel, onChannelChange = onChannelChange,
-            allTags = allTags,
-            selectedTags = tags,
-            onTagsChange = onTagsChange,
-            onExtractSkClick = onExtractSkClick
-        )
-        Spacer(modifier = Modifier.weight(1f))
-
-        // 新增：写入 NFC 按钮
-        Button(
-            onClick = onWriteNfcClick,
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.tertiary
-            )
-        ) {
-            Text(stringResource(R.string.write_link_to_nfc_card))
-        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 按钮操作区
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            // 退出按钮
-            OutlinedButton(onClick = onExitClick) {
-                Text(stringResource(R.string.exit))
-            }
+        Column(modifier = Modifier.weight(1f).padding(horizontal = 16.dp)) {
+            BadgeInputForm(
+                title = title,
+                onTitleChange = onTitleChange,
+                remark = remark,
+                onRemarkChange = onRemarkChange,
+                link = link,
+                onLinkChange = onLinkChange,
+                channel = channel,
+                onChannelChange = onChannelChange,
+                allTags = allTags,
+                selectedTags = tags,
+                onTagsChange = onTagsChange,
+                onExtractSkClick = onExtractSkClick,
+            )
+        }
 
-            Row {
-                // 删除按钮
-                Button(
-                    onClick = { showDeleteConfirm = true },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+        BadgeContentCard(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+        ) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                PrimaryOrangeButton(
+                    text = stringResource(R.string.write_link_to_nfc_card),
+                    onClick = onWriteNfcClick,
+                    icon = BadgeIcons.IdCard,
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Text(stringResource(R.string.delete))
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                // 更新按钮
-                Button(
-                    onClick = { showUpdateConfirm = true }
-                ) {
-                    Text(stringResource(R.string.save_update))
+                    OutlinedOrangeButton(
+                        text = stringResource(R.string.exit),
+                        onClick = onExitClick,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(MaterialTheme.shapes.small)
+                            .background(Color.White)
+                            .border(1.dp, BrandOrange.copy(alpha = 0.6f), MaterialTheme.shapes.small)
+                            .clickable { showDeleteConfirm = true }
+                            .padding(vertical = 14.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = stringResource(R.string.delete),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = BrandOrange,
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(MaterialTheme.shapes.small)
+                            .background(Color.White)
+                            .border(1.dp, BrandOrange, MaterialTheme.shapes.small)
+                            .clickable { showUpdateConfirm = true }
+                            .padding(vertical = 14.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = stringResource(R.string.save_update),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = BrandOrange,
+                        )
+                    }
                 }
             }
         }
@@ -650,71 +712,57 @@ fun BadgeInputForm(
         )
     }
 
-    Column {
-        OutlinedTextField(
-            value = title, onValueChange = onTitleChange,
-            label = {
-                Text(
-                    stringResource(R.string.title_placeholder),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            },
-            modifier = Modifier.fillMaxWidth()
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        LabeledInputField(
+            label = stringResource(R.string.title),
+            value = title,
+            placeholder = stringResource(R.string.title_placeholder),
+            onValueChange = onTitleChange,
         )
-        Spacer(modifier = Modifier.height(8.dp))
 
-        OutlinedTextField(
-            value = remark, onValueChange = onRemarkChange,
-            label = {
-                Text(
-                    stringResource(R.string.remark_placeholder),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            },
-            modifier = Modifier.fillMaxWidth()
+        LabeledInputField(
+            label = stringResource(R.string.remark),
+            value = remark,
+            placeholder = stringResource(R.string.remark_placeholder),
+            onValueChange = onRemarkChange,
         )
-        Spacer(modifier = Modifier.height(8.dp))
 
-        OutlinedTextField(
-            value = link, onValueChange = onLinkChange,
-            label = {
-                Text(
-                    stringResource(R.string.link_placeholder),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .onFocusChanged { focusState ->
-                    // 保持原有的逻辑：当点击获得焦点时触发
-                    if (focusState.isFocused) {
-                        // 仅在快速模式下执行
-                        if (isFastMode) {
-                            val clipboardContent = clipboardManager.getText()?.text
-                            if (!clipboardContent.isNullOrBlank() &&
-                                (clipboardContent.startsWith("http", ignoreCase = true) ||
-                                        clipboardContent.startsWith("sky", ignoreCase = true))
-                            ) {
-                                // 如果内容不同，执行粘贴
-                                if (lastLinkContent != clipboardContent) {
-                                    lastLinkContent = clipboardContent
-                                    onLinkChange(clipboardContent)
-                                }
-                            }
+        LabeledInputField(
+            label = stringResource(R.string.link),
+            value = link,
+            placeholder = stringResource(R.string.link_placeholder),
+            onValueChange = onLinkChange,
+            modifier = Modifier.onFocusChanged { focusState ->
+                if (focusState.isFocused && isFastMode) {
+                    val clipboardContent = clipboardManager.getText()?.text
+                    if (!clipboardContent.isNullOrBlank() &&
+                        (clipboardContent.startsWith("http", ignoreCase = true) ||
+                            clipboardContent.startsWith("sky", ignoreCase = true))
+                    ) {
+                        if (lastLinkContent != clipboardContent) {
+                            lastLinkContent = clipboardContent
+                            onLinkChange(clipboardContent)
                         }
                     }
-                },
-            singleLine = true,
-            trailingIcon = {
-                TextButton(onClick = { onExtractSkClick(link) }) {
-                    Text("SK")
                 }
-            }
+            },
+            trailing = {
+                Box(
+                    modifier = Modifier
+                        .clip(MaterialTheme.shapes.extraSmall)
+                        .background(BrandOrange)
+                        .clickable { onExtractSkClick(link) }
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                ) {
+                    Text(
+                        text = "SK",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = Color.White,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                    )
+                }
+            },
         )
-        Spacer(modifier = Modifier.height(8.dp))
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -781,7 +829,7 @@ fun BadgeInputForm(
                 // 1. 管理按钮
                 IconButton(onClick = { showTagDialog = true }) {
                     Icon(
-                        imageVector = BadgeIcons.Label,
+                        painter = painterResource(BadgeIcons.Label),
                         contentDescription = stringResource(R.string.manage_tags),
                         tint = MaterialTheme.colorScheme.primary
                     )

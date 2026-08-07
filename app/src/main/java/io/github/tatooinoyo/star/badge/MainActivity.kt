@@ -18,8 +18,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import io.github.tatooinoyo.star.badge.ui.theme.BadgeManagerTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -89,7 +89,7 @@ class MainActivity : ComponentActivity() {
         homeViewModel = androidx.lifecycle.ViewModelProvider(this)[HomeViewModel::class.java]
 
         setContent {
-            MaterialTheme {
+            BadgeManagerTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     val navController = rememberNavController()
                     // 传入共享的 ViewModel 实例

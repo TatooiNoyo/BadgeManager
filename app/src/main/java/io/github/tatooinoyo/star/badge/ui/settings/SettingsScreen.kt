@@ -3,7 +3,10 @@ package io.github.tatooinoyo.star.badge.ui.settings
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,26 +14,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,68 +34,57 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import io.github.tatooinoyo.star.badge.MainActivity
 import io.github.tatooinoyo.star.badge.R
+import io.github.tatooinoyo.star.badge.ui.component.BadgeContentCard
+import io.github.tatooinoyo.star.badge.ui.component.LabeledInputField
+import io.github.tatooinoyo.star.badge.ui.component.PrimaryOrangeButton
+import io.github.tatooinoyo.star.badge.ui.component.SecondaryScreenHeader
+import io.github.tatooinoyo.star.badge.ui.theme.BorderDefault
+import io.github.tatooinoyo.star.badge.ui.theme.BrandOrange
+import io.github.tatooinoyo.star.badge.ui.theme.BrandOrangeLight
+import io.github.tatooinoyo.star.badge.ui.theme.PeachTheme
+import io.github.tatooinoyo.star.badge.ui.theme.TextPrimary
+import io.github.tatooinoyo.star.badge.ui.theme.TextSecondary
 import io.github.tatooinoyo.star.badge.utils.LanguageManager
 import io.github.tatooinoyo.star.badge.utils.LanguageUtils
 import io.github.tatooinoyo.star.badge.utils.SkExtractor
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
 ) {
     val context = LocalContext.current
     val languageManager = LanguageManager.getInstance(context)
     var selectedLanguage by remember { mutableStateOf(languageManager.getCurrentLanguage()) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.settings)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.back)
-                        )
-                    }
-                }
-            )
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState())
-        ) {
-            // 语言设置
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = null,
-                            modifier = Modifier.padding(end = 8.dp)
-                        )
-                        Text(
-                            text = stringResource(R.string.language_setting),
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                    }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(PeachTheme)
+            .safeDrawingPadding()
+            .verticalScroll(rememberScrollState())
+            .padding(bottom = 24.dp),
+    ) {
+        SecondaryScreenHeader(
+            title = stringResource(R.string.settings),
+            onBack = onNavigateBack,
+        )
 
-                    Spacer(modifier = Modifier.padding(8.dp))
+        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+            BadgeContentCard {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Text(
+                        text = "🌐 ${stringResource(R.string.language_setting)}",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = BrandOrange,
+                        fontWeight = FontWeight.Bold,
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     LanguageOption(
                         text = stringResource(R.string.follow_system),
@@ -112,9 +93,8 @@ fun SettingsScreen(
                             selectedLanguage = LanguageUtils.LANGUAGE_AUTO
                             languageManager.setLanguage(LanguageUtils.LANGUAGE_AUTO)
                             restartApp(context)
-                        }
+                        },
                     )
-
                     LanguageOption(
                         text = "English",
                         isSelected = selectedLanguage == LanguageUtils.LANGUAGE_ENGLISH,
@@ -122,9 +102,8 @@ fun SettingsScreen(
                             selectedLanguage = LanguageUtils.LANGUAGE_ENGLISH
                             languageManager.setLanguage(LanguageUtils.LANGUAGE_ENGLISH)
                             restartApp(context)
-                        }
+                        },
                     )
-
                     LanguageOption(
                         text = stringResource(R.string.chinese_simplified),
                         isSelected = selectedLanguage == LanguageUtils.LANGUAGE_CHINESE,
@@ -132,9 +111,8 @@ fun SettingsScreen(
                             selectedLanguage = LanguageUtils.LANGUAGE_CHINESE
                             languageManager.setLanguage(LanguageUtils.LANGUAGE_CHINESE)
                             restartApp(context)
-                        }
+                        },
                     )
-
                     LanguageOption(
                         text = stringResource(R.string.chinese_traditional),
                         isSelected = selectedLanguage == LanguageUtils.LANGUAGE_CHINESE_TRADITIONAL,
@@ -142,7 +120,7 @@ fun SettingsScreen(
                             selectedLanguage = LanguageUtils.LANGUAGE_CHINESE_TRADITIONAL
                             languageManager.setLanguage(LanguageUtils.LANGUAGE_CHINESE_TRADITIONAL)
                             restartApp(context)
-                        }
+                        },
                     )
                 }
             }
@@ -161,74 +139,61 @@ private fun SkLinkGeneratorCard() {
     var skInput by remember { mutableStateOf("SKY-TEST-UNRECORDED-001") }
     var generatedLink by remember { mutableStateOf<String?>(null) }
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.Share,
-                    contentDescription = null,
-                    modifier = Modifier.padding(end = 8.dp)
-                )
-                Text(
-                    text = stringResource(R.string.sk_link_tool_title),
-                    style = MaterialTheme.typography.titleMedium
-                )
-            }
+    BadgeContentCard {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Text(
+                text = "🔗 ${stringResource(R.string.sk_link_tool_title)}",
+                style = MaterialTheme.typography.titleMedium,
+                color = BrandOrange,
+                fontWeight = FontWeight.Bold,
+            )
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 text = stringResource(R.string.sk_link_tool_desc),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = TextSecondary,
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedTextField(
+            LabeledInputField(
+                label = "SK",
                 value = skInput,
+                placeholder = stringResource(R.string.sk_link_tool_hint),
                 onValueChange = { skInput = it },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                label = { Text(stringResource(R.string.sk_link_tool_hint)) }
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Button(
+            PrimaryOrangeButton(
+                text = stringResource(R.string.sk_link_tool_generate),
                 onClick = {
                     val sk = skInput.trim()
                     if (sk.isBlank()) {
                         Toast.makeText(
                             context,
                             context.getString(R.string.sk_link_tool_empty_sk),
-                            Toast.LENGTH_SHORT
+                            Toast.LENGTH_SHORT,
                         ).show()
-                        return@Button
+                        return@PrimaryOrangeButton
                     }
                     generatedLink = SkExtractor.buildLinkFromSk(sk)
                 },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(stringResource(R.string.sk_link_tool_generate))
-            }
+            )
 
             generatedLink?.let { link ->
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
                     text = stringResource(R.string.sk_link_tool_result),
-                    style = MaterialTheme.typography.labelMedium
+                    style = MaterialTheme.typography.labelMedium,
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = link,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary
+                    color = BrandOrange,
                 )
                 TextButton(
                     onClick = {
@@ -236,9 +201,9 @@ private fun SkLinkGeneratorCard() {
                         Toast.makeText(
                             context,
                             context.getString(R.string.msg_copy_success),
-                            Toast.LENGTH_SHORT
+                            Toast.LENGTH_SHORT,
                         ).show()
-                    }
+                    },
                 ) {
                     Text(stringResource(R.string.copy))
                 }
@@ -251,21 +216,26 @@ private fun SkLinkGeneratorCard() {
 fun LanguageOption(
     text: String,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
-    ListItem(
-        headlineContent = { Text(text) },
-        leadingContent = {
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .padding(vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(text = text, style = MaterialTheme.typography.bodyLarge, color = TextPrimary)
             RadioButton(
                 selected = isSelected,
-                onClick = onClick
+                onClick = onClick,
+                colors = RadioButtonDefaults.colors(selectedColor = BrandOrange),
             )
-        },
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 4.dp)
-    )
+        }
+        HorizontalDivider(color = BorderDefault)
+    }
 }
 
 fun restartApp(context: Context) {

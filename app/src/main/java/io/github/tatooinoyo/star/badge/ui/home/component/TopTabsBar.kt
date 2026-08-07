@@ -57,6 +57,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -70,7 +71,12 @@ import io.github.tatooinoyo.star.badge.R
 import io.github.tatooinoyo.star.badge.data.BadgeChannel
 import io.github.tatooinoyo.star.badge.ui.home.BadgeInputForm
 import io.github.tatooinoyo.star.badge.ui.home.BadgeUiState
+import io.github.tatooinoyo.star.badge.ui.component.OutlinedOrangeButton
+import io.github.tatooinoyo.star.badge.ui.component.PrimaryOrangeButton
+import io.github.tatooinoyo.star.badge.ui.icons.BadgeIcons
 import io.github.tatooinoyo.star.badge.ui.state.SyncState
+import io.github.tatooinoyo.star.badge.ui.theme.BrandOrange
+import io.github.tatooinoyo.star.badge.ui.theme.SuccessGreen
 
 @Composable
 fun TopControl() {
@@ -146,8 +152,12 @@ fun BadgeInputPanel(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            Button(onClick = onAddClick) {
-                Icon(Icons.Default.Add, contentDescription = null)
+            Button(onClick = onAddClick, shape = MaterialTheme.shapes.small) {
+                Icon(
+                    painter = painterResource(BadgeIcons.IdCard),
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(text = stringResource(R.string.btn_add_badge), maxLines = 1)
             }
@@ -237,44 +247,32 @@ fun BackupRestorePanel(
 
         // --- UI 按钮 ---
 
-        // 导出按钮
-        Button(
+        OutlinedOrangeButton(
+            text = stringResource(R.string.btn_export_json),
             onClick = {
-                // 建议文件名包含日期，如 backup_20231027.json
-                val fileName =
-                    "badges_backup_${System.currentTimeMillis()}.json"
+                val fileName = "badges_backup_${System.currentTimeMillis()}.json"
                 exportLauncher.launch(fileName)
             },
-            modifier = Modifier.fillMaxWidth(0.8f)
-        ) {
-            Icon(Icons.Default.Share, contentDescription = null)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(stringResource(R.string.btn_export_json))
-        }
+            icon = BadgeIcons.Download,
+            modifier = Modifier.fillMaxWidth(0.85f),
+        )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        // 导入按钮
-        Button(
+        PrimaryOrangeButton(
+            text = stringResource(R.string.btn_import_json),
             onClick = {
-                // 限制只能选择 json 文件
                 importLauncher.launch(arrayOf("application/json"))
             },
-            modifier = Modifier.fillMaxWidth(0.8f),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.secondary
-            )
-        ) {
-            Icon(Icons.Default.Refresh, contentDescription = null)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(stringResource(R.string.btn_import_json))
-        }
+            icon = BadgeIcons.Upload,
+            modifier = Modifier.fillMaxWidth(0.85f),
+        )
 
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = stringResource(R.string.warn_restore),
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.error
+            color = BrandOrange,
         )
     }
 }
@@ -398,34 +396,32 @@ fun SyncIdleView(
 ) {
     var inputCode by remember { mutableStateOf("") }
 
-    // 发送入口
-    OutlinedButton(onClick = onStartSender) {
-        Icon(Icons.Default.Share, contentDescription = null)
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(stringResource(R.string.i_am_sender))
-    }
+    OutlinedOrangeButton(
+        text = stringResource(R.string.i_am_sender),
+        onClick = onStartSender,
+        icon = BadgeIcons.Share,
+    )
 
-    Spacer(modifier = Modifier.height(24.dp))
-    HorizontalDivider()
-    Spacer(modifier = Modifier.height(24.dp))
+    Spacer(modifier = Modifier.height(16.dp))
+    HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+    Spacer(modifier = Modifier.height(16.dp))
 
-    // 接收入口
     OutlinedTextField(
         value = inputCode,
         onValueChange = { if (it.length <= 6) inputCode = it },
-        label = { Text(stringResource(R.string.enter_6_digit_code)) },
+        placeholder = { Text(stringResource(R.string.enter_6_digit_code)) },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        singleLine = true
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth(0.85f),
+        shape = MaterialTheme.shapes.small,
     )
     Spacer(modifier = Modifier.height(8.dp))
-    Button(
+    PrimaryOrangeButton(
+        text = stringResource(R.string.i_am_receiver),
         onClick = { onStartReceiver(inputCode) },
-        enabled = inputCode.length == 6
-    ) {
-        Icon(Icons.Default.Search, contentDescription = null)
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(stringResource(R.string.i_am_receiver))
-    }
+        enabled = inputCode.length == 6,
+        modifier = Modifier.fillMaxWidth(0.85f),
+    )
 }
 
 @Composable
@@ -476,7 +472,7 @@ fun SenderStatusView(state: SyncState.Sender) {
                     Icon(
                         Icons.Default.CheckCircle,
                         contentDescription = null,
-                        tint = Color.Green,
+                        tint = SuccessGreen,
                         modifier = Modifier.size(48.dp)
                     )
                     Text(stringResource(R.string.send_success))
@@ -542,7 +538,7 @@ fun ReceiverStatusView(state: SyncState.Receiver) {
                 Icon(
                     Icons.Default.CheckCircle,
                     contentDescription = null,
-                    tint = Color.Green,
+                    tint = SuccessGreen,
                     modifier = Modifier.size(64.dp)
                 )
                 Spacer(modifier = Modifier.height(8.dp))

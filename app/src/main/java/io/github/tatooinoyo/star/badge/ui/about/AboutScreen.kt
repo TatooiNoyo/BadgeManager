@@ -1,26 +1,23 @@
 package io.github.tatooinoyo.star.badge.ui.about
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,19 +29,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import io.github.tatooinoyo.star.badge.BuildConfig
 import io.github.tatooinoyo.star.badge.R
+import io.github.tatooinoyo.star.badge.ui.component.BadgeContentCard
+import io.github.tatooinoyo.star.badge.ui.component.PrimaryOrangeButton
+import io.github.tatooinoyo.star.badge.ui.component.SecondaryScreenHeader
+import io.github.tatooinoyo.star.badge.ui.theme.BorderDefault
+import io.github.tatooinoyo.star.badge.ui.theme.BrandOrange
+import io.github.tatooinoyo.star.badge.ui.theme.PeachTheme
+import io.github.tatooinoyo.star.badge.ui.theme.TextPrimary
+import io.github.tatooinoyo.star.badge.ui.theme.TextSecondary
 import io.github.tatooinoyo.star.badge.utils.update.UpdateCheckResult
 import io.github.tatooinoyo.star.badge.utils.update.UpdateChecker
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AboutScreen(
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
 ) {
     val uriHandler = LocalUriHandler.current
     val context = LocalContext.current
@@ -69,145 +73,122 @@ fun AboutScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.help_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.back)
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(PeachTheme)
+            .safeDrawingPadding(),
+    ) {
+        SecondaryScreenHeader(
+            title = stringResource(R.string.help_title),
+            onBack = onNavigateBack,
+        )
+
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            BadgeContentCard {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Text(
+                        text = stringResource(R.string.usage_help_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = BrandOrange,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    HelpBullet(stringResource(R.string.usage_help_entry))
+                    HelpBullet(stringResource(R.string.usage_help_share))
+                    HelpBullet(stringResource(R.string.usage_help_sync))
+                    HelpBullet(stringResource(R.string.usage_help_floating_menu))
+                    HelpBullet(stringResource(R.string.usage_help_landscape_only))
+                }
+            }
+
+            BadgeContentCard {
+                Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
+                    LinkRow("📦 ${stringResource(R.string.help_repo)}") {
+                        uriHandler.openUri(projectUrl)
+                    }
+                    HorizontalDivider(color = BorderDefault)
+                    LinkRow("💡 ${stringResource(R.string.help_feedback)}") {
+                        uriHandler.openUri(issuesUrl)
+                    }
+                    HorizontalDivider(color = BorderDefault)
+                    LinkRow("📝 ${stringResource(R.string.help_poll)}") {
+                        uriHandler.openUri(pollUrl)
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = stringResource(R.string.badge_not_found_help),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextSecondary,
+                    )
+                }
+            }
+
+            BadgeContentCard {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Text(
+                        text = stringResource(R.string.contact_me),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = TextPrimary,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    SelectionContainer {
+                        Text(
+                            text = contactMail,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = TextSecondary,
                         )
                     }
                 }
-            )
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text(
-                text = "V${BuildConfig.VERSION_NAME}",
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center
-            )
-
-            Text(stringResource(R.string.about_badge_manager_desc))
-
-            HorizontalDivider()
-
-            Text(
-                text = stringResource(R.string.usage_help_title),
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Text(
-                text = stringResource(R.string.usage_help_entry),
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Text(
-                text = stringResource(R.string.usage_help_share),
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Text(
-                text = stringResource(R.string.usage_help_sync),
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Text(
-                text = stringResource(R.string.usage_help_floating_menu),
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Text(
-                text = stringResource(R.string.usage_help_landscape_only),
-                style = MaterialTheme.typography.bodyMedium
-            )
-
-            HorizontalDivider()
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { uriHandler.openUri(projectUrl) },
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    stringResource(R.string.help_repo),
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        color = MaterialTheme.colorScheme.primary,
-                        textDecoration = TextDecoration.Underline
-                    ),
-                )
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { uriHandler.openUri(issuesUrl) },
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    stringResource(R.string.help_feedback),
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        color = MaterialTheme.colorScheme.primary,
-                        textDecoration = TextDecoration.Underline
-                    )
-                )
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { uriHandler.openUri(pollUrl) },
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    stringResource(R.string.help_poll),
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        color = MaterialTheme.colorScheme.primary,
-                        textDecoration = TextDecoration.Underline
-                    ),
-                )
-            }
-            Text(stringResource(R.string.badge_not_found_help))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    stringResource(R.string.contact_me),
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        color = MaterialTheme.colorScheme.primary,
-                    ),
-                )
-            }
-            SelectionContainer { Text(contactMail) }
-
-            Button(
-                onClick = { startUpdateCheck() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp)
-            ) {
-                Text(stringResource(R.string.check_update))
             }
         }
 
-        if (showUpdateDialog) {
-            UpdateCheckDialog(
-                result = updateResult,
-                loading = updateLoading,
-                onDismiss = { showUpdateDialog = false },
-                onDismissVersion = { updateChecker.dismissVersion(it) },
-            )
-        }
+        PrimaryOrangeButton(
+            text = stringResource(R.string.check_update) + " (V${BuildConfig.VERSION_NAME})",
+            onClick = { startUpdateCheck() },
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
+        )
     }
+
+    if (showUpdateDialog) {
+        UpdateCheckDialog(
+            result = updateResult,
+            loading = updateLoading,
+            onDismiss = { showUpdateDialog = false },
+            onDismissVersion = { updateChecker.dismissVersion(it) },
+        )
+    }
+}
+
+@Composable
+private fun HelpBullet(text: String) {
+    Row(
+        modifier = Modifier.padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text("•", color = BrandOrange, fontWeight = FontWeight.Bold)
+        Text(text = text, style = MaterialTheme.typography.bodyMedium, color = TextPrimary)
+    }
+}
+
+@Composable
+private fun LinkRow(label: String, onClick: () -> Unit) {
+    Text(
+        text = label,
+        style = MaterialTheme.typography.bodyLarge.copy(
+            color = TextPrimary,
+            textDecoration = TextDecoration.Underline,
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 14.dp),
+    )
 }
