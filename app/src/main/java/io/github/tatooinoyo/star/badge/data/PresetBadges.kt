@@ -67,6 +67,7 @@ object PresetBadges {
         "SKY-PN-ST-ANC-VK" to TitleAndRemark(R.string.preset_badge_elder_vault, R.string.preset_badge_cd_20min),
         "SKY-PN-ST-ANC-VT" to TitleAndRemark(R.string.preset_badge_elder_valley, R.string.preset_badge_cd_30min),
         "SKY-PN-ST-BL-HT" to TitleAndRemark(R.string.preset_badge_huge_tiny_spell, R.string.preset_badge_cd_15min_dur_20min),
+        "SKY-PN-ST-BL-ST" to TitleAndRemark(R.string.preset_badge_star_trail_spell, R.string.preset_badge_cd_60min_dur_60min),
         "SKY-PN-ST-CAP-BM" to TitleAndRemark(R.string.preset_badge_bloom_cape, R.string.preset_badge_cd_30min_dur_30min),
         "SKY-PN-ST-CAP-BP" to TitleAndRemark(R.string.preset_badge_bloom_pin, R.string.preset_badge_cd_15s),
         "SKY-PN-ST-CAP-BW" to TitleAndRemark(R.string.preset_badge_belonging_white_cape, R.string.preset_badge_cd_30min_dur_10min),

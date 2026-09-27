@@ -277,6 +277,7 @@
     <string name="preset_badge_bloom_sunflower">向日葵花憩徽章</string>
     <string name="preset_badge_wisteria_bloom">紫藤花憩徽章</string>
     <string name="preset_badge_tgc_pin">TGC徽章</string>
+    <string name="preset_badge_star_trail_spell">星星步尘</string>
 
     <!-- 预设徽章备注 -->
     <string name="preset_badge_cd_15min_dur_5min_scene">15min CD, 5min Dur (ends on scene change)</string>
@@ -296,6 +297,7 @@
     <string name="preset_badge_cd_20min_dur_15min">20min CD, 15min Dur</string>
     <string name="preset_badge_cd_20min">20min CD</string>
     <string name="preset_badge_cd_30min">30min CD</string>
+    <string name="preset_badge_cd_60min_dur_60min">60min CD, 60min Dur</string>
     <string name="update_image_url">https://badgen.net/github/release/tatooinoyo/BadgeManager</string>
     <string name="download_url">https://www.pgyer.com/badgemanager</string>
     <string name="current_version">当前版本: V%1$s</string>
