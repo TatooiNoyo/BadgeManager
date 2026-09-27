@@ -23,7 +23,7 @@ object PresetBadges {
         "SKY-PN-ST-BL-HS" to TitleAndRemark(R.string.preset_badge_big_guy, R.string.preset_badge_cd_15min_dur_20min),
         "SKY-PN-ST-MAS-CB" to TitleAndRemark(R.string.preset_badge_dwarf_badge, R.string.preset_badge_cd_15min_dur_10min),
         "SKY-KC-ST-BL-GR" to TitleAndRemark(R.string.preset_badge_grown_up, R.string.preset_badge_cd_15min_dur_20min),
-        "SKY-PN-ST-CAP-MB" to TitleAndRemark(R.string.preset_badge_cape_bat, R.string.preset_badge_cd_20min_dur_15min),
+        "SKY-PN-ST-CAP-MB" to TitleAndRemark(R.string.preset_badge_cape_bat, R.string.preset_badge_cd_15min_dur_10min),
         "SKY-PN-ST-CNT-YIR" to TitleAndRemark(R.string.preset_badge_twin_badge_twisted, R.string.preset_badge_cd_15s),
         "SKY-PN-ST-CNT-YIL" to TitleAndRemark(R.string.preset_badge_twin_badge_harp, R.string.preset_badge_cd_15s),
         "SKY-PN-ST-PL-HC" to TitleAndRemark(R.string.preset_badge_crab_stack, R.string.preset_badge_cd_15s),
