@@ -3,48 +3,32 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    
-    <!-- 背景圆圈，带一点不规则，模拟手绘感 -->
-    <path
-        android:fillColor="#FF9800"
-        android:pathData="M54,10 
-        C30,10 10,30 10,54 
-        C10,78 30,98 54,98 
-        C78,98 98,78 98,54 
-        C98,30 78,10 54,10 Z"
-        android:strokeWidth="3"
-        android:strokeColor="#000000"
-        android:strokeLineCap="round"/>
+    <!-- 整体外接范围约为画布中央 50%，四周各留约 1/4 空白。 -->
+    <group
+        android:pivotX="58.75"
+        android:pivotY="53.75"
+        android:scaleX="0.7883"
+        android:scaleY="0.7883"
+        android:translateX="-4.75"
+        android:translateY="0.25">
+        <!-- 徽章标签；圆孔和四角星使用 even-odd 镂空。 -->
+        <path
+            android:fillColor="#F26A1B"
+            android:fillType="evenOdd"
+            android:pathData="M30,28H51C53,28 55,29 56.5,30.5L83,57C86,60 86,64 83,67L65,85C62,88 58,88 55,85L28.5,58.5C27,57 26,55 26,53V32C26,30 28,28 30,28ZM37,33A5,5 0,1 0,37,43A5,5 0,1 0,37,33ZM59,44C60.5,50.5 64.5,54.5 71,56C64.5,57.5 60.5,61.5 59,68C57.5,61.5 53.5,57.5 47,56C53.5,54.5 57.5,50.5 59,44Z" />
 
-    <!-- 类似 NFC 信号波纹的手绘线条 -->
-    <path
-        android:pathData="M35,54 Q40,30 54,30 Q68,30 73,54"
-        android:strokeWidth="4"
-        android:strokeColor="#FFFFFF"
-        android:strokeLineCap="round"
-        android:fillColor="#00000000"/>
-        
-    <path
-        android:pathData="M30,54 Q38,20 54,20 Q70,20 78,54"
-        android:strokeWidth="4"
-        android:strokeColor="#FFFFFF"
-        android:strokeLineCap="round"
-        android:fillColor="#00000000"/>
-
-    <!-- 中心的徽章星星 -->
-    <path
-        android:fillColor="#FFEB3B"
-        android:pathData="M54,40 L58,50 L68,50 L60,58 L63,68 L54,62 L45,68 L48,58 L40,50 L50,50 Z"
-        android:strokeWidth="2"
-        android:strokeColor="#000000"
-        android:strokeLineJoin="round"/>
-
-    <!-- 底部文字或简单的装饰线 -->
-    <path
-        android:pathData="M34,75 Q54,85 74,75"
-        android:strokeWidth="3"
-        android:strokeColor="#000000"
-        android:strokeLineCap="round"
-        android:fillColor="#00000000"/>
-
+        <!-- NFC 波纹与标签组合为一个清晰轮廓。 -->
+        <path
+            android:fillColor="#00000000"
+            android:pathData="M65,31C74,33 80,39 80,48"
+            android:strokeColor="#2F2520"
+            android:strokeLineCap="round"
+            android:strokeWidth="5" />
+        <path
+            android:fillColor="#00000000"
+            android:pathData="M68,22C81,25 89,35 89,49"
+            android:strokeColor="#2F2520"
+            android:strokeLineCap="round"
+            android:strokeWidth="5" />
+    </group>
 </vector>
