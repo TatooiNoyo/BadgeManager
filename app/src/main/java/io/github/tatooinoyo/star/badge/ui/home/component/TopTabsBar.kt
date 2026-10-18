@@ -331,6 +331,7 @@ fun SyncDataPanel(
 
                 // 统一的底部按钮，根据状态改变文案和行为
                 when (syncState) {
+                    SyncState.Receiver.Importing -> Unit
                     is SyncState.Receiver.Confirming -> {
                         Row(
                             modifier = Modifier.fillMaxWidth(0.9f),
@@ -408,7 +409,7 @@ fun SyncIdleView(
 
     OutlinedTextField(
         value = inputCode,
-        onValueChange = { if (it.length <= 6) inputCode = it },
+        onValueChange = { if (it.length <= 6 && it.all { digit -> digit in '0'..'9' }) inputCode = it },
         placeholder = { Text(stringResource(R.string.enter_6_digit_code)) },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         singleLine = true,
@@ -532,6 +533,12 @@ fun ReceiverStatusView(state: SyncState.Receiver) {
                     style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Center,
                 )
+            }
+
+            SyncState.Receiver.Importing -> {
+                Text(stringResource(R.string.sync_importing))
+                Spacer(modifier = Modifier.height(16.dp))
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth(0.8f))
             }
 
             is SyncState.Receiver.Success -> {

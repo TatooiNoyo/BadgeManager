@@ -81,6 +81,10 @@ The built APK file will be located in the `app/build/outputs/apk/release/` direc
         *   Select "I am Sender" to generate a 6-digit share code, or provide the code to the receiver
         *   The receiver selects "I am Receiver" and enters the share code
         *   Data will be securely transmitted over the local network without internet connection
+LAN discovery uses IPv4 UDP broadcasts. Client isolation, blocked broadcasts, and some VPN configurations can prevent discovery. Discovery and data transfer each have a 60-second deadline; the receiver has 120 seconds to confirm an import after receiving the data. Keep the app in the foreground during transfer.
+
+Imports accept up to 4 MiB of JSON and 10,000 badges. Limits per badge are 512 characters for the title, 4,096 for remarks, 8,192 for the link, and 32 tags of up to 128 characters each. Empty data, duplicate IDs, and invalid fields are rejected. Confirmation starts a single import operation. Replacements and shared-file batch imports use database transactions, preserving existing data on failure. LAN replacement requires a successful local backup first; the latest five backups are retained in cache.
+
 ### Permissions
 
 When running the app for the first time, the following permissions need to be granted:

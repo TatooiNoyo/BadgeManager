@@ -157,9 +157,11 @@ object BadgeRepository {
 
     // 还原数据：清空旧数据并插入新数据（覆盖策略）
     suspend fun restoreBadges(badges: List<Badge>) {
-        val dao = requireDao()
-        dao.deleteAll()
-        dao.insertAll(badges)
+        requireDao().replaceAll(badges)
+    }
+
+    suspend fun importBadgeCopies(badges: List<Badge>) {
+        requireDao().appendCopies(badges)
     }
 }
 

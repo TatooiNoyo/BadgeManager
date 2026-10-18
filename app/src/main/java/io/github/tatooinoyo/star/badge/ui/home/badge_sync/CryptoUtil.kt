@@ -1,9 +1,13 @@
 package io.github.tatooinoyo.star.badge.ui.home.badge_sync
 
-import android.util.Base64
 import org.bouncycastle.jcajce.spec.XDHParameterSpec
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import java.io.InputStream
+import java.io.IOException
+import java.net.Socket
+import java.net.SocketTimeoutException
+import java.util.concurrent.TimeUnit
+import java.util.Base64
 import java.security.KeyFactory
 import java.security.KeyPair
 import java.security.KeyPairGenerator
@@ -20,8 +24,8 @@ import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 
 object CryptoUtil {
-    fun b64(bytes: ByteArray): String = Base64.encodeToString(bytes, Base64.NO_WRAP)
-    fun d64(s: String): ByteArray = Base64.decode(s, Base64.NO_WRAP)
+    fun b64(bytes: ByteArray): String = Base64.getEncoder().encodeToString(bytes)
+    fun d64(s: String): ByteArray = Base64.getDecoder().decode(s)
     private val bcProvider = BouncyCastleProvider()
 
     init {
@@ -100,8 +104,8 @@ object CryptoUtil {
     }
 
     fun aesGcmDecrypt(key: ByteArray, ivAndCipher: ByteArray, aad: ByteArray? = null): ByteArray {
+        require(ivAndCipher.size >= 12 + 16) { "Truncated GCM payload" }
         val iv = ivAndCipher.copyOfRange(0, 12)
-        val cipherBytes = ivAndCipher.copyOfRange(12, ivAndCipher.size)
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         val gcmSpec = GCMParameterSpec(128, iv)
         val sk = SecretKeySpec(key, "AES")
@@ -109,16 +113,23 @@ object CryptoUtil {
         if (aad != null) {
             cipher.updateAAD(aad)
         }
-        return cipher.doFinal(cipherBytes)
+        return cipher.doFinal(ivAndCipher, 12, ivAndCipher.size - 12)
     }
 
     /** Read bytes until LF without BufferedReader read-ahead. */
-    fun readLineFromStream(input: InputStream): String? {
+    fun readLineFromStream(input: InputStream, socket: Socket? = null, deadlineNanos: Long = Long.MAX_VALUE): String? {
         val sb = StringBuilder()
+        var bytesRead = 0
         while (true) {
+            if (socket != null) {
+                val remaining = deadlineNanos - System.nanoTime()
+                if (remaining <= 0) throw SocketTimeoutException("Handshake deadline exceeded")
+                socket.soTimeout = TimeUnit.NANOSECONDS.toMillis(remaining).coerceIn(1, SyncProtocol.HANDSHAKE_TIMEOUT_MS.toLong()).toInt()
+            }
             val b = input.read()
-            if (b == -1) return if (sb.isEmpty()) null else sb.toString()
+            if (b == -1) return if (sb.isEmpty()) null else throw IOException("Truncated handshake")
             if (b == '\n'.code) return sb.toString()
+            if (++bytesRead > SyncProtocol.MAX_HANDSHAKE_BYTES) throw IOException("Handshake is too large")
             if (b != '\r'.code) {
                 sb.append(b.toChar())
             }

@@ -3,14 +3,17 @@ package io.github.tatooinoyo.star.badge.ui.home.badge_sync
 import org.json.JSONObject
 import java.net.Socket
 import java.security.SecureRandom
+import java.security.MessageDigest
+import java.util.concurrent.TimeUnit
 
 object HandshakeManager {
 
     fun handleServerSide(socket: Socket, psk6: String): ByteArray? {
+        val deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(SyncProtocol.HANDSHAKE_TIMEOUT_MS.toLong())
         val input = socket.getInputStream()
         val out = socket.getOutputStream()
 
-        val clientLine = CryptoUtil.readLineFromStream(input) ?: return null
+        val clientLine = CryptoUtil.readLineFromStream(input, socket, deadline) ?: return null
         val clientObj = JSONObject(clientLine)
         if (clientObj.optString("type") != "hello") return null
 
@@ -18,11 +21,12 @@ object HandshakeManager {
         val clientNonce = CryptoUtil.d64(clientObj.getString("nonce"))
         val clientRole = clientObj.getString("role")
         val clientHmac = CryptoUtil.d64(clientObj.getString("hmac"))
+        if (clientRole != "client" || clientPub.size != 44 || clientNonce.size != 16 || clientHmac.size != 32) return null
 
         val pskKey = CryptoUtil.derivePskKeyFromCode(psk6, clientNonce)
         val expected =
             CryptoUtil.hmacSha256(pskKey, clientPub + clientNonce + clientRole.toByteArray())
-        if (!expected.contentEquals(clientHmac)) return null
+        if (!MessageDigest.isEqual(expected, clientHmac)) return null
 
         val kp = CryptoUtil.generateX25519KeyPair()
         val localPub = kp.public.encoded
@@ -46,6 +50,7 @@ object HandshakeManager {
     }
 
     fun handleClientSide(socket: Socket, psk6: String): ByteArray? {
+        val deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(SyncProtocol.HANDSHAKE_TIMEOUT_MS.toLong())
         val input = socket.getInputStream()
         val out = socket.getOutputStream()
 
@@ -66,16 +71,17 @@ object HandshakeManager {
         out.write((hello.toString() + "\n").toByteArray())
         out.flush()
 
-        val srvLine = CryptoUtil.readLineFromStream(input) ?: return null
+        val srvLine = CryptoUtil.readLineFromStream(input, socket, deadline) ?: return null
         val srvObj = JSONObject(srvLine)
         if (srvObj.optString("type") != "hello") return null
         val srvPub = CryptoUtil.d64(srvObj.getString("pub"))
         val srvNonce = CryptoUtil.d64(srvObj.getString("nonce"))
         val srvRole = srvObj.getString("role")
         val srvHmac = CryptoUtil.d64(srvObj.getString("hmac"))
+        if (srvRole != "server" || srvPub.size != 44 || srvNonce.size != 16 || srvHmac.size != 32) return null
 
         val expected = CryptoUtil.hmacSha256(pskKey, srvPub + srvNonce + srvRole.toByteArray())
-        if (!expected.contentEquals(srvHmac)) return null
+        if (!MessageDigest.isEqual(expected, srvHmac)) return null
 
         val shared = CryptoUtil.computeX25519SharedSecret(localPriv, srvPub)
         val salt = localNonce + srvNonce

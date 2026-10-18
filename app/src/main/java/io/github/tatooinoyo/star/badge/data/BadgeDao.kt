@@ -4,8 +4,10 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
+import java.util.UUID
 
 @Dao
 interface BadgeDao {
@@ -47,9 +49,24 @@ interface BadgeDao {
     suspend fun deleteAll()
 
     // 批量插入
-    suspend fun insertAll(badges: List<Badge>) {
-        badges.forEach { badge ->
-            insertBadge(badge)
-        }
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(badges: List<Badge>)
+
+    @Transaction
+    suspend fun replaceAll(badges: List<Badge>) {
+        deleteAll()
+        insertAll(badges)
+    }
+
+    @Query("SELECT MAX(orderIndex) FROM badges")
+    suspend fun maxOrder(): Int?
+
+    @Transaction
+    suspend fun appendCopies(badges: List<Badge>) {
+        val start = maxOf(0, maxOrder() ?: 0)
+        require(start <= Int.MAX_VALUE - badges.size) { "Badge order is full" }
+        insertAll(badges.mapIndexed { index, badge ->
+            badge.copy(id = UUID.randomUUID().toString(), orderIndex = start + index + 1)
+        })
     }
 }

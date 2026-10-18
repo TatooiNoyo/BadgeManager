@@ -13,17 +13,34 @@ class UdpBroadcaster(
 ) {
     @Volatile
     private var running = false
+    private val lock = Any()
     private var socket: DatagramSocket? = null
+    private var started = false
 
     fun start(tcpPort: Int) {
-        if (running) return
-        running = true
+        synchronized(lock) {
+            if (started) return
+            started = true
+            running = true
+        }
 
         Thread {
             try {
-                socket = DatagramSocket().apply { broadcast = true }
+                val bound = DatagramSocket().apply { broadcast = true }
+                synchronized(lock) {
+                    if (!running) { bound.close(); return@Thread }
+                    socket = bound
+                }
                 val message = SyncProtocol.buildDiscoveryMessage(tcpPort, shareCode)
                 val buffer = message.toByteArray(StandardCharsets.UTF_8)
+                val addresses = linkedSetOf(InetAddress.getByName("255.255.255.255"))
+                runCatching {
+                    java.net.NetworkInterface.getNetworkInterfaces().toList()
+                        .filter { it.isUp && !it.isLoopback }
+                        .flatMap { it.interfaceAddresses }
+                        .mapNotNull { it.broadcast }
+                        .forEach { addresses.add(it) }
+                }
                 val packet = DatagramPacket(
                     buffer,
                     buffer.size,
@@ -33,7 +50,12 @@ class UdpBroadcaster(
 
                 while (running) {
                     try {
-                        socket?.send(packet)
+                        var sent = false
+                        for (address in addresses) {
+                            packet.address = address
+                            try { bound.send(packet); sent = true } catch (_: Exception) { }
+                        }
+                        if (!sent) throw java.io.IOException("No broadcast route")
                         Thread.sleep(1500)
                     } catch (e: InterruptedException) {
                         Thread.currentThread().interrupt()
@@ -63,10 +85,10 @@ class UdpBroadcaster(
     }
 
     fun stop() {
-        running = false
-        try {
-            socket?.close()
-        } catch (_: Exception) {
+        synchronized(lock) {
+            started = true
+            running = false
+            runCatching { socket?.close() }
         }
     }
 }

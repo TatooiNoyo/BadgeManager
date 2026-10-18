@@ -19,6 +19,7 @@ sealed interface SyncState {
         data object Searching : Receiver
         data class Receiving(val senderIp: String) : Receiver
         data class Confirming(val badgeCount: Int) : Receiver
+        data object Importing : Receiver
         data object Success : Receiver
         data class Error(val message: String, val detail: String? = null) : Receiver
     }

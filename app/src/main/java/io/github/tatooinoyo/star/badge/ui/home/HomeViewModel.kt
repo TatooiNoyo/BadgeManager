@@ -15,6 +15,8 @@ import io.github.tatooinoyo.star.badge.data.Badge
 import io.github.tatooinoyo.star.badge.data.BadgeChannel
 import io.github.tatooinoyo.star.badge.data.BadgeRepository
 import io.github.tatooinoyo.star.badge.utils.LanguageManager
+import io.github.tatooinoyo.star.badge.utils.BadgeImportValidator
+import io.github.tatooinoyo.star.badge.utils.readBoundedBytes
 import io.github.tatooinoyo.star.badge.utils.preset.PresetResolver
 import io.github.tatooinoyo.star.badge.utils.SkExtractException
 import io.github.tatooinoyo.star.badge.utils.SkExtractor
@@ -30,6 +32,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.IOException
@@ -118,7 +121,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
                 // 返回过滤结果供 collect 使用
                 BadgeListFilterResult(filteredBadges, allBadges, allTags, selectedTag)
-            }.collect { result ->
+            }.flowOn(kotlinx.coroutines.Dispatchers.Default).collect { result ->
                 _uiState.update {
                     it.copy(
                         badges = result.filteredBadges,
@@ -310,7 +313,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     ) {
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             try {
-                val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBoundedBytes(BadgeShareCrypto.MAX_FILE_BYTES) }
                     ?: run {
                         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                             onResult(-1)
@@ -340,17 +343,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 }
                 val envelope = result.getOrThrow()
 
-                var imported = 0
-                for (badge in envelope.badges) {
-                    BadgeRepository.addBadge(
-                        title = badge.title,
-                        remark = badge.remark,
-                        link = badge.link,
-                        channel = badge.channel,
-                        tags = badge.tags,
-                    )
-                    imported++
-                }
+                BadgeRepository.importBadgeCopies(envelope.badges)
+                val imported = envelope.badges.size
 
                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                     onResult(imported)
@@ -749,46 +743,14 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     ) {
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             try {
-                // 1. 读取文件内容
-                val stringBuilder = StringBuilder()
-                context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                    java.io.BufferedReader(
-                        java.io.InputStreamReader(
-                            inputStream,
-                            Charsets.UTF_8
-                        )
-                    ).use { reader ->
-                        var line: String? = reader.readLine()
-                        while (line != null) {
-                            stringBuilder.append(line)
-                            line = reader.readLine()
-                        }
-                    }
-                }
-                val jsonString = stringBuilder.toString()
+                val jsonString = context.contentResolver.openInputStream(uri)?.use {
+                    String(it.readBoundedBytes(BadgeImportValidator.MAX_JSON_BYTES), Charsets.UTF_8)
+                } ?: throw IOException("Cannot read backup")
+                val badges = BadgeImportValidator.parse(jsonString)
 
-                if (jsonString.isBlank()) {
-                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                        onResult(false)
-                    }
-                    return@launch
-                }
-
-                // 2. 解析 JSON
-                val gson = com.google.gson.Gson()
-                val type = object : com.google.gson.reflect.TypeToken<List<Badge>>() {}.type
-                val badges: List<Badge> = gson.fromJson(jsonString, type)
-
-                // 3. 写入数据库
-                if (badges.isNotEmpty()) {
-                    BadgeRepository.restoreBadges(badges)
-                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                        onResult(true)
-                    }
-                } else {
-                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                        onResult(false)
-                    }
+                BadgeRepository.restoreBadges(badges)
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    onResult(true)
                 }
             } catch (e: Exception) {
                 Log.e("BadgeManagerViewModel", "Error importing badges", e)

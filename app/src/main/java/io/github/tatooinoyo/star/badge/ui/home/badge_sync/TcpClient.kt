@@ -1,6 +1,9 @@
 package io.github.tatooinoyo.star.badge.ui.home.badge_sync
 
 import android.util.Log
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.InetSocketAddress
@@ -17,13 +20,18 @@ class TcpClient(
     private val targetPort: Int = 6000,
     private val psk6: String,
 ) {
+    private val lock = Any()
     private var socket: Socket? = null
+    private var closed = false
 
     suspend fun connectAndGetChannel(): ConnectResult =
-        withContext(Dispatchers.IO) {
+        try { withContext(Dispatchers.IO) {
             try {
                 val sock = Socket()
-                socket = sock
+                synchronized(lock) {
+                    if (closed) { sock.close(); throw CancellationException("Client closed") }
+                    socket = sock
+                }
                 sock.connect(
                     InetSocketAddress(targetIP, targetPort),
                     SyncProtocol.CONNECT_TIMEOUT_MS,
@@ -32,7 +40,7 @@ class TcpClient(
 
                 val sessionKey = HandshakeManager.handleClientSide(sock, psk6)
                 if (sessionKey != null) {
-                    sock.soTimeout = 0
+                    currentCoroutineContext().ensureActive()
                     return@withContext ConnectResult.Ok(SecureChannel(sock, sessionKey))
                 }
                 sock.close()
@@ -40,6 +48,9 @@ class TcpClient(
                     SyncErrorCode.HANDSHAKE_FAILED,
                     IllegalStateException("Handshake returned null session key"),
                 )
+            } catch (e: CancellationException) {
+                close()
+                throw e
             } catch (e: SocketTimeoutException) {
                 Log.e("TcpClient", "connect/handshake timeout", e)
                 socket?.close()
@@ -49,13 +60,16 @@ class TcpClient(
                 socket?.close()
                 return@withContext ConnectResult.Fail(SyncErrorCode.TRANSFER_INTERRUPTED, e)
             }
+        } } catch (e: CancellationException) {
+            close()
+            throw e
         }
 
     fun close() {
-        try {
-            socket?.close()
-        } catch (_: Exception) {
+        synchronized(lock) {
+            closed = true
+            runCatching { socket?.close() }
+            socket = null
         }
-        socket = null
     }
 }

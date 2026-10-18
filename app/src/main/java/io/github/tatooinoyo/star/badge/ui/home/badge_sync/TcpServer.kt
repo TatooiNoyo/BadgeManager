@@ -1,130 +1,119 @@
 package io.github.tatooinoyo.star.badge.ui.home.badge_sync
 
-import android.util.Log
 import java.net.ServerSocket
-import java.net.SocketException
-import java.util.concurrent.atomic.AtomicInteger
+import java.net.Socket
+import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.SynchronousQueue
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 
-class TcpServer(
-    private val psk6: String,
-) {
+class TcpServer(private val psk6: String) {
     companion object {
         const val ERROR_HANDSHAKE_FAILED = "HANDSHAKE_FAILED"
         const val ERROR_LISTENER_DISCONNECTED = "LISTENER_DISCONNECTED"
-        const val ERROR_TOO_MANY_HANDSHAKE_FAILURES = "TOO_MANY_HANDSHAKE_FAILURES"
     }
 
-    @Volatile
+    private val lock = Any()
     private var running = false
+    private var started = false
     private var serverSocket: ServerSocket? = null
-    private val handshakeFailures = AtomicInteger(0)
-
-    val listeningPort: Int
-        get() = serverSocket?.localPort ?: -1
+    private val clients = HashSet<Socket>()
+    // Bound both worker count and per-peer failures; a bad peer cannot lock out everyone.
+    private val failures = LinkedHashMap<String, Pair<Int, Long>>()
+    private val workers = ThreadPoolExecutor(
+        SyncProtocol.MAX_PENDING_HANDSHAKES, SyncProtocol.MAX_PENDING_HANDSHAKES,
+        0L, TimeUnit.MILLISECONDS, SynchronousQueue(),
+        { task -> Thread(task, "badge-handshake").apply { isDaemon = true } },
+    )
 
     fun start(
-        onServerReady: (port: Int) -> Unit,
+        onServerReady: (Int) -> Unit,
         onChannelReady: (SecureChannel) -> Unit,
-        onError: (code: String, cause: Throwable?) -> Unit,
+        onError: (String, Throwable?) -> Unit,
     ) {
-        if (running) return
-        running = true
-        handshakeFailures.set(0)
-
-        Thread {
+        synchronized(lock) {
+            if (started) return
+            started = true
+            running = true
+        }
+        Thread({
             try {
-                serverSocket = ServerSocket(0)
-            } catch (e: Exception) {
-                onError(SyncErrorCode.NETWORK_UNAVAILABLE.name, e)
-                running = false
-                return@Thread
-            }
-            onServerReady(listeningPort)
-            val server = serverSocket!!
-            try {
-                while (running) {
-                    val clientSocket = server.accept()
-                    Log.d("TcpServer", "Client connected: $clientSocket")
-                    clientSocket.soTimeout = SyncProtocol.HANDSHAKE_TIMEOUT_MS
-
-                    Thread {
-                        try {
-                            val sessionKey = HandshakeManager.handleServerSide(clientSocket, psk6)
-                            if (sessionKey != null) {
-                                clientSocket.soTimeout = 0
-                                handshakeFailures.set(0)
-                                running = false
-                                try {
-                                    server.close()
-                                } catch (_: Exception) {
-                                }
-                                serverSocket = null
-                                onChannelReady(SecureChannel(clientSocket, sessionKey))
-                            } else {
-                                clientSocket.close()
-                                val failures = handshakeFailures.incrementAndGet()
-                                val cause = IllegalStateException("Handshake returned null session key")
-                                if (failures >= SyncProtocol.MAX_HANDSHAKE_FAILURES) {
-                                    running = false
-                                    try {
-                                        server.close()
-                                    } catch (_: Exception) {
-                                    }
-                                    serverSocket = null
-                                    onError(ERROR_TOO_MANY_HANDSHAKE_FAILURES, cause)
-                                } else {
-                                    onError(ERROR_HANDSHAKE_FAILED, cause)
-                                }
-                            }
-                        } catch (e: Exception) {
-                            Log.e("TcpServer", "Handshake error", e)
+                val server = ServerSocket(0)
+                synchronized(lock) {
+                    if (!running) { server.close(); return@Thread }
+                    serverSocket = server
+                    onServerReady(server.localPort)
+                }
+                while (true) {
+                    val client = server.accept()
+                    val address = client.inetAddress.hostAddress.orEmpty()
+                    val accepted = synchronized(lock) {
+                        val failure = failures[address]
+                        val blocked = failure != null && failure.first >= SyncProtocol.MAX_HANDSHAKE_FAILURES &&
+                            System.nanoTime() - failure.second < TimeUnit.SECONDS.toNanos(30)
+                        if (!running || blocked || clients.size >= SyncProtocol.MAX_PENDING_HANDSHAKES) false
+                        else clients.add(client)
+                    }
+                    if (!accepted) { client.close(); continue }
+                    try {
+                        workers.execute {
+                            var transferred = false
                             try {
-                                clientSocket.close()
-                            } catch (_: Exception) {
-                            }
-                            val failures = handshakeFailures.incrementAndGet()
-                            if (failures >= SyncProtocol.MAX_HANDSHAKE_FAILURES) {
-                                running = false
-                                try {
-                                    server.close()
-                                } catch (_: Exception) {
+                                client.soTimeout = SyncProtocol.HANDSHAKE_TIMEOUT_MS
+                                val key = HandshakeManager.handleServerSide(client, psk6)
+                                    ?: throw IllegalArgumentException("Handshake rejected")
+                                synchronized(lock) {
+                                    if (running) {
+                                        val channel = SecureChannel(client, key)
+                                        running = false
+                                        clients.remove(client)
+                                        server.close()
+                                        clients.forEach { runCatching { it.close() } }
+                                        clients.clear()
+                                        transferred = true
+                                        onChannelReady(channel)
+                                        workers.shutdown()
+                                    }
                                 }
-                                serverSocket = null
-                                onError(ERROR_TOO_MANY_HANDSHAKE_FAILURES, e)
-                            } else {
-                                onError(ERROR_HANDSHAKE_FAILED, e)
+                            } catch (e: Exception) {
+                                synchronized(lock) {
+                                    if (running) {
+                                        val previous = failures[address]
+                                        val count = if (previous != null && System.nanoTime() - previous.second < TimeUnit.SECONDS.toNanos(30)) previous.first + 1 else 1
+                                        failures[address] = count to System.nanoTime()
+                                        if (failures.size > 128) failures.remove(failures.keys.first())
+                                        onError(ERROR_HANDSHAKE_FAILED, e)
+                                    }
+                                }
+                            } finally {
+                                synchronized(lock) { clients.remove(client) }
+                                if (!transferred) runCatching { client.close() }
                             }
                         }
-                    }.start()
-                }
-                try {
-                    server.close()
-                } catch (_: Exception) {
-                }
-            } catch (e: SocketException) {
-                if (running) {
-                    Log.e("TcpServer", "Accept failed", e)
-                    onError(ERROR_LISTENER_DISCONNECTED, e)
-                } else {
-                    Log.d("TcpServer", "Server stopped normally")
+                    } catch (_: RejectedExecutionException) {
+                        synchronized(lock) { clients.remove(client) }
+                        client.close()
+                    }
                 }
             } catch (e: Exception) {
-                Log.e("TcpServer", "Accept error", e)
-                if (running) {
-                    onError(ERROR_LISTENER_DISCONNECTED, e)
+                synchronized(lock) {
+                    if (running) onError(ERROR_LISTENER_DISCONNECTED, e)
                 }
             } finally {
-                running = false
+                stop()
             }
-        }.start()
+        }, "badge-tcp-listener").apply { isDaemon = true }.start()
     }
 
     fun stop() {
-        running = false
-        try {
-            serverSocket?.close()
-        } catch (_: Exception) {
+        synchronized(lock) {
+            running = false
+            started = true
+            runCatching { serverSocket?.close() }
+            serverSocket = null
+            clients.forEach { runCatching { it.close() } }
+            clients.clear()
+            workers.shutdownNow()
         }
-        serverSocket = null
     }
 }

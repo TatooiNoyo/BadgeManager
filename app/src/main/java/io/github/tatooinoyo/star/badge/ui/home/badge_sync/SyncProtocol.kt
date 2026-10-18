@@ -1,11 +1,17 @@
 package io.github.tatooinoyo.star.badge.ui.home.badge_sync
 
 import org.json.JSONObject
+import io.github.tatooinoyo.star.badge.utils.BadgeImportValidator
 
 object SyncProtocol {
     const val PROTOCOL_VERSION = 2
     const val DISCOVERY_KEYWORD = "DISCOVER_STAR_APP"
-    const val MAX_FRAME_BYTES = 16 * 1024 * 1024
+    // JSON string escaping can double the data bytes; reserve room for the envelope and GCM.
+    const val MAX_FRAME_BYTES = 2 * BadgeImportValidator.MAX_JSON_BYTES + 1024
+    const val MAX_HANDSHAKE_BYTES = 4096
+    const val MAX_PENDING_HANDSHAKES = 4
+    const val DISCOVERY_TIMEOUT_MS = 60_000
+    const val TRANSFER_TIMEOUT_MS = 60_000
     const val CONNECT_TIMEOUT_MS = 5_000
     const val HANDSHAKE_TIMEOUT_MS = 10_000
     /** Wait for receiver to acknowledge payload arrival (before user confirms import). */
@@ -37,8 +43,9 @@ object SyncProtocol {
         val parts = rest.split(':')
         if (parts.size != 2) return null
         val port = parts[0].toIntOrNull() ?: return null
+        if (port !in 1..65535) return null
         val fp = parts[1].trim()
-        if (fp.isEmpty()) return null
+        if (!fp.matches(Regex("[A-Za-z0-9+/]{6}=="))) return null
         return DiscoveryPacket(port, fp)
     }
 
