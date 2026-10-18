@@ -528,14 +528,16 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     // === 拖拽排序 ===
-    fun moveBadge(from: Int, to: Int) {
-        val list = _uiState.value.badges.toMutableList()
-        list.apply {
-            add(to, removeAt(from))
-        }
+    fun moveBadge(badgeId: String, insertBeforeId: String?): Boolean {
+        val reordered = reorderBadgesBefore(
+            badges = _uiState.value.badges,
+            badgeId = badgeId,
+            insertBeforeId = insertBeforeId,
+        ) ?: return false
 
-        // 更新内存中的 state，让 UI 立即响应
-        _uiState.value = _uiState.value.copy(badges = list)
+        // 以稳定 ID 解析当前位置，避免数据库回写或标签切换后旧下标移动错误徽章。
+        _uiState.value = _uiState.value.copy(badges = reordered)
+        return true
     }
 
     /**
@@ -552,6 +554,13 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         val orderIndices = reordered.map { it.orderIndex }.sorted()
         val updatedList = reordered.mapIndexed { index, badge ->
             badge.copy(orderIndex = orderIndices[index])
+        }
+        _uiState.update { state ->
+            if (state.badges.map { it.id } == reordered.map { it.id }) {
+                state.copy(badges = updatedList)
+            } else {
+                state
+            }
         }
         viewModelScope.launch {
             BadgeRepository.updateBadgeOrder(updatedList)

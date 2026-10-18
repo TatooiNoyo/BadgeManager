@@ -17,13 +17,13 @@ import io.github.tatooinoyo.star.badge.data.Badge
  * 拖拽排序状态：列表中保留被拖项半透明影子，悬浮层跟随手指；
  * 松手后按横杆落点一次性 onMove + onSaveOrder。
  *
- * [dropInsertBeforeIndex] 相对「仍含被拖项」的完整列表；
- * 提交时再换算为 MutableList.add(to, removeAt(from)) 的 to。
+ * [dropInsertBeforeIndex] 相对「仍含被拖项」的完整列表；提交时使用稳定 ID
+ * 重新定位来源和目标，避免列表更新后继续使用过期下标。
  */
 @Stable
 class MultiTouchReorderState(
     private val listState: LazyListState,
-    private val onMove: (Int, Int) -> Unit,
+    private val onMove: (String, String?) -> Boolean,
     private val onSaveOrder: () -> Unit,
 ) {
     var isDragging by mutableStateOf(false)
@@ -33,9 +33,6 @@ class MultiTouchReorderState(
         private set
 
     var draggingBadge by mutableStateOf<Badge?>(null)
-        private set
-
-    var draggingIndex by mutableIntStateOf(-1)
         private set
 
     var dragPointerId by mutableStateOf(PointerId(-1))
@@ -55,26 +52,32 @@ class MultiTouchReorderState(
     var dropIndicatorY by mutableFloatStateOf(0f)
         private set
 
-    /** 当前列表条数（含被拖项影子） */
-    var itemCount by mutableIntStateOf(0)
+    /** 当前列表顺序（含被拖项影子）；用于在提交时以稳定 ID 定位。 */
+    private var itemKeys: List<String> = emptyList()
 
     var listCoordinates: LayoutCoordinates? = null
 
+    fun updateItemKeys(keys: List<String>) {
+        itemKeys = keys
+    }
+
     fun onDragStart(
         badge: Badge,
-        index: Int,
         fingerY: Float,
         pointerId: PointerId,
         itemHeight: Float,
-    ) {
+    ): Boolean {
+        if (isDragging) return false
+        if (badge.id !in itemKeys) return false
+
         isDragging = true
         draggingKey = badge.id
         draggingBadge = badge
-        draggingIndex = index
         dragFingerY = fingerY
         dragPointerId = pointerId
         draggingItemHeight = itemHeight
         resolveDropTarget()
+        return true
     }
 
     fun updateDragFingerY(fingerY: Float) {
@@ -88,45 +91,52 @@ class MultiTouchReorderState(
     }
 
     private fun resolveDropTarget() {
-        if (!isDragging || draggingIndex < 0) return
-        val resolved = resolveInsertBeforeIndex(listState, dragFingerY, itemCount) ?: return
+        if (!isDragging || currentDraggingIndex() < 0) return
+        val resolved = resolveInsertBeforeIndex(listState, dragFingerY, itemKeys.size) ?: return
         dropInsertBeforeIndex = resolved.index
         dropIndicatorY = resolved.indicatorY
     }
 
     /** 将「完整列表 insertBefore」换算为 removeAt 之后的 add 下标 */
     fun resolvedMoveToIndex(): Int {
-        val from = draggingIndex
+        val from = currentDraggingIndex()
         val insertBefore = dropInsertBeforeIndex
         if (from < 0 || insertBefore < 0) return from
         return if (insertBefore > from) insertBefore - 1 else insertBefore
     }
 
-    fun onDragEnd() {
-        if (!isDragging) return
-        val from = draggingIndex
-        val to = resolvedMoveToIndex()
-        isDragging = false
-        draggingKey = null
-        draggingBadge = null
-        draggingIndex = -1
-        dragPointerId = PointerId(-1)
-        dropInsertBeforeIndex = -1
-        draggingItemHeight = 0f
+    fun currentDraggingIndex(): Int = draggingKey?.let(itemKeys::indexOf) ?: -1
 
-        if (from >= 0 && to >= 0 && to != from) {
-            onMove(from, to)
+    fun onDragEnd(pointerId: PointerId = dragPointerId) {
+        if (!isDragging || pointerId != dragPointerId) return
+        // 用当前 ID 顺序重新解析位置，避免列表更新后沿用手势开始时的旧下标。
+        resolveDropTarget()
+        val draggedId = draggingKey
+        val from = currentDraggingIndex()
+        val to = resolvedMoveToIndex()
+        val insertBeforeId = itemKeys.getOrNull(dropInsertBeforeIndex)
+        reset()
+
+        if (draggedId != null && from >= 0 && to >= 0 && to != from) {
+            if (onMove(draggedId, insertBeforeId)) {
+                onSaveOrder()
+            }
         }
-        onSaveOrder()
     }
 
-    fun onDragCancel() {
+    fun onDragCancel(pointerId: PointerId = dragPointerId) {
+        if (!isDragging || pointerId != dragPointerId) return
+        reset()
+    }
+
+    private fun reset() {
         isDragging = false
         draggingKey = null
         draggingBadge = null
-        draggingIndex = -1
         dragPointerId = PointerId(-1)
+        dragFingerY = 0f
         dropInsertBeforeIndex = -1
+        dropIndicatorY = 0f
         draggingItemHeight = 0f
     }
 
@@ -174,7 +184,7 @@ class MultiTouchReorderState(
 @Composable
 fun rememberMultiTouchReorderState(
     listState: LazyListState,
-    onMove: (Int, Int) -> Unit,
+    onMove: (String, String?) -> Boolean,
     onSaveOrder: () -> Unit,
 ): MultiTouchReorderState {
     val onMoveState = androidx.compose.runtime.rememberUpdatedState(onMove)
@@ -182,7 +192,9 @@ fun rememberMultiTouchReorderState(
     return remember(listState) {
         MultiTouchReorderState(
             listState = listState,
-            onMove = { from, to -> onMoveState.value(from, to) },
+            onMove = { badgeId, insertBeforeId ->
+                onMoveState.value(badgeId, insertBeforeId)
+            },
             onSaveOrder = { onSaveOrderState.value() },
         )
     }

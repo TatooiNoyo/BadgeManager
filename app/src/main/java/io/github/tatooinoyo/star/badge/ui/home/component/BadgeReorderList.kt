@@ -1,7 +1,6 @@
 package io.github.tatooinoyo.star.badge.ui.home.component
 
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -15,16 +14,14 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -42,11 +39,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
@@ -69,7 +66,6 @@ import kotlin.math.roundToInt
 
 private const val REORDER_PLACEMENT_MS = 250
 private const val FLOAT_APPEAR_MS = 180
-private const val INDICATOR_MOVE_MS = 120
 private const val FLOAT_SCALE = 0.88f
 private const val FLOAT_ALPHA = 0.92f
 
@@ -92,7 +88,7 @@ fun BadgeTagList(tags: List<String>) {
 fun BadgeReorderList(
     badges: List<Badge>,
     onItemClick: (Badge) -> Unit,
-    onMove: (Int, Int) -> Unit,
+    onMove: (String, String?) -> Boolean,
     onSaveOrder: () -> Unit,
     listState: LazyListState = rememberLazyListState(),
     isShareSelecting: Boolean = false,
@@ -102,7 +98,7 @@ fun BadgeReorderList(
     val reorderState = rememberMultiTouchReorderState(listState, onMove, onSaveOrder)
 
     // 拖拽中仍保留列表项作为半透明影子；落点下标相对完整列表
-    reorderState.itemCount = badges.size
+    reorderState.updateItemKeys(badges.map { it.id })
 
     val density = LocalDensity.current
     val indicatorHalfHeightPx = with(density) { 1.5.dp.toPx() }
@@ -144,7 +140,7 @@ fun BadgeReorderList(
                                 }
 
                                 if (dragEnded) {
-                                    reorderState.onDragEnd()
+                                    reorderState.onDragEnd(dragPointerId)
                                 }
                             }
                         }
@@ -175,7 +171,7 @@ fun BadgeReorderList(
                     )
                 }
             }
-            itemsIndexed(badges, key = { _, badge -> badge.id }) { index, badge ->
+            items(badges, key = { badge -> badge.id }) { badge ->
                 val isGhost = reorderState.isDragging && badge.id == reorderState.draggingKey
                 BadgeListCard(
                     badge = badge,
@@ -201,7 +197,6 @@ fun BadgeReorderList(
                         {
                             DragHandle(
                                 badge = badge,
-                                index = index,
                                 reorderState = reorderState,
                             )
                         }
@@ -214,12 +209,7 @@ fun BadgeReorderList(
         val moveTo = reorderState.resolvedMoveToIndex()
         val showDropIndicator = reorderState.isDragging &&
             reorderState.dropInsertBeforeIndex >= 0 &&
-            moveTo != reorderState.draggingIndex
-        val animatedIndicatorY by animateFloatAsState(
-            targetValue = reorderState.dropIndicatorY,
-            animationSpec = tween(INDICATOR_MOVE_MS),
-            label = "dropIndicatorY",
-        )
+            moveTo != reorderState.currentDraggingIndex()
         if (showDropIndicator) {
             Box(
                 modifier = Modifier
@@ -228,7 +218,7 @@ fun BadgeReorderList(
                     .offset {
                         IntOffset(
                             x = 0,
-                            y = (animatedIndicatorY - indicatorHalfHeightPx).roundToInt()
+                            y = (reorderState.dropIndicatorY - indicatorHalfHeightPx).roundToInt()
                         )
                     }
                     .fillMaxWidth()
@@ -376,22 +366,21 @@ private fun BadgeListCard(
 @Composable
 private fun DragHandle(
     badge: Badge,
-    index: Int,
     reorderState: MultiTouchReorderState,
 ) {
     var handleCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
-    val density = LocalDensity.current
+    val currentBadge by rememberUpdatedState(badge)
 
     DragHandleIcon(
         modifier = Modifier
             .onGloballyPositioned { handleCoordinates = it }
-            .pointerInput(badge.id) {
+            .pointerInput(badge.id, reorderState) {
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false)
                     val coords = handleCoordinates
                     val listCoords = reorderState.listCoordinates
-                    if (index < 0 ||
-                        coords == null ||
+                    val gestureBadge = currentBadge
+                    if (coords == null ||
                         listCoords == null ||
                         !coords.isAttached ||
                         !listCoords.isAttached
@@ -400,28 +389,33 @@ private fun DragHandle(
                     }
 
                     val startFingerY = listCoords.localPositionOf(coords, down.position).y
-                    val itemHeight = reorderState.itemHeightForKey(badge.id)
-                        ?: with(density) { 72.dp.toPx() }
-                    down.consume()
-                    reorderState.onDragStart(
-                        badge = badge,
-                        index = index,
+                    val itemHeight = reorderState.itemHeightForKey(gestureBadge.id)
+                        ?: 72.dp.toPx()
+                    val started = reorderState.onDragStart(
+                        badge = gestureBadge,
                         fingerY = startFingerY,
                         pointerId = down.id,
                         itemHeight = itemHeight,
                     )
+                    if (!started) return@awaitEachGesture
+                    down.consume()
 
                     try {
                         while (true) {
                             val event = awaitPointerEvent()
-                            val dragChange = event.changes.find { it.id == down.id } ?: continue
+                            val dragChange = event.changes.find { it.id == down.id }
+                            if (dragChange == null) {
+                                reorderState.onDragCancel(down.id)
+                                break
+                            }
                             if (!dragChange.pressed) {
-                                reorderState.onDragEnd()
+                                reorderState.onDragEnd(down.id)
                                 break
                             }
                             dragChange.consume()
                         }
                     } catch (e: CancellationException) {
+                        reorderState.onDragCancel(down.id)
                         throw e
                     }
                 }

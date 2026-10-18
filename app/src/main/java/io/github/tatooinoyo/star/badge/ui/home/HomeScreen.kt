@@ -209,7 +209,9 @@ fun HomeScreen(
             onExtractSkClick = { link -> viewModelInstance.extractSkFromLink(link) },
             onTagsChange = { viewModelInstance.updateAddInput(tags = it) },
             onTagSelected = { tag -> viewModelInstance.selectTag(tag) },
-            onMove = { from, to -> viewModelInstance.moveBadge(from, to) },
+            onMove = { badgeId, insertBeforeId ->
+                viewModelInstance.moveBadge(badgeId, insertBeforeId)
+            },
             onSaveOrder = { viewModelInstance.saveOrder() },
             // === 传递同步参数 ===
             syncState = syncState,
@@ -338,7 +340,7 @@ fun BadgeListContent(
     onExtractSkClick: (String) -> Unit,
     onTagsChange: (List<String>) -> Unit,
     onTagSelected: (String?) -> Unit = {},
-    onMove: (Int, Int) -> Unit,
+    onMove: (String, String?) -> Boolean,
     onSaveOrder: () -> Unit,
     // 同步相关参数 ===
     syncState: SyncState,
