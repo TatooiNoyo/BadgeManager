@@ -47,6 +47,10 @@
     <string name="share_import_wrong_password">Wrong verification code</string>
     <string name="share_import_invalid_file">Invalid or corrupted share file</string>
     <string name="share_import_empty">No badges found in file</string>
+    <string name="import_encrypted_share">Import file</string>
+    <string name="import_encrypted_share_note_title">Encrypted badge share</string>
+    <string name="import_encrypted_share_note">Choose the .badgeenc file and enter the sender\'s 6-digit code.</string>
+    <string name="import_encrypted_share_additive_note">Adds badges without replacing existing ones</string>
     <string name="share_format_label">Share format</string>
     <string name="share_format_text">Text</string>
     <string name="share_format_file">Encrypted file</string>

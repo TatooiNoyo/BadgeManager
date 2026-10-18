@@ -55,6 +55,7 @@ fun ColumnScope.BadgeFunctionArea(
     onAddClick: () -> Unit,
     onExtractSkClick: (String) -> Unit,
     onTagsChange: (List<String>) -> Unit,
+    onSharedFileSelected: (Uri) -> Unit,
     onStartSender: () -> Unit,
     onStopSender: () -> Unit,
     onStartReceiver: (String) -> Unit,
@@ -148,6 +149,7 @@ fun ColumnScope.BadgeFunctionArea(
                         onAddClick = onAddClick,
                         onExtractSkClick = onExtractSkClick,
                         onTagsChange = onTagsChange,
+                        onSharedFileSelected = onSharedFileSelected,
                     )
 
                     1 -> BackupRestorePanel(onImport = onImport, onExport = onExport)

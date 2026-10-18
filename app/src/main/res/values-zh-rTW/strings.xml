@@ -47,6 +47,10 @@
     <string name="share_import_wrong_password">驗證碼錯誤</string>
     <string name="share_import_invalid_file">分享檔案無效或已損壞</string>
     <string name="share_import_empty">檔案中沒有徽章資料</string>
+    <string name="import_encrypted_share">匯入檔案</string>
+    <string name="import_encrypted_share_note_title">加密分享匯入</string>
+    <string name="import_encrypted_share_note">選擇對方傳來的 .badgeenc 檔案，再輸入 6 位驗證碼。</string>
+    <string name="import_encrypted_share_additive_note">只會新增徽章，不會覆蓋現有資料</string>
     <string name="share_format_label">分享格式</string>
     <string name="share_format_text">文字</string>
     <string name="share_format_file">加密檔案</string>

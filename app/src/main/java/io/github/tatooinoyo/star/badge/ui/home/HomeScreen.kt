@@ -208,6 +208,7 @@ fun HomeScreen(
             onSetFunctionAreaExpanded = { viewModelInstance.setFunctionAreaExpanded(it) },
             onExtractSkClick = { link -> viewModelInstance.extractSkFromLink(link) },
             onTagsChange = { viewModelInstance.updateAddInput(tags = it) },
+            onSharedFileSelected = viewModelInstance::receiveShareImport,
             onTagSelected = { tag -> viewModelInstance.selectTag(tag) },
             onMove = { badgeId, insertBeforeId ->
                 viewModelInstance.moveBadge(badgeId, insertBeforeId)
@@ -339,6 +340,7 @@ fun BadgeListContent(
     onSetFunctionAreaExpanded: (Boolean) -> Unit,
     onExtractSkClick: (String) -> Unit,
     onTagsChange: (List<String>) -> Unit,
+    onSharedFileSelected: (Uri) -> Unit,
     onTagSelected: (String?) -> Unit = {},
     onMove: (String, String?) -> Boolean,
     onSaveOrder: () -> Unit,
@@ -436,6 +438,7 @@ fun BadgeListContent(
                         onAddClick = onAddClick,
                         onExtractSkClick = onExtractSkClick,
                         onTagsChange = onTagsChange,
+                        onSharedFileSelected = onSharedFileSelected,
                         onStartSender = onStartSender,
                         onStopSender = onStopSender,
                         onStartReceiver = onStartReceiver,

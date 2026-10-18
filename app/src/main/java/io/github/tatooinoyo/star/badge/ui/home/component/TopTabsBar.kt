@@ -6,6 +6,8 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
@@ -55,7 +58,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -78,6 +85,8 @@ import io.github.tatooinoyo.star.badge.ui.icons.BadgeIcons
 import io.github.tatooinoyo.star.badge.ui.state.SyncState
 import io.github.tatooinoyo.star.badge.ui.theme.BrandOrange
 import io.github.tatooinoyo.star.badge.ui.theme.SuccessGreen
+import io.github.tatooinoyo.star.badge.ui.theme.TextPrimary
+import io.github.tatooinoyo.star.badge.ui.theme.TextSecondary
 
 @Composable
 fun TopControl() {
@@ -94,8 +103,14 @@ fun BadgeInputPanel(
     onAddClick: () -> Unit,
     onExtractSkClick: (String) -> Unit,
     onTagsChange: (List<String>) -> Unit,
+    onSharedFileSelected: (Uri) -> Unit,
 ) {
     var showContinuousHelp by remember { mutableStateOf(false) }
+    val encryptedFilePicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        uri?.let(onSharedFileSelected)
+    }
 
     Column(
         modifier = Modifier
@@ -169,6 +184,16 @@ fun BadgeInputPanel(
                 Text(text = stringResource(R.string.btn_add_badge), maxLines = 1)
             }
         }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        EncryptedShareImportButton(
+            onClick = {
+                encryptedFilePicker.launch(
+                    arrayOf("application/x-badgeenc", "application/octet-stream"),
+                )
+            },
+        )
     }
 
     if (showContinuousHelp) {
@@ -182,6 +207,102 @@ fun BadgeInputPanel(
                 }
             },
         )
+    }
+}
+
+@Composable
+private fun EncryptedShareImportButton(onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(120.dp)
+                .shadow(8.dp, CircleShape)
+                .clip(CircleShape)
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(
+                            Color(0xFFFF9147),
+                            BrandOrange,
+                            Color(0xFFE95810),
+                        ),
+                    ),
+                )
+                .border(2.dp, Color.White.copy(alpha = 0.7f), CircleShape)
+                .clickable(role = Role.Button, onClick = onClick),
+            contentAlignment = Alignment.Center,
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Icon(
+                    painter = painterResource(BadgeIcons.Download),
+                    contentDescription = null,
+                    modifier = Modifier.size(30.dp),
+                    tint = Color.White,
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = stringResource(R.string.import_encrypted_share),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                )
+                Spacer(modifier = Modifier.height(5.dp))
+                Box(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.92f))
+                        .padding(horizontal = 8.dp, vertical = 2.dp),
+                ) {
+                    Text(
+                        text = ".badgeenc",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = BrandOrange,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(R.string.import_encrypted_share_note_title),
+                style = MaterialTheme.typography.titleSmall,
+                color = TextPrimary,
+                fontWeight = FontWeight.Bold,
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = stringResource(R.string.import_encrypted_share_note),
+                style = MaterialTheme.typography.bodySmall,
+                color = TextSecondary,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.Top) {
+                Box(
+                    modifier = Modifier
+                        .padding(top = 5.dp)
+                        .size(6.dp)
+                        .clip(CircleShape)
+                        .background(BrandOrange),
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = stringResource(R.string.import_encrypted_share_additive_note),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = BrandOrange,
+                )
+            }
+        }
     }
 }
 
