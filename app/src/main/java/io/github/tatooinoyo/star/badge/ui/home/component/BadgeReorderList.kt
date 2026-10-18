@@ -58,7 +58,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import io.github.tatooinoyo.star.badge.R
 import io.github.tatooinoyo.star.badge.data.Badge
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -130,6 +129,9 @@ fun BadgeReorderList(
                                         if (!change.pressed) {
                                             dragEnded = true
                                         }
+                                        // 拖拽开始后由列表容器持有并消费主指针，避免手柄项
+                                        // 滑出可见区被回收时中断手势，也避免误触标签横滑。
+                                        change.consume()
                                     } else if (change.pressed) {
                                         val dy = change.positionChange().y
                                         if (dy != 0f) {
@@ -145,6 +147,8 @@ fun BadgeReorderList(
                             }
                         }
                     } finally {
+                        // 容器真正退出或手势监听被重建时才取消仍在进行的拖拽。
+                        reorderState.onDragCancel()
                         scrollChannel.close()
                     }
                 }
@@ -399,25 +403,6 @@ private fun DragHandle(
                     )
                     if (!started) return@awaitEachGesture
                     down.consume()
-
-                    try {
-                        while (true) {
-                            val event = awaitPointerEvent()
-                            val dragChange = event.changes.find { it.id == down.id }
-                            if (dragChange == null) {
-                                reorderState.onDragCancel(down.id)
-                                break
-                            }
-                            if (!dragChange.pressed) {
-                                reorderState.onDragEnd(down.id)
-                                break
-                            }
-                            dragChange.consume()
-                        }
-                    } catch (e: CancellationException) {
-                        reorderState.onDragCancel(down.id)
-                        throw e
-                    }
                 }
             }
     )
