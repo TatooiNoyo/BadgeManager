@@ -3,7 +3,9 @@ package io.github.tatooinoyo.star.badge.ui.home.component
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -18,7 +20,19 @@ fun TagFilterBar(
 ) {
     if (allTags.isEmpty()) return
 
+    val listState = rememberLazyListState()
+    val selectedIndex = selectedTag
+        ?.let(allTags::indexOf)
+        ?.takeIf { it >= 0 }
+        ?.plus(1)
+        ?: 0
+
+    LaunchedEffect(selectedIndex, allTags) {
+        listState.animateScrollToItem(selectedIndex)
+    }
+
     androidx.compose.foundation.lazy.LazyRow(
+        state = listState,
         contentPadding = androidx.compose.foundation.layout.PaddingValues(
             horizontal = 0.dp,
             vertical = 0.dp,
@@ -34,7 +48,7 @@ fun TagFilterBar(
             )
         }
 
-        items(allTags) { tag ->
+        items(allTags, key = { it }) { tag ->
             val isSelected = tag == selectedTag
             FilterChipStyled(
                 label = tag,

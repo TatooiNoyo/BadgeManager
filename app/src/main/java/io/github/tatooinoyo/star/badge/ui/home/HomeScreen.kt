@@ -12,6 +12,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -502,7 +503,13 @@ fun BadgeListContent(
                             listState = listState,
                             isShareSelecting = uiState.isShareSelecting,
                             shareSelectedIds = uiState.shareSelectedIds,
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier
+                                .weight(1f)
+                                .swipeToChangeTag(
+                                    allTags = uiState.allTags,
+                                    selectedTag = uiState.selectedTag,
+                                    onTagSelected = onTagSelected,
+                                ),
                         )
                     }
                 } else {
@@ -533,6 +540,44 @@ fun BadgeListContent(
 private val LIST_HANDLE_HEIGHT = 36.dp
 private const val LIST_SHEET_ANIM_MS = 1300
 private const val LIST_HANDLE_DRAG_THRESHOLD_PX = 80f
+private val TAG_FILTER_SWIPE_THRESHOLD = 56.dp
+
+/**
+ * 在列表內容上橫向滑動時切換相鄰標籤。橫向手勢辨識器會與 LazyColumn 的
+ * 垂直滾動競爭方向，因此正常上下捲動不會觸發篩選切換。
+ */
+private fun Modifier.swipeToChangeTag(
+    allTags: List<String>,
+    selectedTag: String?,
+    onTagSelected: (String?) -> Unit,
+): Modifier = pointerInput(allTags, selectedTag) {
+    if (allTags.isEmpty()) return@pointerInput
+
+    val options: List<String?> = listOf(null) + allTags
+    val selectedIndex = options.indexOf(selectedTag).takeIf { it >= 0 } ?: 0
+    val thresholdPx = TAG_FILTER_SWIPE_THRESHOLD.toPx()
+    var totalDrag = 0f
+
+    detectHorizontalDragGestures(
+        onDragStart = { totalDrag = 0f },
+        onHorizontalDrag = { change, dragAmount ->
+            change.consume()
+            totalDrag += dragAmount
+        },
+        onDragCancel = { totalDrag = 0f },
+        onDragEnd = {
+            val targetIndex = when {
+                totalDrag <= -thresholdPx -> selectedIndex + 1
+                totalDrag >= thresholdPx -> selectedIndex - 1
+                else -> selectedIndex
+            }
+            if (targetIndex != selectedIndex && targetIndex in options.indices) {
+                onTagSelected(options[targetIndex])
+            }
+            totalDrag = 0f
+        },
+    )
+}
 
 @Composable
 private fun BadgeListDragHandle(
