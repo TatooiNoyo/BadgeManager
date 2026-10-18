@@ -9,6 +9,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -96,7 +97,13 @@ fun BadgeInputPanel(
 ) {
     var showContinuousHelp by remember { mutableStateOf(false) }
 
-    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp)
+            .padding(bottom = 16.dp),
+    ) {
         BadgeInputForm(
             title = uiState.addTitle,
             onTitleChange = onInputTitleChange,
