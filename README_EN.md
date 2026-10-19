@@ -1,108 +1,88 @@
 # Sky: Children of the Light - Badge Manager
 
-Badge Manager is an Android application designed to help users manage and quickly launch "Sky: Children of the Light Star Badges". It supports NFC reading functionality, allowing users to quickly populate links by tapping NFC tags, and provides a floating ball feature for quick access.
+[![GitHub stars](https://img.shields.io/github/stars/tatooinoyo/BadgeManager)](https://github.com/tatooinoyo/BadgeManager/stargazers)
+[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/tatooinoyo/BadgeManager)](https://github.com/tatooinoyo/BadgeManager/releases)
+[![GitHub all releases](https://img.shields.io/github/downloads/tatooinoyo/BadgeManager/total)](https://github.com/tatooinoyo/BadgeManager/releases)
+
+[中文版本](README.md)
+
+Badge Manager is an Android application that helps players manage and quickly launch “Sky: Children of the Light STAR badges.” With it, players can quickly use STAR badges in the game.
 
 ## ✨ Key Features
 
-*   **Badge Management (CRUD)**:
-    *   Create, Read, Update, and Delete badges.
-    *   Badge properties include: Title, Remark, Link (URL), Tags, and Channel Type.
-*   **NFC Integration**:
-    *   Supports NFC reading (NDEF format).
-    *   Tap an NFC tag on the home page or details page to automatically fill the "Link" input field with the tag's content.
-*   **Floating Window Service**:
-    *   Provides a global floating handle (Starlight effect).
-    *   Allows users to quickly access badge functions over other applications (requires overlay permission).
-*   **Data Persistence**:
-    *   Uses **Room Database** for local data storage, ensuring data is not lost upon restart.
-*   **Backup and Restore**:
-    *   Support exporting all badge data as JSON files or restoring from local files.
-*   **Data Synchronization**:
-    *   Support instant data synchronization between devices on the same local network (LAN) using a 6-digit code.
-*   **Internationalization**:
-    *   Supports multiple languages: Simplified Chinese, Traditional Chinese (Taiwan), and English.
-*   **Modern UI**:
-    *   Built entirely with **Jetpack Compose**, following Material Design 3 specifications.
-
-## 🛠️ Tech Stack
-
-*   **Language**: Kotlin
-*   **UI Framework**: Jetpack Compose (Material3)
-*   **Architecture**: MVVM (Model-View-ViewModel pattern with Repository)
-*   **Local Storage**: Android Jetpack Room (SQLite)
-*   **Hardware Interaction**: Android NFC API
-*   **Background Service**: Android Service (Floating Window)
-*   **Communication**: Socket & UDP Broadcast (for LAN Sync)
-*   **Build Tool**: Gradle (Kotlin DSL), Version Catalogs (libs.versions.toml)
-*   **Version Control**: Git
-*   **CI/CD**: GitHub Actions
-
-## 💻 Build & Run
-
-### Prerequisites
-*   Android Studio Ladybug or newer.
-*   JDK 11 or higher.
-*   An Android device with NFC support (for testing NFC functionality; emulators cannot fully simulate NFC touches).
-
-### Build Steps
-
-1.  **Clone the Repository**:
-    ```bash
-    git clone https://github.com/TatooiNoyo/BadgeManager.git
-    ```
-2.  **Open Project**:
-    Launch Android Studio, select "Open", and navigate to the cloned directory.
-3.  **Sync Gradle**:
-    Wait for Android Studio to download dependencies and sync the project.
-4.  **Run Application**:
-    Connect an Android device and click the "Run" button.
-
-### Building Release Version
-
-To build a release version APK file, you can use the following command:
-
-```bash
-./gradlew assembleRelease
-```
-
-The built APK file will be located in the `app/build/outputs/apk/release/` directory, with the filename format `BadgeManager_{version}_{version_code}_release.apk`.
+- **Badge management**: Add, edit, and delete badges while storing their title, notes, link, game channel, and custom tags. Badges can be filtered by tag and reordered by dragging.
+- **Fast entry**: Scan an NFC badge or paste a link to automatically identify saved badge information. Continuous Entry mode automatically saves the badge and clears the form after a link is filled in. Devices without NFC can enter badges manually.
+- **NFC reading and writing**: Read text or URI records in NDEF format and write a badge link to a writable, NDEF-compatible NFC tag from the badge details screen.
+- **Quick in-game access**: After granting overlay permission, double-tap the right edge of the screen while playing in landscape mode to open the badge menu, filter badges by tag, and launch the matching Sky game channel.
+- **Backup and migration**: Export all data to a JSON file and restore it by replacing existing data. Data can also be synchronized to another device on the same local network with a 6-digit share code.
+- **Selective sharing**: Select badges and copy their “title + link” as text, or create an encrypted `.badgeenc` file protected by a 6-digit verification code. Importing an encrypted file adds badges without replacing existing data.
+- **Languages and updates**: Supports Simplified Chinese, Traditional Chinese, and English, with in-app update checks.
 
 ## 📝 User Guide
 
-1.  **Add Badge**: Enter title and remark on the home page, select a channel. Manually enter a link, or tap an NFC tag with the back of the phone to automatically fill in the link, then click the "Add" button.
-2.  **Edit/Delete**: Click on a list item to enter the details page. Click "Save Update" after modifying content, or click "Delete" to remove the badge.
-3.  **NFC Input**: On any screen where you input a link, tapping an NFC tag will overwrite the current link input field content.
-4.  **Use Badge**: Click the floating button to open the badge menu, then click to use. Supports devices without NFC functionality.
-5.  **Management list**: Click on the list item to enter the detail page for editing. Long press the list item and drag to adjust the order of the badges.
-6.  **Data synchronization**: Switch to the "Backup and Restore" TAB, and you can:
-    *   Export/Import JSON backup files.
-    *   Use LAN synchronization:
-        *   Click on the "Nearby Share" tab
-        *   Select "I am Sender" to generate a 6-digit share code, or provide the code to the receiver
-        *   The receiver selects "I am Receiver" and enters the share code
-        *   Data will be securely transmitted over the local network without internet connection
-LAN discovery uses IPv4 UDP broadcasts. Client isolation, blocked broadcasts, and some VPN configurations can prevent discovery. Discovery and data transfer each have a 60-second deadline; the receiver has 120 seconds to confirm an import after receiving the data. Keep the app in the foreground during transfer.
+### Installation and permissions
 
-Imports accept up to 4 MiB of JSON and 10,000 badges. Limits per badge are 512 characters for the title, 4,096 for remarks, 8,192 for the link, and 32 tags of up to 128 characters each. Empty data, duplicate IDs, and invalid fields are rejected. Confirmation starts a single import operation. Replacements and shared-file batch imports use database transactions, preserving existing data on failure. LAN replacement requires a successful local backup first; the latest five backups are retained in cache.
+1. Download and install the latest APK from [Releases](https://github.com/TatooiNoyo/BadgeManager/releases). Android 10 (API 29) or later is required.
+2. Grant overlay permission on first launch to enable the in-game shortcut menu. NFC is optional; devices without NFC can still paste or manually enter links.
+3. To change the interface language, open the menu in the upper-right corner, go to “Settings,” and select a language.
 
-### Permissions
+### Adding and managing badges
 
-When running the app for the first time, the following permissions need to be granted:
-1.  **Overlay Permission**: Used to display the global floating ball. The app will automatically detect and redirect to the settings page to request this upon startup.
-2.  **NFC Permission**: Handled automatically by the system.
+1. On the “Entry” tab, select a game channel and enter the title, notes, link, and tags. You can also hold an NFC badge near the back of the phone to fill in the link, then tap “Add Badge.”
+2. Enable “Continuous Entry” when adding several badges. After an NFC scan, paste, or link entry, the app automatically adds the badge and clears the form.
+3. Tap a card in the badge list to edit or delete it, or to write its current link to an NFC tag. Drag the reorder handle on the right side of a card to change its position.
+4. Use the tags above the list to filter badges. You can also swipe left or right to switch between tags.
 
+### Using badges in the game
 
-## 🔄 Continuous Integration and Deployment
+1. Make sure the badge uses the same game channel as the installed game.
+2. Enter the game in landscape mode, then double-tap the right edge of the screen to open the overlay menu.
+3. Select a tag and tap a badge to send its link to the matching Sky game channel. The overlay menu is only visible in landscape mode.
 
-This project uses GitHub Actions for continuous integration and deployment:
+### Backup, sharing, and LAN synchronization
 
-* **Build Checks**: Automatically run build checks each time code is pushed to the repository.
-* **Automatic Releases**: When pushing commits with version tags (e.g., `v1.2.0`), automatically build the release version and create a GitHub Release.
+- **Full backup**: Export a JSON file from the “Backup” tab. Restoring from JSON replaces all current badges, so save a backup of the existing data first.
+- **Share selected badges**: Select badges on the “Share” tab, then copy them as text or create an encrypted `.badgeenc` file. Send both the file and its 6-digit verification code to the recipient. The recipient can open the file with Badge Manager and enter the code to add the badges.
+- **LAN synchronization**: Connect both devices to the same Wi-Fi network. On the “Nearby” tab, the sender generates a 6-digit share code, and the receiver enters the code and confirms the import. A successful synchronization replaces the receiver's existing data.
 
-## 🤝 Contribution
+If the devices cannot discover each other, check whether the router has client isolation enabled or UDP broadcasts disabled, and whether a VPN is blocking local network traffic.
 
-Issues and Pull Requests are welcome to improve this project!
+## 💻 Development Workflow
+
+### Requirements
+
+- Android Studio with support for Android Gradle Plugin 8.10.0
+- JDK 17
+- Android SDK 35
+- A device or emulator running Android 10 or later; NFC reading and writing require a physical NFC-capable device
+
+### Local development
+
+```bash
+git clone https://github.com/TatooiNoyo/BadgeManager.git
+cd BadgeManager
+./gradlew assembleDebug
+```
+
+The debug APK is generated at `app/build/outputs/apk/debug/app-debug.apk`. You can also open the project in Android Studio, wait for Gradle synchronization to finish, and run the `app` configuration.
+
+Before submitting changes, run:
+
+```bash
+./gradlew testDebugUnitTest assembleDebug
+```
+
+Pushing a `v*.*.*` tag triggers the GitHub Actions release build. A release build requires the project signing file and the `KEYSTORE_PASSWORD` and `KEY_PASSWORD` environment variables. Build artifacts are written to `app/build/outputs/apk/release/`.
+
+## 🤝 Contributing
+
+Bug reports and suggestions are welcome in [Issues](https://github.com/TatooiNoyo/BadgeManager/issues), and Pull Requests are welcome:
+
+1. Fork the repository and create a dedicated branch from `main`.
+2. Make your changes, add relevant tests, and ensure the project builds locally.
+3. Conventional Commits are recommended, for example: `feat: add ...`, `fix: resolve ...`, or `docs: update ...`.
+4. Open a Pull Request explaining what changed, why it changed, and how it was verified. Include screenshots or a screen recording for interface changes.
 
 ## 📄 License
 
-[MIT License](LICENSE)
+This project is licensed under the [MIT License](LICENSE).

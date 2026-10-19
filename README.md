@@ -1,4 +1,4 @@
-# 光遇徽章管理器 (Badge Manager)
+# 光遇徽章管理器（Badge Manager）
 
 [![GitHub stars](https://img.shields.io/github/stars/tatooinoyo/BadgeManager)](https://github.com/tatooinoyo/BadgeManager/stargazers)
 [![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/tatooinoyo/BadgeManager)](https://github.com/tatooinoyo/BadgeManager/releases)
@@ -6,116 +6,83 @@
 
 [English Version](README_EN.md)
 
-Badge Manager 是一个 Android 应用程序，帮助用户管理和快速启动“光遇star徽章”。它支持 NFC 读取功能，通过触碰
-NFC 标签快速填充链接，并提供悬浮球功能以便快速访问。
+Badge Manager 是一个Android 应用程序，帮助玩家管理和快速启动“光遇 Star 徽章”。使用它, 能在游戏中快速使用Star 徽章。
 
 ## ✨ 主要功能
 
-* **徽章管理 (CRUD)**:
-    * 创建、读取、更新和删除徽章。
-    * 徽章属性包括：标题、备注、链接 (URL)、标签 以及渠道类型。
-* **NFC 集成**:
-    * 支持 NFC 读取 (NDEF 格式)。
-    * 在主页或详情页触碰 NFC 标签，可自动将标签内容填充至“链接”输入框。
-* **悬浮窗服务**:
-    * 提供一个全局悬浮球 (Floating Action Button)。
-    * 允许用户在其他应用之上快速访问徽章功能（需开启悬浮窗权限）。
-* **数据持久化**:
-    * 使用 **Room Database** 进行本地数据存储，确保数据重启不丢失。
-* **备份与还原**:
-    * 支持将所有徽章数据导出为 JSON 文件，或从文件恢复。
-* **数据同步**:
-    * 支持在同网环境下, 将数据同步给其他设备。
-* **国际化支持**:
-    * 支持多种语言界面：简体中文、繁体中文（台湾）、英文。
-* **现代化 UI**:
-    * 完全使用 **Jetpack Compose** 构建，遵循 Material Design 3 规范。
-
-## 🛠️ 技术栈
-
-* **语言**: Kotlin
-* **UI 框架**: Jetpack Compose (Material3)
-* **架构**: MVVM (Model-View-ViewModel pattern with Repository)
-* **本地存储**: Android Jetpack Room (SQLite)
-* **硬件交互**: Android NFC API
-* **后台服务**: Android Service (Floating Window)
-* **网络通信**: Socket & UDP 广播（用于局域网同步）
-* **构建工具**: Gradle (Kotlin DSL), Version Catalogs (libs.versions.toml)
-* **版本控制**: Git
-* **CI/CD**: GitHub Actions
-
-## 💻 开发构建 (Build & Run)
-
-### 前置要求
-
-* Android Studio Ladybug 或更新版本。
-* JDK 11 或更高版本。
-* 一台支持 NFC 的 Android 设备（用于测试 NFC 功能，模拟器无法完全模拟 NFC 触碰）。
-
-### 编译步骤
-
-1. **克隆仓库**:
-   ```bash
-   git clone https://github.com/TatooiNoyo/BadgeManager.git
-   ```
-2. **打开项目**:
-   启动 Android Studio，选择 "Open"，然后导航到克隆的目录。
-3. **同步 Gradle**:
-   等待 Android Studio 下载依赖并同步项目。
-4. **运行应用**:
-   连接 Android 设备并点击 "Run" 按钮。
-
-### 构建发布版本
-
-要构建发布版本的 APK 文件，可以使用以下命令：
-
-```bash
-./gradlew assembleRelease
-```
-
-构建好的 APK 文件将位于 `app/build/outputs/apk/release/` 目录下，文件名格式为 `BadgeManager_{版本号}_{版本代码}_release.apk`。
+- **徽章管理**：录入、编辑和删除徽章，保存标题、备注、链接、游戏渠道与自定义标签；支持按标签筛选和拖拽排序。
+- **快速录入**：读取 NFC 徽章或粘贴链接后自动识别已收录的徽章信息；连续录入模式可在填入链接后自动保存并清空表单。没有 NFC 的设备也可手动录入。
+- **NFC 读写**：读取 NDEF 格式的文本或 URI，并可在徽章详情页将链接写入支持 NDEF 且可写的 NFC 标签。
+- **游戏内快捷使用**：授予悬浮窗权限后，在横屏游戏中双击屏幕右侧边缘打开徽章菜单，可按标签筛选并启动对应渠道的《光·遇》。
+- **备份与迁移**：将全部数据导出为 JSON 文件并覆盖还原；也可在同一局域网内使用 6 位分享码将数据同步到另一台设备。
+- **选择性分享**：选择部分徽章后复制“标题 + 链接”文本，或生成带 6 位验证码的 `.badgeenc` 加密文件；导入加密文件时只新增数据，不覆盖现有徽章。
+- **多语言与更新**：支持简体中文、繁体中文和英语，并可在应用内检查新版本。
 
 ## 📝 使用指南
 
-1. **添加徽章**: 在主页输入标题、备注，选择渠道。手动输入链接，或直接用手机背面触碰 NFC
-   标签自动填入链接，点击“添加”按钮。
-2. **编辑/删除**: 点击列表项进入详情页，修改内容后点击“保存更新”，或点击“删除”移除徽章。
-3. **NFC 录入**: 在任何输入链接的界面，触碰 NFC 标签即可覆盖当前链接输入框内容。
-4. **徽章使用**: 点击悬浮按钮打开徽章菜单， 点击即可使用。支持无NFC功能设备使用。
-5. **管理列表**: 点击列表项进入详情页编辑；**长按列表项并拖动**可调整徽章顺序。
-6. **数据同步**: 切换至“备份还原”标签页，您可以：
-    * 导出/导入 JSON 备份文件。
-    * 使用局域网同步功能：
-        * 点击“同网互传”标签页
-        * 选择“我是发送方”生成6位分享码，或将分享码提供给接收方
-        * 接收方选择“我是接收方”并输入分享码
-        * 数据将通过局域网安全传输，无需互联网连接
+### 安装与权限
 
-同网互传使用 IPv4 UDP 广播发现设备；路由器的客户端隔离、禁用广播或某些 VPN 可能阻止发现。搜索最多等待 60 秒，数据传输最多等待 60 秒，收到数据后有 120 秒确认导入。请在传输期间保持应用处于前台。
+1. 从 [Releases](https://github.com/TatooiNoyo/BadgeManager/releases) 下载最新 APK 并安装。应用要求 Android 10（API 29）或更高版本。
+2. 首次启动时授予悬浮窗权限，以便在游戏中显示快捷菜单。NFC 为可选功能，不支持 NFC 的设备仍可粘贴或手动输入链接。
+3. 如需切换界面语言，打开右上角菜单，进入“设置”选择语言。
 
-导入前会验证数据：JSON 最多 4 MiB、10,000 枚徽章，标题最多 512 字符、备注 4,096 字符、链接 8,192 字符，每枚徽章最多 32 个标签、每个标签最多 128 字符。空数据、重复 ID 和无效字段会被拒绝。确认后进入不可重复点击的导入状态；覆盖还原及分享文件的批量导入均通过数据库事务完成，失败时保留原数据。互传覆盖前必须成功保存本机备份，缓存保留最近 5 份。
+### 录入和管理徽章
 
-### 权限说明
+1. 在“录入”页选择游戏渠道，填写标题、备注、链接和标签。也可将 NFC 徽章贴近手机背面自动填入链接，然后点击“添加徽章”。
+2. 批量录入时开启“连续录入”：读取 NFC、粘贴或填入链接后，应用会自动添加徽章并清空表单。
+3. 在徽章列表中点击卡片可编辑或删除徽章，也可将当前链接写入 NFC 标签；拖动卡片右侧的排序手柄可调整顺序。
+4. 使用列表上方的标签筛选徽章；在不同标签之间也可左右滑动切换。
 
-首次运行应用时，需要授予以下权限：
+### 在游戏中使用徽章
 
-1. **悬浮窗权限**: 用于显示全局悬浮球。应用启动时会自动检测并跳转至设置页面请求。
-2. **NFC 权限**: 系统会自动处理。
+1. 确保目标徽章选择了与已安装游戏一致的渠道。
+2. 横屏进入游戏后，双击屏幕右侧边缘打开悬浮菜单。
+3. 选择标签并点击徽章，即可向对应渠道的《光·遇》发送徽章链接。悬浮菜单仅在横屏时显示。
 
-## 🌍 国际化
+### 备份、分享与同网同步
 
-本应用支持多种语言界面：
+- **完整备份**：在“备份”页导出 JSON 文件；从 JSON 还原会覆盖当前全部徽章，请先保存现有备份。
+- **分享部分徽章**：在“分享”页选择徽章，然后复制文本，或生成 `.badgeenc` 加密文件并将文件与 6 位验证码发给接收方。接收方使用本应用打开文件并输入验证码即可新增徽章。
+- **同网同步**：两台设备连接同一 Wi-Fi，在“同网”页由发送方生成 6 位分享码，接收方输入分享码并确认导入。同步成功后，接收方的现有数据会被覆盖。
 
-* 简体中文 (默认)
-* 繁体中文 (台湾)
-* 英语
+如果同网设备无法互相发现，请检查路由器是否启用了客户端隔离、禁用了 UDP 广播，或设备是否正在使用会拦截局域网流量的 VPN。
 
-您可以在应用内的设置界面中切换语言。
+## 💻 开发流程
+
+### 环境要求
+
+- Android Studio（支持 Android Gradle Plugin 8.10.0）
+- JDK 17
+- Android SDK 35
+- Android 10 或更高版本的设备或模拟器；测试 NFC 读写需要支持 NFC 的实体设备
+
+### 本地开发
+
+```bash
+git clone https://github.com/TatooiNoyo/BadgeManager.git
+cd BadgeManager
+./gradlew assembleDebug
+```
+
+Debug APK 生成在 `app/build/outputs/apk/debug/app-debug.apk`。也可用 Android Studio 打开项目，等待 Gradle 同步完成后运行 `app` 配置。
+
+提交改动前运行：
+
+```bash
+./gradlew testDebugUnitTest assembleDebug
+```
+
+发布版本由 `v*.*.*` 标签触发 GitHub Actions 构建。Release 构建需要项目签名文件以及 `KEYSTORE_PASSWORD`、`KEY_PASSWORD` 环境变量，产物位于 `app/build/outputs/apk/release/`。
 
 ## 🤝 贡献
 
-欢迎提交 Issue 或 Pull Request 来改进这个项目！
+欢迎通过 [Issues](https://github.com/TatooiNoyo/BadgeManager/issues) 报告问题或提出建议，也欢迎提交 Pull Request：
+
+1. Fork 仓库，并从 `main` 创建独立分支。
+2. 完成修改，补充与改动相关的测试，并确保本地构建通过。
+3. 提交信息建议遵循 Conventional Commits，例如 `feat: add ...`、`fix: resolve ...`、`docs: update ...`。
+4. 发起 Pull Request，说明改动内容、原因和验证方式；涉及界面调整时请附上截图或录屏。
 
 ## 📄 许可证
 
-[MIT License](LICENSE)
+本项目基于 [MIT License](LICENSE) 开源。
