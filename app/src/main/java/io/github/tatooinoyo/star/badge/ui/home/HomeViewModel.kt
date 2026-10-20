@@ -1,6 +1,5 @@
 package io.github.tatooinoyo.star.badge.ui.home
 
-import android.app.Activity
 import android.app.Application
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -11,7 +10,6 @@ import android.nfc.NdefRecord
 import android.nfc.Tag
 import android.nfc.tech.Ndef
 import android.util.Log
-import android.widget.Toast
 import android.os.Build
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -41,7 +39,9 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.IOException
 
 // 定义 UI 状态
@@ -63,6 +63,7 @@ data class BadgeUiState(
     val detailChannel: BadgeChannelTarget? = null,
     val detailTags: List<String> = emptyList(),
     val isWritingNfc: Boolean = false, // 是否正在等待写入 NFC
+    val isNfcWriteInProgress: Boolean = false,
     val extractedSk: String? = null, // 提取出的 SK 编码
     val isFunctionAreaExpanded: Boolean = true, // 记录功能区是否展开
     val selectedTag: String? = null,
@@ -99,6 +100,12 @@ private data class BadgeListFilterResult(
     val selectedTag: String?,
 )
 
+private data class NfcWriteOutcome(
+    val success: Boolean,
+    val messageRes: Int,
+    val detail: String? = null,
+)
+
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow(BadgeUiState())
@@ -109,6 +116,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     val uiEvent: SharedFlow<BadgeUiEvent> = _uiEvent.asSharedFlow()
 
     private val _selectedTag = MutableStateFlow<String?>(null) // null 代表显示全部
+    private var nfcWriteGeneration = 0L
+    private var nfcWriteJob: Job? = null
     private val packageChangeReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             refreshInstalledChannels()
@@ -568,8 +577,14 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun exitEditMode() {
+        nfcWriteGeneration++
         _uiState.value =
-            _uiState.value.copy(editingBadge = null, isWritingNfc = false, extractedSk = null)
+            _uiState.value.copy(
+                editingBadge = null,
+                isWritingNfc = false,
+                isNfcWriteInProgress = false,
+                extractedSk = null,
+            )
     }
 
     // === 拖拽排序 ===
@@ -628,72 +643,94 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     // === NFC 写入逻辑 ===
     fun startWritingNfc() {
-        _uiState.value = _uiState.value.copy(isWritingNfc = true)
+        nfcWriteGeneration++
+        _uiState.value = _uiState.value.copy(
+            isWritingNfc = true,
+            isNfcWriteInProgress = false,
+        )
     }
 
     fun cancelWritingNfc() {
-        _uiState.value = _uiState.value.copy(isWritingNfc = false)
+        // 已经进入系统 NFC I/O 的任务不强制中断，以免标签写到一半；忽略其迟到结果。
+        nfcWriteGeneration++
+        _uiState.value = _uiState.value.copy(
+            isWritingNfc = false,
+            isNfcWriteInProgress = false,
+        )
     }
 
-    fun writeNfcTag(tag: Tag, activity: Activity): Boolean {
-        if (!_uiState.value.isWritingNfc) return false
+    /**
+     * 接收 NFC 标签并把阻塞的 Ndef I/O 交给后台线程。
+     * 返回 true 表示该标签属于当前写入流程，调用方不应继续按读取事件处理。
+     */
+    fun writeNfcTag(tag: Tag): Boolean {
+        val state = _uiState.value
+        if (!state.isWritingNfc) return false
+        if (state.isNfcWriteInProgress || nfcWriteJob?.isActive == true) return true
 
-        val linkToWrite = _uiState.value.detailLink
+        val linkToWrite = state.detailLink
         if (linkToWrite.isBlank()) {
-            activity.runOnUiThread {
-                Toast.makeText(activity, R.string.nfc_write_link_empty, Toast.LENGTH_SHORT).show()
+            viewModelScope.launch {
+                _uiEvent.emit(
+                    BadgeUiEvent.ShowToast(localizedContext().getString(R.string.nfc_write_link_empty))
+                )
             }
-            return false
+            return true
         }
 
+        val operation = ++nfcWriteGeneration
+        _uiState.update { it.copy(isNfcWriteInProgress = true) }
+        nfcWriteJob = viewModelScope.launch(Dispatchers.IO) {
+            val outcome = writeNfcTagOnIo(tag, linkToWrite)
+            withContext(Dispatchers.Main) {
+                if (operation != nfcWriteGeneration) return@withContext
+
+                _uiState.update {
+                    it.copy(
+                        isWritingNfc = !outcome.success,
+                        isNfcWriteInProgress = false,
+                    )
+                }
+                val context = localizedContext()
+                val message = if (outcome.detail == null) {
+                    context.getString(outcome.messageRes)
+                } else {
+                    context.getString(outcome.messageRes, outcome.detail)
+                }
+                _uiEvent.emit(BadgeUiEvent.ShowToast(message))
+            }
+        }
+        return true
+    }
+
+    private fun writeNfcTagOnIo(tag: Tag, link: String): NfcWriteOutcome {
         val ndef = Ndef.get(tag)
-        if (ndef == null) {
-            activity.runOnUiThread {
-                Toast.makeText(activity, R.string.nfc_write_not_ndef, Toast.LENGTH_SHORT).show()
-            }
-            return false
-        }
-
-        try {
+            ?: return NfcWriteOutcome(false, R.string.nfc_write_not_ndef)
+        return try {
             ndef.connect()
             if (!ndef.isWritable) {
-                activity.runOnUiThread {
-                    Toast.makeText(activity, R.string.nfc_write_readonly, Toast.LENGTH_SHORT).show()
+                NfcWriteOutcome(false, R.string.nfc_write_readonly)
+            } else {
+                val message = NdefMessage(arrayOf(NdefRecord.createUri(link)))
+                if (ndef.maxSize < message.toByteArray().size) {
+                    NfcWriteOutcome(false, R.string.nfc_write_insufficient_capacity)
+                } else {
+                    ndef.writeNdefMessage(message)
+                    NfcWriteOutcome(true, R.string.nfc_write_success)
                 }
-                return false
             }
-
-            val ndefRecord = NdefRecord.createUri(linkToWrite)
-            val ndefMessage = NdefMessage(arrayOf(ndefRecord))
-
-            if (ndef.maxSize < ndefMessage.toByteArray().size) {
-                activity.runOnUiThread {
-                    Toast.makeText(activity, R.string.nfc_write_insufficient_capacity, Toast.LENGTH_SHORT).show()
-                }
-                return false
-            }
-
-            ndef.writeNdefMessage(ndefMessage)
-            activity.runOnUiThread {
-                Toast.makeText(activity, R.string.nfc_write_success, Toast.LENGTH_SHORT).show()
-            }
-            _uiState.value = _uiState.value.copy(isWritingNfc = false)
-            return true
         } catch (e: Exception) {
-            e.printStackTrace()
-            activity.runOnUiThread {
-                Toast.makeText(
-                    activity,
-                    activity.getString(R.string.nfc_write_failed, e.message),
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-            return false
+            Log.e("HomeViewModel", "NFC write failed", e)
+            NfcWriteOutcome(
+                success = false,
+                messageRes = R.string.nfc_write_failed,
+                detail = e.localizedMessage ?: e.javaClass.simpleName,
+            )
         } finally {
             try {
                 ndef.close()
             } catch (e: IOException) {
-                e.printStackTrace()
+                Log.w("HomeViewModel", "Failed to close NFC tag", e)
             }
         }
     }

@@ -55,6 +55,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -298,6 +299,7 @@ fun HomeScreen(
             allTags = uiState.allTags,
             onTagsChange = { viewModelInstance.updateDetailInput(tags = it) },
             isWritingNfc = uiState.isWritingNfc,
+            isNfcWriteInProgress = uiState.isNfcWriteInProgress,
             onTitleChange = { viewModelInstance.updateDetailInput(title = it) },
             onRemarkChange = { viewModelInstance.updateDetailInput(remark = it) },
             onLinkChange = { viewModelInstance.updateDetailInput(link = it) },
@@ -717,6 +719,7 @@ fun BadgeDetailContent(
     allTags: List<String>,
     onTagsChange: (List<String>) -> Unit,
     isWritingNfc: Boolean,
+    isNfcWriteInProgress: Boolean,
     onTitleChange: (String) -> Unit,
     onRemarkChange: (String) -> Unit,
     onLinkChange: (String) -> Unit,
@@ -878,8 +881,31 @@ fun BadgeDetailContent(
     if (isWritingNfc) {
         AlertDialog(
             onDismissRequest = onCancelWriteNfcClick,
-            title = { Text(stringResource(R.string.prepare_write_nfc)) },
-            text = { Text(stringResource(R.string.prepare_write_nfc_message, link)) },
+            title = {
+                Text(
+                    stringResource(
+                        if (isNfcWriteInProgress) R.string.writing_nfc
+                        else R.string.prepare_write_nfc,
+                    )
+                )
+            },
+            text = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    if (isNfcWriteInProgress) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    }
+                    Text(
+                        if (isNfcWriteInProgress) {
+                            stringResource(R.string.writing_nfc_message)
+                        } else {
+                            stringResource(R.string.prepare_write_nfc_message, link)
+                        }
+                    )
+                }
+            },
             confirmButton = {
                 TextButton(onClick = onCancelWriteNfcClick) {
                     Text(stringResource(R.string.cancel))

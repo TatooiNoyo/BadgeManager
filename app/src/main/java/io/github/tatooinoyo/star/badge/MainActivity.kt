@@ -182,12 +182,9 @@ class MainActivity : ComponentActivity() {
 
         // 使用共享的 ViewModel 实例处理 NFC 写入
         if (tag != null && ::homeViewModel.isInitialized) {
-            if (homeViewModel.uiState.value.isWritingNfc) {
-                val success = homeViewModel.writeNfcTag(tag, this)
-                if (success) {
-                    // 写入成功，不需要继续解析读取了
-                    return
-                }
+            if (homeViewModel.writeNfcTag(tag)) {
+                // 写入已交给后台任务处理，不能再把同一标签作为读取事件处理。
+                return
             }
         }
 

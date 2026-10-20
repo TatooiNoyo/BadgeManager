@@ -182,6 +182,8 @@
     <string name="confirm_update_message">Are you sure you want to save changes to "%1$s"?</string>
     <string name="prepare_write_nfc">Prepare to Write NFC</string>
     <string name="prepare_write_nfc_message">Please place the NFC card against the back of your phone to write data.\nTarget link: %1$s</string>
+    <string name="writing_nfc">Writing NFC</string>
+    <string name="writing_nfc_message">Keep the NFC tag against the phone until writing finishes.</string>
     <string name="cancel">Cancel</string>
     <string name="title">Title</string>
     <string name="title_placeholder">Title (e.g. Little One)</string>

@@ -182,6 +182,8 @@
     <string name="confirm_update_message">确定要保存对“%1$s”的修改吗？</string>
     <string name="prepare_write_nfc">准备写入 NFC</string>
     <string name="prepare_write_nfc_message">请将 NFC 卡片紧贴手机背面以写入数据。\n目标链接: %1$s</string>
+    <string name="writing_nfc">正在写入 NFC</string>
+    <string name="writing_nfc_message">请保持 NFC 标签紧贴手机，直到写入完成。</string>
     <string name="cancel">取消</string>
     <string name="title">标题</string>
     <string name="title_placeholder">标题 (如: 小不点)</string>
