@@ -13,13 +13,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -30,8 +33,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.tatooinoyo.star.badge.R
 import io.github.tatooinoyo.star.badge.data.BadgeChannelTarget
@@ -40,6 +45,8 @@ import io.github.tatooinoyo.star.badge.ui.component.CapsuleTab
 import io.github.tatooinoyo.star.badge.ui.home.BadgeUiState
 import io.github.tatooinoyo.star.badge.ui.icons.BadgeIcons
 import io.github.tatooinoyo.star.badge.ui.state.SyncState
+import io.github.tatooinoyo.star.badge.ui.theme.BorderDefault
+import io.github.tatooinoyo.star.badge.ui.theme.BrandOrange
 import io.github.tatooinoyo.star.badge.ui.theme.TextPrimary
 import kotlinx.coroutines.launch
 
@@ -190,64 +197,67 @@ fun MenuButton(
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
+            shape = MaterialTheme.shapes.medium,
+            containerColor = Color.White,
+            tonalElevation = 0.dp,
+            shadowElevation = 8.dp,
         ) {
-            DropdownMenuItem(
-                text = {
-                    Text(
-                        stringResource(R.string.settings),
-                        color = TextPrimary,
-                    )
-                },
+            SettingsMenuItem(
+                text = stringResource(R.string.settings),
+                iconRes = BadgeIcons.Settings,
                 onClick = {
                     expanded = false
                     onSettingsClick()
                 },
-                leadingIcon = {
-                    Icon(
-                        painter = painterResource(BadgeIcons.Settings),
-                        contentDescription = null,
-                        tint = TextPrimary,
-                    )
-                },
             )
-            DropdownMenuItem(
-                text = {
-                    Text(
-                        stringResource(R.string.help_us),
-                        color = TextPrimary,
-                    )
-                },
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                color = BorderDefault,
+            )
+            SettingsMenuItem(
+                text = stringResource(R.string.help_us),
+                iconRes = BadgeIcons.Heart,
                 onClick = {
                     expanded = false
                     onUnrecordedBadgesClick()
                 },
-                leadingIcon = {
-                    Icon(
-                        painter = painterResource(BadgeIcons.Heart),
-                        contentDescription = null,
-                        tint = TextPrimary,
-                    )
-                },
             )
-            DropdownMenuItem(
-                text = {
-                    Text(
-                        stringResource(R.string.about),
-                        color = TextPrimary,
-                    )
-                },
+            SettingsMenuItem(
+                text = stringResource(R.string.about),
+                iconRes = BadgeIcons.Info,
                 onClick = {
                     expanded = false
                     onAboutClick()
                 },
-                leadingIcon = {
-                    Icon(
-                        painter = painterResource(BadgeIcons.Info),
-                        contentDescription = null,
-                        tint = TextPrimary,
-                    )
-                },
             )
         }
     }
+}
+
+@Composable
+private fun SettingsMenuItem(
+    text: String,
+    iconRes: Int,
+    onClick: () -> Unit,
+) {
+    DropdownMenuItem(
+        text = {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyMedium,
+                color = TextPrimary,
+                fontWeight = FontWeight.Medium,
+            )
+        },
+        leadingIcon = {
+            Icon(
+                painter = painterResource(iconRes),
+                contentDescription = null,
+                tint = BrandOrange,
+                modifier = Modifier.size(20.dp),
+            )
+        },
+        onClick = onClick,
+        modifier = Modifier.padding(horizontal = 4.dp),
+    )
 }
