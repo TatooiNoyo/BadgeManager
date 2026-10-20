@@ -169,6 +169,7 @@
     <string name="channel_none_installed">未安装可接收徽章的应用</string>
     <string name="channel_choose_other_app">选择其他应用</string>
     <string name="channel_installed">已安装</string>
+    <string name="channel_label">渠道</string>
     <string name="edit_badge_details">编辑徽章详情</string>
     <string name="write_link_to_nfc_card">写入链接到 NFC 卡片</string>
     <string name="exit">退出</string>

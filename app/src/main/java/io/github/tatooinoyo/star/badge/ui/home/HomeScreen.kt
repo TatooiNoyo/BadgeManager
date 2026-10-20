@@ -44,22 +44,22 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.InputChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -71,6 +71,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -105,7 +106,9 @@ import io.github.tatooinoyo.star.badge.ui.icons.BadgeIcons
 import io.github.tatooinoyo.star.badge.ui.state.SyncState
 import io.github.tatooinoyo.star.badge.ui.theme.BorderDefault
 import io.github.tatooinoyo.star.badge.ui.theme.BrandOrange
+import io.github.tatooinoyo.star.badge.ui.theme.BrandOrangeLight
 import io.github.tatooinoyo.star.badge.ui.theme.PeachTheme
+import io.github.tatooinoyo.star.badge.ui.theme.TextPrimary
 import io.github.tatooinoyo.star.badge.ui.theme.TextSecondary
 import io.github.tatooinoyo.star.badge.utils.export.BadgeShareFormat
 import io.github.tatooinoyo.star.badge.utils.update.UpdateCheckResult
@@ -976,52 +979,97 @@ fun BadgeInputForm(
         ) {
 
             Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
-                // 使用 Box 和一个不可编辑的 TextField 来模拟下拉框触发器
-                // 注意：这里我们覆盖在 TextField 上加了一个点击区域
-                Box(
+                val arrowRotation by animateFloatAsState(
+                    targetValue = if (channelMenuExpanded) 180f else 0f,
+                    label = "channelArrowRotation",
+                )
+                Row(
                     modifier = Modifier
-                        .clickable { channelMenuExpanded = true }
-                ) {
-                    OutlinedTextField(
-                        value = channel?.getLabel(LocalContext.current)
-                            ?: stringResource(R.string.channel_none_installed),
-                        onValueChange = {},
-                        textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp),
-                        readOnly = true,
-                        trailingIcon = {
-                            Icon(
-                                Icons.Default.ArrowDropDown,
-                                contentDescription = null
-                            )
-                        },
-                        modifier = Modifier.width(150.dp),
-                        enabled = false, // 禁用自带输入，完全靠点击触发
-                        colors = TextFieldDefaults.colors(
-                            disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                            disabledContainerColor = Color.Transparent,
-                            disabledIndicatorColor = MaterialTheme.colorScheme.outline,
-                            disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        .width(88.dp)
+                        .clip(MaterialTheme.shapes.small)
+                        .background(Color.White)
+                        .border(
+                            width = 1.dp,
+                            color = if (channelMenuExpanded) BrandOrange else BorderDefault,
+                            shape = MaterialTheme.shapes.small,
                         )
-                    )
+                        .clickable { channelMenuExpanded = true }
+                        .padding(horizontal = 8.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.channel_label),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = TextSecondary,
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = channel?.getLabel(LocalContext.current)
+                                    ?: stringResource(R.string.channel_none_installed),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = TextPrimary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f, fill = false),
+                            )
+                        }
+                    }
+                    Box(
+                        modifier = Modifier
+                            .padding(start = 2.dp)
+                            .size(22.dp)
+                            .clip(androidx.compose.foundation.shape.CircleShape)
+                            .background(BrandOrangeLight),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            Icons.Default.KeyboardArrowDown,
+                            contentDescription = null,
+                            tint = BrandOrange,
+                            modifier = Modifier.size(16.dp).rotate(arrowRotation),
+                        )
+                    }
                 }
 
                 DropdownMenu(
                     expanded = channelMenuExpanded,
-                    onDismissRequest = { channelMenuExpanded = false }
+                    onDismissRequest = { channelMenuExpanded = false },
+                    modifier = Modifier.width(280.dp),
+                    shape = MaterialTheme.shapes.medium,
+                    containerColor = Color.White,
+                    tonalElevation = 0.dp,
+                    shadowElevation = 8.dp,
                 ) {
                     directChannels.forEach { option ->
+                        val selected = channel?.packageName == option.packageName
                         DropdownMenuItem(
                             text = {
                                 Column {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(option.getLabel(LocalContext.current))
+                                        Text(
+                                            text = option.getLabel(LocalContext.current),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = if (selected) BrandOrange else TextPrimary,
+                                            fontWeight = if (selected) {
+                                                androidx.compose.ui.text.font.FontWeight.SemiBold
+                                            } else {
+                                                androidx.compose.ui.text.font.FontWeight.Normal
+                                            },
+                                        )
                                         if (option.isInstalled) {
-                                            Text(
-                                                text = stringResource(R.string.channel_installed),
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.primary,
+                                            Surface(
                                                 modifier = Modifier.padding(start = 8.dp),
-                                            )
+                                                color = BrandOrangeLight,
+                                                shape = MaterialTheme.shapes.extraSmall,
+                                            ) {
+                                                Text(
+                                                    text = stringResource(R.string.channel_installed),
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = BrandOrange,
+                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                                )
+                                            }
                                         }
                                     }
                                     if (option.channel == io.github.tatooinoyo.star.badge.data.BadgeChannel.CUSTOM) {
@@ -1033,15 +1081,39 @@ fun BadgeInputForm(
                                     }
                                 }
                             },
+                            trailingIcon = if (selected) {
+                                {
+                                    Icon(
+                                        painter = painterResource(BadgeIcons.Check),
+                                        contentDescription = null,
+                                        tint = BrandOrange,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                }
+                            } else null,
                             onClick = {
                                 onChannelChange(option)
                                 channelMenuExpanded = false
-                            }
+                            },
+                            modifier = Modifier.background(
+                                if (selected) BrandOrangeLight.copy(alpha = 0.45f) else Color.Transparent
+                            ),
                         )
                     }
                     if (otherApps.isNotEmpty()) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                            color = BorderDefault,
+                        )
                         DropdownMenuItem(
-                            text = { Text(stringResource(R.string.channel_choose_other_app)) },
+                            text = {
+                                Text(
+                                    text = stringResource(R.string.channel_choose_other_app),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = BrandOrange,
+                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+                                )
+                            },
                             onClick = {
                                 channelMenuExpanded = false
                                 otherAppsExpanded = true
