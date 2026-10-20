@@ -2,18 +2,24 @@ package io.github.tatooinoyo.star.badge.ui.home
 
 import android.app.Activity
 import android.app.Application
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.nfc.NdefMessage
 import android.nfc.NdefRecord
 import android.nfc.Tag
 import android.nfc.tech.Ndef
 import android.util.Log
 import android.widget.Toast
+import android.os.Build
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.tatooinoyo.star.badge.R
 import io.github.tatooinoyo.star.badge.data.Badge
-import io.github.tatooinoyo.star.badge.data.BadgeChannel
+import io.github.tatooinoyo.star.badge.data.BadgeChannelTarget
 import io.github.tatooinoyo.star.badge.data.BadgeRepository
+import io.github.tatooinoyo.star.badge.data.InstalledChannelProvider
 import io.github.tatooinoyo.star.badge.utils.LanguageManager
 import io.github.tatooinoyo.star.badge.utils.BadgeImportValidator
 import io.github.tatooinoyo.star.badge.utils.readBoundedBytes
@@ -34,6 +40,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.IOException
 
@@ -46,13 +53,14 @@ data class BadgeUiState(
     val addTitle: String = "",
     val addRemark: String = "",
     val addLink: String = "",
-    val addChannel: BadgeChannel = BadgeChannel.HUAWEI,
+    val addChannel: BadgeChannelTarget? = null,
+    val availableChannels: List<BadgeChannelTarget> = emptyList(),
     val isFastMode: Boolean = false,
     // 详情模式下的输入状态 (如果是分离的页面，也可以拆分 ViewModel，这里为了简单先放一起)
     val detailTitle: String = "",
     val detailRemark: String = "",
     val detailLink: String = "",
-    val detailChannel: BadgeChannel = BadgeChannel.HUAWEI,
+    val detailChannel: BadgeChannelTarget? = null,
     val detailTags: List<String> = emptyList(),
     val isWritingNfc: Boolean = false, // 是否正在等待写入 NFC
     val extractedSk: String? = null, // 提取出的 SK 编码
@@ -101,8 +109,26 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     val uiEvent: SharedFlow<BadgeUiEvent> = _uiEvent.asSharedFlow()
 
     private val _selectedTag = MutableStateFlow<String?>(null) // null 代表显示全部
+    private val packageChangeReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            refreshInstalledChannels()
+        }
+    }
 
     init {
+        val packageFilter = IntentFilter().apply {
+            addAction(Intent.ACTION_PACKAGE_ADDED)
+            addAction(Intent.ACTION_PACKAGE_REMOVED)
+            addAction(Intent.ACTION_PACKAGE_CHANGED)
+            addDataScheme("package")
+        }
+        if (Build.VERSION.SDK_INT >= 33) {
+            application.registerReceiver(packageChangeReceiver, packageFilter, Context.RECEIVER_EXPORTED)
+        } else {
+            @Suppress("DEPRECATION")
+            application.registerReceiver(packageChangeReceiver, packageFilter)
+        }
+        refreshInstalledChannels()
         // 收集 Repository 的 Flow 和 选中的标签 Flow，合并计算后更新 UI 状态
         viewModelScope.launch {
             combine(
@@ -130,6 +156,25 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                         selectedTag = result.selectedTag,
                     )
                 }
+            }
+        }
+    }
+
+    override fun onCleared() {
+        runCatching { getApplication<Application>().unregisterReceiver(packageChangeReceiver) }
+        super.onCleared()
+    }
+
+    fun refreshInstalledChannels() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val channels = InstalledChannelProvider.discover(getApplication())
+            _uiState.update { state ->
+                state.copy(
+                    availableChannels = channels,
+                    addChannel = state.addChannel ?: channels.firstOrNull {
+                        it.acceptsBadgeLinks && it.isInstalled
+                    },
+                )
             }
         }
     }
@@ -382,7 +427,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         title: String = _uiState.value.addTitle,
         remark: String = _uiState.value.addRemark,
         link: String = _uiState.value.addLink,
-        channel: BadgeChannel = _uiState.value.addChannel,
+        channel: BadgeChannelTarget? = _uiState.value.addChannel,
         tags: List<String> = _uiState.value.addTags
     ) {
         val isLinkChanged = link != _uiState.value.addLink
@@ -423,7 +468,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     fun addBadge() {
         val state = _uiState.value
-        if (state.addTitle.isNotBlank()) {
+        if (state.addTitle.isNotBlank() && state.addChannel != null) {
             // 兼容没有协议的链接
             val finalLink = normalizeLink(state.addLink)
             val title = state.addTitle
@@ -453,7 +498,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             detailTitle = badge.title,
             detailRemark = badge.remark,
             detailLink = badge.link,
-            detailChannel = badge.channel,
+            detailChannel = badge.channelTarget(localizedContext()),
             detailTags = badge.tags
         )
     }
@@ -462,7 +507,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         title: String = _uiState.value.detailTitle,
         remark: String = _uiState.value.detailRemark,
         link: String = _uiState.value.detailLink,
-        channel: BadgeChannel = _uiState.value.detailChannel,
+        channel: BadgeChannelTarget? = _uiState.value.detailChannel,
         tags: List<String> = _uiState.value.detailTags
     ) {
         val isLinkChanged = link != _uiState.value.detailLink
@@ -489,10 +534,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun saveBadgeUpdate() {
         val state = _uiState.value
         state.editingBadge?.let { originalBadge ->
+            val selectedChannel = state.detailChannel ?: return@let
             val finalLink = normalizeLink(state.detailLink)
             val title = state.detailTitle
             val remark = state.detailRemark
-            val channel = state.detailChannel
             val tags = state.detailTags
             val orderIndex = originalBadge.orderIndex
             val id = originalBadge.id
@@ -503,7 +548,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     title,
                     remark,
                     finalLink,
-                    channel,
+                    selectedChannel,
                     orderIndex,
                     tags
                 )

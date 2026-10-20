@@ -76,7 +76,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.tatooinoyo.star.badge.R
-import io.github.tatooinoyo.star.badge.data.BadgeChannel
+import io.github.tatooinoyo.star.badge.data.BadgeChannelTarget
 import io.github.tatooinoyo.star.badge.ui.home.BadgeInputForm
 import io.github.tatooinoyo.star.badge.ui.home.BadgeUiState
 import io.github.tatooinoyo.star.badge.ui.component.OutlinedOrangeButton
@@ -98,7 +98,7 @@ fun BadgeInputPanel(
     onInputTitleChange: (String) -> Unit,
     onInputRemarkChange: (String) -> Unit,
     onInputLinkChange: (String) -> Unit,
-    onInputChannelChange: (BadgeChannel) -> Unit,
+    onInputChannelChange: (BadgeChannelTarget) -> Unit,
     onFastModeChange: (Boolean) -> Unit,
     onAddClick: () -> Unit,
     onExtractSkClick: (String) -> Unit,
@@ -127,6 +127,7 @@ fun BadgeInputPanel(
             link = uiState.addLink,
             onLinkChange = onInputLinkChange,
             channel = uiState.addChannel,
+            availableChannels = uiState.availableChannels,
             onChannelChange = onInputChannelChange,
             allTags = uiState.allTags,
             selectedTags = uiState.addTags,

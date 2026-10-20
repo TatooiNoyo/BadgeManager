@@ -336,7 +336,7 @@ private fun BadgeListCard(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    ServerTag(text = badge.channel.getLabel(LocalContext.current))
+                    ServerTag(text = badge.getChannelLabel(LocalContext.current))
                     badge.tags.forEach { tag ->
                         CategoryTag(text = tag)
                     }

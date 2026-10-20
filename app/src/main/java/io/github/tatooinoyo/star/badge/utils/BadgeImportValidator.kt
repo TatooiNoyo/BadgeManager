@@ -52,6 +52,16 @@ object BadgeImportValidator {
             val channel = if (obj.has("channel")) {
                 BadgeChannel.valueOf(obj.text("channel", 32))
             } else BadgeChannel.NETEASE
+            val channelPackageName = obj.optionalText("channelPackageName", 256)
+            val channelActivityName = obj.optionalText("channelActivityName", 512)
+            val channelLabel = obj.optionalText("channelLabel", 256)
+            val hasConcreteTarget = channelPackageName.isNotEmpty() ||
+                channelActivityName.isNotEmpty() || channelLabel.isNotEmpty()
+            if (channel == BadgeChannel.CUSTOM || hasConcreteTarget) {
+                require(PACKAGE_NAME.matches(channelPackageName)) { "Invalid channel package" }
+                require(channelActivityName.isNotBlank()) { "Invalid channel activity" }
+                require(channelLabel.isNotBlank()) { "Invalid channel label" }
+            }
             val tags = if (obj.has("tags")) {
                 require(obj["tags"].isJsonArray) { "Invalid tags" }
                 val values: JsonArray = obj.getAsJsonArray("tags")
@@ -69,6 +79,9 @@ object BadgeImportValidator {
                 channel = channel,
                 orderIndex = orderIndex,
                 tags = tags,
+                channelPackageName = channelPackageName,
+                channelActivityName = channelActivityName,
+                channelLabel = channelLabel,
             )
         }
     }
@@ -76,8 +89,13 @@ object BadgeImportValidator {
     private fun JsonObject.text(key: String, limit: Int): String =
         string(get(key) ?: error("Missing $key"), limit)
 
+    private fun JsonObject.optionalText(key: String, limit: Int): String =
+        if (has(key)) text(key, limit) else ""
+
     private fun string(value: JsonElement, limit: Int): String {
         require(value.isJsonPrimitive && value.asJsonPrimitive.isString) { "Expected a string" }
         return value.asString.also { require(it.length <= limit) { "Field is too long" } }
     }
+
+    private val PACKAGE_NAME = Regex("[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z][A-Za-z0-9_]*)+")
 }

@@ -26,11 +26,33 @@ enum class BadgeChannel(val labelResId: Int, val packageName: String, val classN
     BILIBILI(R.string.channel_bilibili, "com.netease.sky.bilibili", "com.tgc.sky.netease.GameActivity_Netease"),
     VIVO(R.string.channel_vivo, "com.netease.sky.vivo", "com.tgc.sky.netease.GameActivity_Netease"),
     NETEASE(R.string.channel_netease, "com.netease.sky", "com.tgc.sky.netease.GameActivity_Netease"),
-    SKY(R.string.channel_sky, "com.tgc.sky.android", "com.tgc.sky.GameActivity");
+    SKY(R.string.channel_sky, "com.tgc.sky.android", "com.tgc.sky.GameActivity"),
+    CUSTOM(R.string.channel_custom, "", "");
 
     fun getLabel(context: Context): String {
         return context.getString(labelResId)
     }
+
+    companion object {
+        fun fromPackageName(packageName: String): BadgeChannel? =
+            entries.firstOrNull { it != CUSTOM && it.packageName == packageName }
+    }
+}
+
+data class BadgeChannelTarget(
+    val channel: BadgeChannel,
+    val packageName: String,
+    val activityName: String,
+    val label: String,
+    val acceptsBadgeLinks: Boolean = true,
+    val isInstalled: Boolean = true,
+) {
+    fun getLabel(context: Context): String =
+        if (channel != BadgeChannel.CUSTOM && packageName == channel.packageName) {
+            channel.getLabel(context)
+        } else {
+            label
+        }
 }
 
 // 1. 徽章数据模型
@@ -43,8 +65,27 @@ data class Badge(
     val channel: BadgeChannel = BadgeChannel.NETEASE,
     val orderIndex: Int,
     // 新增：标签列表
-    val tags: List<String> = emptyList()
+    val tags: List<String> = emptyList(),
+    val channelPackageName: String = "",
+    val channelActivityName: String = "",
+    val channelLabel: String = "",
 ) {
+    fun channelTarget(context: Context): BadgeChannelTarget {
+        val packageName = channelPackageName.ifBlank { channel.packageName }
+        return BadgeChannelTarget(
+            channel = channel,
+            packageName = packageName,
+            activityName = channelActivityName.ifBlank { channel.className },
+            label = if (channel != BadgeChannel.CUSTOM && packageName == channel.packageName) {
+                channel.getLabel(context)
+            } else {
+                channelLabel.ifBlank { channel.getLabel(context) }
+            },
+        )
+    }
+
+    fun getChannelLabel(context: Context): String = channelTarget(context).getLabel(context)
+
     fun usage(context: Context) {
         try {
             // 对应 action: "android.nfc.action.NDEF_DISCOVERED"
@@ -61,8 +102,12 @@ data class Badge(
                 intent.data = Uri.parse(link)
             }
 
-            // 对应 packageName 和 className
-            intent.setClassName(channel.packageName, channel.className)
+            val target = channelTarget(context)
+            if (target.activityName.isNotBlank()) {
+                intent.setClassName(target.packageName, target.activityName)
+            } else {
+                intent.setPackage(target.packageName)
+            }
 
             // 必须添加：因为可能从 Service (悬浮窗) 启动 Activity，需要加 NEW_TASK 标记
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -115,7 +160,7 @@ object BadgeRepository {
         title: String,
         remark: String,
         link: String,
-        channel: BadgeChannel,
+        channel: BadgeChannelTarget,
         tags: List<String> = emptyList()
     ) {
         val currentMaxOrder = _badges.value.maxOfOrNull { it.orderIndex } ?: 0
@@ -123,9 +168,12 @@ object BadgeRepository {
             title = title,
             remark = remark,
             link = link,
-            channel = channel,
+            channel = channel.channel,
             tags = tags,
-            orderIndex = currentMaxOrder + 1
+            orderIndex = currentMaxOrder + 1,
+            channelPackageName = channel.packageName,
+            channelActivityName = channel.activityName,
+            channelLabel = channel.label,
         )
         requireDao().insertBadge(newBadge)
     }
@@ -135,11 +183,22 @@ object BadgeRepository {
         title: String,
         remark: String,
         link: String,
-        channel: BadgeChannel,
+        channel: BadgeChannelTarget,
         orderIndex: Int,
         tags: List<String>
     ) {
-        val badge = Badge(id, title, remark, link, channel, orderIndex, tags)
+        val badge = Badge(
+            id = id,
+            title = title,
+            remark = remark,
+            link = link,
+            channel = channel.channel,
+            orderIndex = orderIndex,
+            tags = tags,
+            channelPackageName = channel.packageName,
+            channelActivityName = channel.activityName,
+            channelLabel = channel.label,
+        )
         requireDao().updateBadge(badge)
     }
 

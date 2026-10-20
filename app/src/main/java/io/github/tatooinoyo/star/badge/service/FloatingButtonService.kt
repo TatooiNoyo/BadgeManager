@@ -182,7 +182,7 @@ class FloatingButtonService : Service() {
                         id = badge.id,
                         title = badge.title,
                         icon = Icons.Default.Star,
-                        channel = badge.channel,
+                        channelLabel = badge.getChannelLabel(context),
                         remark = badge.remark
                     ) {
                         Toast.makeText(

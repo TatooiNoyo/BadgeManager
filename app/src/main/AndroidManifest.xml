@@ -9,6 +9,23 @@
         android:name="android.hardware.nfc"
         android:required="false" />
 
+    <queries>
+        <package android:name="com.netease.sky.huawei" />
+        <package android:name="com.netease.sky.bilibili" />
+        <package android:name="com.netease.sky.vivo" />
+        <package android:name="com.netease.sky" />
+        <package android:name="com.tgc.sky.android" />
+        <intent>
+            <action android:name="android.nfc.action.NDEF_DISCOVERED" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <data android:scheme="https" android:host="sky.thatg.co" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"

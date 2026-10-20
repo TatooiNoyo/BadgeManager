@@ -34,7 +34,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.tatooinoyo.star.badge.R
-import io.github.tatooinoyo.star.badge.data.BadgeChannel
+import io.github.tatooinoyo.star.badge.data.BadgeChannelTarget
 import io.github.tatooinoyo.star.badge.ui.component.BadgeMenuButton
 import io.github.tatooinoyo.star.badge.ui.component.CapsuleTab
 import io.github.tatooinoyo.star.badge.ui.home.BadgeUiState
@@ -50,7 +50,7 @@ fun ColumnScope.BadgeFunctionArea(
     onInputTitleChange: (String) -> Unit,
     onInputRemarkChange: (String) -> Unit,
     onInputLinkChange: (String) -> Unit,
-    onInputChannelChange: (BadgeChannel) -> Unit,
+    onInputChannelChange: (BadgeChannelTarget) -> Unit,
     onFastModeChange: (Boolean) -> Unit,
     onAddClick: () -> Unit,
     onExtractSkClick: (String) -> Unit,

@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -37,6 +38,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -85,7 +87,7 @@ import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.tatooinoyo.star.badge.R
 import io.github.tatooinoyo.star.badge.data.Badge
-import io.github.tatooinoyo.star.badge.data.BadgeChannel
+import io.github.tatooinoyo.star.badge.data.BadgeChannelTarget
 import io.github.tatooinoyo.star.badge.ui.about.UpdateCheckDialog
 import io.github.tatooinoyo.star.badge.ui.component.BadgeContentCard
 import io.github.tatooinoyo.star.badge.ui.component.LabeledInputField
@@ -254,6 +256,7 @@ fun HomeScreen(
             remark = uiState.detailRemark,
             link = uiState.detailLink,
             channel = uiState.detailChannel,
+            availableChannels = uiState.availableChannels,
             tags = uiState.detailTags,
             allTags = uiState.allTags,
             onTagsChange = { viewModelInstance.updateDetailInput(tags = it) },
@@ -332,7 +335,7 @@ fun BadgeListContent(
     onInputTitleChange: (String) -> Unit,
     onInputRemarkChange: (String) -> Unit,
     onInputLinkChange: (String) -> Unit,
-    onInputChannelChange: (BadgeChannel) -> Unit,
+    onInputChannelChange: (BadgeChannelTarget) -> Unit,
     onFastModeChange: (Boolean) -> Unit,
     onAddClick: () -> Unit,
     onItemClick: (Badge) -> Unit,
@@ -670,7 +673,8 @@ fun BadgeDetailContent(
     title: String,
     remark: String,
     link: String,
-    channel: BadgeChannel,
+    channel: BadgeChannelTarget?,
+    availableChannels: List<BadgeChannelTarget>,
     tags: List<String>,
     allTags: List<String>,
     onTagsChange: (List<String>) -> Unit,
@@ -678,7 +682,7 @@ fun BadgeDetailContent(
     onTitleChange: (String) -> Unit,
     onRemarkChange: (String) -> Unit,
     onLinkChange: (String) -> Unit,
-    onChannelChange: (BadgeChannel) -> Unit,
+    onChannelChange: (BadgeChannelTarget) -> Unit,
     onWriteNfcClick: () -> Unit,
     onCancelWriteNfcClick: () -> Unit,
     onSaveClick: () -> Unit,
@@ -718,6 +722,7 @@ fun BadgeDetailContent(
                 link = link,
                 onLinkChange = onLinkChange,
                 channel = channel,
+                availableChannels = availableChannels,
                 onChannelChange = onChannelChange,
                 allTags = allTags,
                 selectedTags = tags,
@@ -852,7 +857,8 @@ fun BadgeInputForm(
     title: String, onTitleChange: (String) -> Unit,
     remark: String, onRemarkChange: (String) -> Unit,
     link: String, onLinkChange: (String) -> Unit,
-    channel: BadgeChannel, onChannelChange: (BadgeChannel) -> Unit,
+    channel: BadgeChannelTarget?, onChannelChange: (BadgeChannelTarget) -> Unit,
+    availableChannels: List<BadgeChannelTarget>,
     onExtractSkClick: (String) -> Unit, // 新增回调
     allTags: List<String> = emptyList(),
     selectedTags: List<String> = emptyList(),
@@ -860,9 +866,46 @@ fun BadgeInputForm(
     isFastMode: Boolean = false
 ) {
     var channelMenuExpanded by remember { mutableStateOf(false) }
+    var otherAppsExpanded by remember { mutableStateOf(false) }
     val clipboardManager = LocalClipboardManager.current
     var lastLinkContent by remember { mutableStateOf("") }
     var showTagDialog by remember { mutableStateOf(false) }
+    val directChannels = availableChannels.filter { it.acceptsBadgeLinks }
+    val otherApps = availableChannels.filterNot { it.acceptsBadgeLinks }
+    if (otherAppsExpanded) {
+        AlertDialog(
+            onDismissRequest = { otherAppsExpanded = false },
+            title = { Text(stringResource(R.string.channel_choose_other_app)) },
+            text = {
+                LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 420.dp)) {
+                    items(otherApps, key = { it.packageName }) { option ->
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    onChannelChange(option)
+                                    otherAppsExpanded = false
+                                }
+                                .padding(vertical = 10.dp),
+                        ) {
+                            Text(option.getLabel(LocalContext.current))
+                            Text(
+                                option.packageName,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { otherAppsExpanded = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        )
+    }
     // 弹窗组件
     if (showTagDialog) {
         TagManageDialog(
@@ -940,7 +983,8 @@ fun BadgeInputForm(
                         .clickable { channelMenuExpanded = true }
                 ) {
                     OutlinedTextField(
-                        value = channel.getLabel(LocalContext.current),
+                        value = channel?.getLabel(LocalContext.current)
+                            ?: stringResource(R.string.channel_none_installed),
                         onValueChange = {},
                         textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp),
                         readOnly = true,
@@ -965,13 +1009,50 @@ fun BadgeInputForm(
                     expanded = channelMenuExpanded,
                     onDismissRequest = { channelMenuExpanded = false }
                 ) {
-                    BadgeChannel.values().forEach { option ->
+                    directChannels.forEach { option ->
                         DropdownMenuItem(
-                            text = { Text(option.getLabel(LocalContext.current)) },
+                            text = {
+                                Column {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(option.getLabel(LocalContext.current))
+                                        if (option.isInstalled) {
+                                            Text(
+                                                text = stringResource(R.string.channel_installed),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.padding(start = 8.dp),
+                                            )
+                                        }
+                                    }
+                                    if (option.channel == io.github.tatooinoyo.star.badge.data.BadgeChannel.CUSTOM) {
+                                        Text(
+                                            option.packageName,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                }
+                            },
                             onClick = {
                                 onChannelChange(option)
                                 channelMenuExpanded = false
                             }
+                        )
+                    }
+                    if (otherApps.isNotEmpty()) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.channel_choose_other_app)) },
+                            onClick = {
+                                channelMenuExpanded = false
+                                otherAppsExpanded = true
+                            },
+                        )
+                    }
+                    if (directChannels.isEmpty() && otherApps.isEmpty()) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.channel_none_installed)) },
+                            onClick = {},
+                            enabled = false,
                         )
                     }
                 }

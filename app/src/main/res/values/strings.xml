@@ -163,7 +163,11 @@
     <string name="channel_bilibili">Bilibili</string>
     <string name="channel_vivo">VIVO</string>
     <string name="channel_netease">NetEase</string>
-    <string name="channel_sky">International</string>
+    <string name="channel_sky">Sky</string>
+    <string name="channel_custom">Other app</string>
+    <string name="channel_none_installed">No compatible app installed</string>
+    <string name="channel_choose_other_app">Choose another app</string>
+    <string name="channel_installed">Installed</string>
     <string name="edit_badge_details">Edit Badge Details</string>
     <string name="write_link_to_nfc_card">Write Link to NFC Card</string>
     <string name="exit">Exit</string>

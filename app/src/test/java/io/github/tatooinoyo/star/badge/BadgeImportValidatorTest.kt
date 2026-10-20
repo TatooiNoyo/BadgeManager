@@ -37,6 +37,24 @@ class BadgeImportValidatorTest {
         ).forEach { reject("[$it]") }
     }
 
+    @Test fun customInstalledChannelRoundTrips() {
+        val custom = badge
+            .replace("NETEASE", "CUSTOM")
+            .replace(
+                "\"orderIndex\":0",
+                "\"orderIndex\":0,\"channelPackageName\":\"com.example.sky\",\"channelActivityName\":\"com.example.sky.GameActivity\",\"channelLabel\":\"Sky Clone\"",
+            )
+        val parsed = BadgeImportValidator.parse("[$custom]").single()
+        assertEquals(BadgeChannel.CUSTOM, parsed.channel)
+        assertEquals("com.example.sky", parsed.channelPackageName)
+        assertEquals("com.example.sky.GameActivity", parsed.channelActivityName)
+        assertEquals("Sky Clone", parsed.channelLabel)
+    }
+
+    @Test fun customChannelWithoutAConcreteInstalledTargetIsRejected() {
+        reject("[${badge.replace("NETEASE", "CUSTOM")}]")
+    }
+
     @Test fun excessiveLengthsCountsAndNestingAreRejected() {
         reject("[$badge]".replace("標題", "a".repeat(513)))
         reject("[" + (0..BadgeImportValidator.MAX_BADGES).joinToString(",") { badge.replace("\"a\"", "\"$it\"") } + "]")
