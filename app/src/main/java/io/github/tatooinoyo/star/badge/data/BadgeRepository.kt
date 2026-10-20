@@ -163,19 +163,18 @@ object BadgeRepository {
         channel: BadgeChannelTarget,
         tags: List<String> = emptyList()
     ) {
-        val currentMaxOrder = _badges.value.maxOfOrNull { it.orderIndex } ?: 0
         val newBadge = Badge(
             title = title,
             remark = remark,
             link = link,
             channel = channel.channel,
             tags = tags,
-            orderIndex = currentMaxOrder + 1,
+            orderIndex = 0, // 实际排序号由 DAO 在事务内分配。
             channelPackageName = channel.packageName,
             channelActivityName = channel.activityName,
             channelLabel = channel.label,
         )
-        requireDao().insertBadge(newBadge)
+        requireDao().appendBadge(newBadge)
     }
 
     suspend fun updateBadge(

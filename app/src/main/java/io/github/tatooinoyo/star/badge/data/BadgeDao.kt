@@ -62,6 +62,14 @@ interface BadgeDao {
     suspend fun maxOrder(): Int?
 
     @Transaction
+    suspend fun appendBadge(badge: Badge) {
+        // 排序号读取与插入必须在同一事务中，避免并发新增分配到相同序号。
+        val start = maxOf(0, maxOrder() ?: 0)
+        require(start < Int.MAX_VALUE) { "Badge order is full" }
+        insertBadge(badge.copy(orderIndex = start + 1))
+    }
+
+    @Transaction
     suspend fun appendCopies(badges: List<Badge>) {
         val start = maxOf(0, maxOrder() ?: 0)
         require(start <= Int.MAX_VALUE - badges.size) { "Badge order is full" }
