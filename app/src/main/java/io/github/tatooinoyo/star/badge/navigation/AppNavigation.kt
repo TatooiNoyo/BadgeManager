@@ -1,5 +1,11 @@
 package io.github.tatooinoyo.star.badge.navigation
 
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -33,7 +39,21 @@ fun AppNavigation(
         navController = navController,
         startDestination = NavRoutes.Home
     ) {
-        composable(NavRoutes.Home) {
+        composable(
+            route = NavRoutes.Home,
+            exitTransition = {
+                slideOutHorizontally(
+                    animationSpec = tween(240, easing = FastOutSlowInEasing),
+                    targetOffsetX = { width -> -width / 5 },
+                ) + fadeOut(animationSpec = tween(160))
+            },
+            popEnterTransition = {
+                slideInHorizontally(
+                    animationSpec = tween(260, easing = FastOutSlowInEasing),
+                    initialOffsetX = { width -> -width / 5 },
+                ) + fadeIn(animationSpec = tween(200, delayMillis = 30))
+            },
+        ) {
             HomeScreen(
                 homeViewModel = homeViewModel,
                 nfcPayload = nfcPayload,
@@ -43,17 +63,29 @@ fun AppNavigation(
                 onNavigateToUnrecordedBadges = { navController.navigate(NavRoutes.HelpUs) }
             )
         }
-        composable(NavRoutes.Settings) {
+        composable(
+            route = NavRoutes.Settings,
+            enterTransition = { secondaryPageEnterTransition() },
+            popExitTransition = { secondaryPageExitTransition() },
+        ) {
             SettingsScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
-        composable(NavRoutes.About) {
+        composable(
+            route = NavRoutes.About,
+            enterTransition = { secondaryPageEnterTransition() },
+            popExitTransition = { secondaryPageExitTransition() },
+        ) {
             AboutScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
-        composable(NavRoutes.HelpUs) {
+        composable(
+            route = NavRoutes.HelpUs,
+            enterTransition = { secondaryPageEnterTransition() },
+            popExitTransition = { secondaryPageExitTransition() },
+        ) {
             // 使用 Repository 全量列表，避免受首页标签筛选影响
             val badges by BadgeRepository.badges.collectAsState()
             HelpUsScreen(
@@ -63,3 +95,15 @@ fun AppNavigation(
         }
     }
 }
+
+private fun secondaryPageEnterTransition() =
+    slideInHorizontally(
+        animationSpec = tween(280, easing = FastOutSlowInEasing),
+        initialOffsetX = { width -> width },
+    ) + fadeIn(animationSpec = tween(180, delayMillis = 40))
+
+private fun secondaryPageExitTransition() =
+    slideOutHorizontally(
+        animationSpec = tween(280, easing = FastOutSlowInEasing),
+        targetOffsetX = { width -> width },
+    ) + fadeOut(animationSpec = tween(180))

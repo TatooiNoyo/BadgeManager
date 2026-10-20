@@ -6,6 +6,13 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -191,7 +198,35 @@ fun HomeScreen(
         }
     }
 
-    if (uiState.editingBadge == null) {
+    AnimatedContent(
+        targetState = uiState.editingBadge,
+        contentKey = { badge -> badge?.id ?: "badge-list" },
+        transitionSpec = {
+            val enteringDetail = targetState != null
+            val transform = if (enteringDetail) {
+                (slideInHorizontally(
+                    animationSpec = tween(280, easing = FastOutSlowInEasing),
+                    initialOffsetX = { width -> width },
+                ) + fadeIn(animationSpec = tween(180, delayMillis = 40))) togetherWith
+                    (slideOutHorizontally(
+                        animationSpec = tween(240, easing = FastOutSlowInEasing),
+                        targetOffsetX = { width -> -width / 5 },
+                    ) + fadeOut(animationSpec = tween(160)))
+            } else {
+                (slideInHorizontally(
+                    animationSpec = tween(260, easing = FastOutSlowInEasing),
+                    initialOffsetX = { width -> -width / 5 },
+                ) + fadeIn(animationSpec = tween(200, delayMillis = 30))) togetherWith
+                    (slideOutHorizontally(
+                        animationSpec = tween(280, easing = FastOutSlowInEasing),
+                        targetOffsetX = { width -> width },
+                    ) + fadeOut(animationSpec = tween(180)))
+            }
+            transform.using(SizeTransform(clip = false))
+        },
+        label = "badgeDetailTransition",
+    ) { editingBadge ->
+    if (editingBadge == null) {
         BadgeListContent(
             uiState = uiState,
             listState = listState,
@@ -253,7 +288,7 @@ fun HomeScreen(
         )
     } else {
         BadgeDetailContent(
-            badge = uiState.editingBadge!!,
+            badge = editingBadge,
             title = uiState.detailTitle,
             remark = uiState.detailRemark,
             link = uiState.detailLink,
@@ -274,6 +309,7 @@ fun HomeScreen(
             onExitClick = { viewModelInstance.exitEditMode() },
             onExtractSkClick = { link -> viewModelInstance.extractSkFromLink(link) }
         )
+    }
     }
 
     uiState.extractedSk?.let { sk ->
