@@ -231,7 +231,6 @@
     <string name="preset_badge_manatee_plush">Manatee Plush</string>
     <string name="preset_badge_winter_feast_scarf">Winter Feast Scarf</string>
     <string name="preset_badge_artbook_gratitude_nesting">The Art of Sky: Gratitude to Nesting (2019–2024)</string>
-    <string name="preset_badge_thatskykid">thatskykid</string>
     <string name="preset_badge_keychain_crab_classic">Crab Plush Pin Keychain (Classic)</string>
     <string name="preset_badge_keychain_fish_hood">Fish Hood Plush Keychain</string>
     <string name="preset_badge_keychain_dark_dragon_se">Dark Dragon Plush Keychain Charm - Special Edition</string>
@@ -251,7 +250,6 @@
     <string name="preset_badge_elder_isle">Elder of the Isle Pin</string>
     <string name="preset_badge_elder_vault">Elder of the Vault Pin</string>
     <string name="preset_badge_elder_valley">Elder of the Valley Pin</string>
-    <string name="preset_badge_huge_tiny_spell">Huge and Tiny Spell Pin</string>
     <string name="preset_badge_bloom_cape">Bloom Cape Pin</string>
     <string name="preset_badge_bloom_pin">Bloom Pin</string>
     <string name="preset_badge_belonging_white_cape">Belonging White Cape Pin</string>
@@ -284,9 +282,32 @@
     <string name="preset_badge_wisteria_bloom">Wisteria Bloom Pin</string>
     <string name="preset_badge_tgc_pin">TGC Pin</string>
     <string name="preset_badge_star_trail_spell">Star Trail Spell</string>
+    <string name="preset_badge_figurine_little_prince">Little Prince Figurine</string>
+    <string name="preset_badge_figurine_thatskykid_tgc">thatskykid Figurine (TGC Cape)</string>
+    <string name="preset_badge_figurine_thatskykid">thatskykid Figurine</string>
+    <string name="preset_badge_plush_thatskykid_oreo">thatskykid Plush - Little Oreo</string>
+    <string name="preset_badge_keychain_crab_celebration">Crab Celebration Keychain</string>
+    <string name="preset_badge_keychain_dark_dragon_celebration">Dark Dragon Celebration Keychain</string>
+    <string name="preset_badge_aurora_voice_instrument">AURORA Voice Instrument</string>
+    <string name="preset_badge_keychain_little_oreo_anniversary">Little Oreo Anniversary Keychain</string>
+    <string name="preset_badge_iridescent_butterflies">Iridescent Butterfly Pin</string>
+    <string name="preset_badge_bunny_spell">Bunny Spell Pin</string>
+    <string name="preset_badge_ocean_cape">Ocean Cape Pin</string>
+    <string name="preset_badge_dark_dragon">Dark Dragon Pin</string>
+    <string name="preset_badge_crab_piggyback">Crab Piggyback Pin</string>
+    <string name="preset_badge_dreams_bear_hug">Dreams Bear Hug Pin</string>
+    <string name="preset_badge_duet_bow">Duet Bow Pin</string>
+    <string name="preset_badge_playfight_witch">Playfight Pin (Witch Hat)</string>
+    <string name="preset_badge_playfight_braid">Playfight Pin (Braids)</string>
+    <string name="preset_badge_earth_day_cape">Earth Day Cape Pin</string>
+    <string name="preset_badge_earth_day_friendship">Earth Day Friendship Pin</string>
+    <string name="preset_badge_soulmate_umbrella">Soulmate Pin (Umbrella)</string>
+    <string name="preset_badge_soulmate_campfire">Soulmate Pin (Campfire)</string>
+    <string name="preset_badge_birthday_cake">Birthday Cake Pin</string>
+    <string name="preset_badge_cannon">Cannon Pin</string>
+    <string name="preset_badge_rainbow_spell">Rainbow Spell Pin</string>
 
     <!-- Preset Badges Remarks -->
-    <string name="preset_badge_cd_15min_dur_5min_scene">15min CD, 5min Dur (ends on scene change)</string>
     <string name="preset_badge_cd_15s_dur_5min">15s CD, 5min Dur</string>
     <string name="preset_badge_cd_30min_dur_30min">30min CD, 30min Dur</string>
     <string name="preset_badge_cd_30min_dur_10min">30min CD, 10min Dur</string>
@@ -304,6 +325,11 @@
     <string name="preset_badge_cd_20min">20min CD</string>
     <string name="preset_badge_cd_30min">30min CD</string>
     <string name="preset_badge_cd_60min_dur_60min">60min CD, 60min Dur</string>
+    <string name="preset_badge_cd_15min_dur_5min">15min CD, 5min Dur</string>
+    <string name="preset_badge_cd_9s_dur_20min">9s CD, 20min Dur</string>
+    <string name="preset_badge_cd_15min_dur_60min">15min CD, 60min Dur</string>
+    <string name="preset_badge_cd_15s_dur_20min">15s CD, 20min Dur</string>
+    <string name="preset_badge_cd_15s_dur_10min">15s CD, 10min Dur</string>
     <string name="update_image_url">https://img.shields.io/github/v/release/tatooinoyo/BadgeManager</string>
     <string name="download_url">https://github.com/tatooinoyo/BadgeManager/releases</string>
     <string name="current_version">Current: V%1$s</string>

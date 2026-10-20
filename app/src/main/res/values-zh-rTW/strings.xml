@@ -232,7 +232,6 @@
     <string name="preset_badge_manatee_plush">海牛毛絨玩具</string>
     <string name="preset_badge_winter_feast_scarf">冬季宴會圍巾</string>
     <string name="preset_badge_artbook_gratitude_nesting">《光·遇》美術設定集 II：Gratitude to Nesting (2019–2024)</string>
-    <string name="preset_badge_thatskykid">光之子手辦</string>
     <string name="preset_badge_keychain_crab_classic">毛絨螃蟹別針鑰匙扣 (經典款)</string>
     <string name="preset_badge_keychain_fish_hood">年年有魚毛絨鑰匙扣</string>
     <string name="preset_badge_keychain_dark_dragon_se">冥龍毛絨鑰匙扣掛飾 - 特別款</string>
@@ -252,7 +251,6 @@
     <string name="preset_badge_elder_isle">晨島先祖徽章</string>
     <string name="preset_badge_elder_vault">禁閣先祖徽章</string>
     <string name="preset_badge_elder_valley">霞谷先祖徽章</string>
-    <string name="preset_badge_huge_tiny_spell">大隻佬和小不點魔法徽章</string>
     <string name="preset_badge_bloom_cape">花憩斗篷徽章</string>
     <string name="preset_badge_bloom_pin">花憩徽章</string>
     <string name="preset_badge_belonging_white_cape">歸屬白斗篷徽章</string>
@@ -285,9 +283,32 @@
     <string name="preset_badge_wisteria_bloom">紫藤花憩徽章</string>
     <string name="preset_badge_tgc_pin">TGC徽章</string>
     <string name="preset_badge_star_trail_spell">星星步塵</string>
+    <string name="preset_badge_figurine_little_prince">小王子手辦</string>
+    <string name="preset_badge_figurine_thatskykid_tgc">光之子手辦（TGC斗篷）</string>
+    <string name="preset_badge_figurine_thatskykid">光之子手辦</string>
+    <string name="preset_badge_plush_thatskykid_oreo">光之子毛絨玩具－小奧款</string>
+    <string name="preset_badge_keychain_crab_celebration">螃蟹鑰匙圈</string>
+    <string name="preset_badge_keychain_dark_dragon_celebration">冥龍鑰匙圈</string>
+    <string name="preset_badge_aurora_voice_instrument">歐若拉人聲樂器</string>
+    <string name="preset_badge_keychain_little_oreo_anniversary">小奧鑰匙圈</string>
+    <string name="preset_badge_iridescent_butterflies">幻彩蝴蝶徽章</string>
+    <string name="preset_badge_bunny_spell">兔子魔法徽章</string>
+    <string name="preset_badge_ocean_cape">海洋斗篷徽章</string>
+    <string name="preset_badge_dark_dragon">冥龍徽章</string>
+    <string name="preset_badge_crab_piggyback">疊疊蟹徽章</string>
+    <string name="preset_badge_dreams_bear_hug">夢想熊抱徽章</string>
+    <string name="preset_badge_duet_bow">二重奏鞠躬徽章</string>
+    <string name="preset_badge_playfight_witch">魔法打鬧徽章（魔法帽款）</string>
+    <string name="preset_badge_playfight_braid">魔法打鬧徽章（粗辮款）</string>
+    <string name="preset_badge_earth_day_cape">綠芽斗篷徽章</string>
+    <string name="preset_badge_earth_day_friendship">地球日友誼徽章</string>
+    <string name="preset_badge_soulmate_umbrella">知己徽章（雨傘款）</string>
+    <string name="preset_badge_soulmate_campfire">知己徽章（篝火款）</string>
+    <string name="preset_badge_birthday_cake">生日蛋糕徽章</string>
+    <string name="preset_badge_cannon">大炮徽章</string>
+    <string name="preset_badge_rainbow_spell">彩虹魔法徽章</string>
 
     <!-- 預設徽章備註 -->
-    <string name="preset_badge_cd_15min_dur_5min_scene">15min CD, 5min Dur (ends on scene change)</string>
     <string name="preset_badge_cd_15s_dur_5min">15s CD, 5min Dur</string>
     <string name="preset_badge_cd_30min_dur_30min">30min CD, 30min Dur</string>
     <string name="preset_badge_cd_30min_dur_10min">30min CD, 10min Dur</string>
@@ -305,6 +326,11 @@
     <string name="preset_badge_cd_20min">20min CD</string>
     <string name="preset_badge_cd_30min">30min CD</string>
     <string name="preset_badge_cd_60min_dur_60min">60min CD, 60min Dur</string>
+    <string name="preset_badge_cd_15min_dur_5min">15min CD, 5min Dur</string>
+    <string name="preset_badge_cd_9s_dur_20min">9s CD, 20min Dur</string>
+    <string name="preset_badge_cd_15min_dur_60min">15min CD, 60min Dur</string>
+    <string name="preset_badge_cd_15s_dur_20min">15s CD, 20min Dur</string>
+    <string name="preset_badge_cd_15s_dur_10min">15s CD, 10min Dur</string>
     <string name="update_image_url">https://img.shields.io/github/v/release/tatooinoyo/BadgeManager</string>
     <string name="download_url">https://github.com/tatooinoyo/BadgeManager/releases</string>
     <string name="current_version">當前版本: V%1$s</string>

@@ -232,7 +232,6 @@
     <string name="preset_badge_manatee_plush">海牛毛绒玩具</string>
     <string name="preset_badge_winter_feast_scarf">冬季宴会围巾</string>
     <string name="preset_badge_artbook_gratitude_nesting">《光·遇》美术设定集 II：Gratitude to Nesting (2019–2024)</string>
-    <string name="preset_badge_thatskykid">光之子手办</string>
     <string name="preset_badge_keychain_crab_classic">毛绒螃蟹别针钥匙扣 (经典款)</string>
     <string name="preset_badge_keychain_fish_hood">年年有鱼毛绒钥匙扣</string>
     <string name="preset_badge_keychain_dark_dragon_se">冥龙毛绒钥匙扣挂饰 - 特别款</string>
@@ -252,7 +251,6 @@
     <string name="preset_badge_elder_isle">晨岛先祖徽章</string>
     <string name="preset_badge_elder_vault">禁阁先祖徽章</string>
     <string name="preset_badge_elder_valley">霞谷先祖徽章</string>
-    <string name="preset_badge_huge_tiny_spell">大只佬和小不点魔法徽章</string>
     <string name="preset_badge_bloom_cape">花憩斗篷徽章</string>
     <string name="preset_badge_bloom_pin">花憩徽章</string>
     <string name="preset_badge_belonging_white_cape">归属白斗篷徽章</string>
@@ -285,9 +283,32 @@
     <string name="preset_badge_wisteria_bloom">紫藤花憩徽章</string>
     <string name="preset_badge_tgc_pin">TGC徽章</string>
     <string name="preset_badge_star_trail_spell">星星步尘</string>
+    <string name="preset_badge_figurine_little_prince">小王子手办</string>
+    <string name="preset_badge_figurine_thatskykid_tgc">光之子手办（TGC斗篷）</string>
+    <string name="preset_badge_figurine_thatskykid">光之子手办</string>
+    <string name="preset_badge_plush_thatskykid_oreo">光之子毛绒玩具－小奥款</string>
+    <string name="preset_badge_keychain_crab_celebration">螃蟹钥匙扣</string>
+    <string name="preset_badge_keychain_dark_dragon_celebration">冥龙钥匙扣</string>
+    <string name="preset_badge_aurora_voice_instrument">欧若拉人声乐器</string>
+    <string name="preset_badge_keychain_little_oreo_anniversary">小奥钥匙扣</string>
+    <string name="preset_badge_iridescent_butterflies">幻彩蝴蝶徽章</string>
+    <string name="preset_badge_bunny_spell">兔子魔法徽章</string>
+    <string name="preset_badge_ocean_cape">海洋斗篷徽章</string>
+    <string name="preset_badge_dark_dragon">冥龙徽章</string>
+    <string name="preset_badge_crab_piggyback">叠叠蟹徽章</string>
+    <string name="preset_badge_dreams_bear_hug">梦想熊抱徽章</string>
+    <string name="preset_badge_duet_bow">二重奏鞠躬徽章</string>
+    <string name="preset_badge_playfight_witch">魔法打闹徽章（魔法帽款）</string>
+    <string name="preset_badge_playfight_braid">魔法打闹徽章（粗辫款）</string>
+    <string name="preset_badge_earth_day_cape">绿芽斗篷徽章</string>
+    <string name="preset_badge_earth_day_friendship">地球日友谊徽章</string>
+    <string name="preset_badge_soulmate_umbrella">知己徽章（雨伞款）</string>
+    <string name="preset_badge_soulmate_campfire">知己徽章（篝火款）</string>
+    <string name="preset_badge_birthday_cake">生日蛋糕徽章</string>
+    <string name="preset_badge_cannon">大炮徽章</string>
+    <string name="preset_badge_rainbow_spell">彩虹魔法徽章</string>
 
     <!-- 预设徽章备注 -->
-    <string name="preset_badge_cd_15min_dur_5min_scene">15min CD, 5min Dur (ends on scene change)</string>
     <string name="preset_badge_cd_15s_dur_5min">15s CD, 5min Dur</string>
     <string name="preset_badge_cd_30min_dur_30min">30min CD, 30min Dur</string>
     <string name="preset_badge_cd_30min_dur_10min">30min CD, 10min Dur</string>
@@ -305,6 +326,11 @@
     <string name="preset_badge_cd_20min">20min CD</string>
     <string name="preset_badge_cd_30min">30min CD</string>
     <string name="preset_badge_cd_60min_dur_60min">60min CD, 60min Dur</string>
+    <string name="preset_badge_cd_15min_dur_5min">15min CD, 5min Dur</string>
+    <string name="preset_badge_cd_9s_dur_20min">9s CD, 20min Dur</string>
+    <string name="preset_badge_cd_15min_dur_60min">15min CD, 60min Dur</string>
+    <string name="preset_badge_cd_15s_dur_20min">15s CD, 20min Dur</string>
+    <string name="preset_badge_cd_15s_dur_10min">15s CD, 10min Dur</string>
     <string name="update_image_url">https://badgen.net/github/release/tatooinoyo/BadgeManager</string>
     <string name="download_url">https://www.pgyer.com/badgemanager</string>
     <string name="current_version">当前版本: V%1$s</string>
