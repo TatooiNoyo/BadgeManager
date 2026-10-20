@@ -211,6 +211,7 @@ fun FilterChipStyled(
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    showCheck: Boolean = true,
 ) {
     Row(
         modifier = modifier
@@ -230,7 +231,7 @@ fun FilterChipStyled(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        if (selected) {
+        if (selected && showCheck) {
             Icon(
                 painter = painterResource(BadgeIcons.Check),
                 contentDescription = null,

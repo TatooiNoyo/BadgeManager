@@ -1,152 +1,224 @@
 package io.github.tatooinoyo.star.badge.ui.home.component
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import io.github.tatooinoyo.star.badge.R
+import io.github.tatooinoyo.star.badge.ui.component.FilterChipStyled
+import io.github.tatooinoyo.star.badge.ui.icons.BadgeIcons
+import io.github.tatooinoyo.star.badge.ui.theme.BorderDefault
+import io.github.tatooinoyo.star.badge.ui.theme.BrandOrange
+import io.github.tatooinoyo.star.badge.ui.theme.BrandOrangeLight
+import io.github.tatooinoyo.star.badge.ui.theme.SurfacePanel
+import io.github.tatooinoyo.star.badge.ui.theme.TextPrimary
+import io.github.tatooinoyo.star.badge.ui.theme.TextSecondary
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun TagManageDialog(
-    allTags: List<String>,          // 系统中所有已存在的标签
-    selectedTags: List<String>,     // 当前徽章已选中的标签
-    onDismiss: () -> Unit,          // 关闭弹窗
-    onConfirm: (List<String>) -> Unit // 确认选择
+    allTags: List<String>,
+    selectedTags: List<String>,
+    onDismiss: () -> Unit,
+    onConfirm: (List<String>) -> Unit,
 ) {
-    // 临时状态，用于在弹窗内操作，点击确定才回传
     val currentSelected = remember { mutableStateListOf(*selectedTags.toTypedArray()) }
     var newTagInput by remember { mutableStateOf("") }
 
+    fun addTag() {
+        val tag = newTagInput.trim()
+        if (tag.isEmpty()) return
+        if (tag !in currentSelected) currentSelected.add(tag)
+        newTagInput = ""
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.manage_tags)) },
-        text = {
-            Column {
-                // 1. 输入新标签区域
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
+        containerColor = SurfacePanel,
+        shape = MaterialTheme.shapes.large,
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(MaterialTheme.shapes.small)
+                        .background(BrandOrangeLight),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    OutlinedTextField(
+                    Icon(
+                        painter = painterResource(BadgeIcons.Label),
+                        contentDescription = null,
+                        tint = BrandOrange,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.manage_tags),
+                        style = MaterialTheme.typography.titleLarge,
+                        color = TextPrimary,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = stringResource(R.string.tag_selected_count, currentSelected.size),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextSecondary,
+                    )
+                }
+            }
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(MaterialTheme.shapes.small)
+                        .background(Color.White)
+                        .border(1.dp, BorderDefault, MaterialTheme.shapes.small)
+                        .padding(start = 14.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    BasicTextField(
                         value = newTagInput,
                         onValueChange = { newTagInput = it },
-                        label = { Text(stringResource(R.string.new_tag)) },
                         modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(
-                        onClick = {
-                            if (newTagInput.isNotBlank()) {
-                                val tag = newTagInput.trim()
-                                // 新增并默认选中
-                                if (!currentSelected.contains(tag)) {
-                                    currentSelected.add(tag)
+                        singleLine = true,
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(color = TextPrimary),
+                        decorationBox = { innerTextField ->
+                            Box {
+                                if (newTagInput.isEmpty()) {
+                                    Text(
+                                        text = stringResource(R.string.new_tag),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = TextSecondary,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
                                 }
-                                newTagInput = ""
+                                innerTextField()
                             }
                         },
-                        enabled = newTagInput.isNotBlank()
+                    )
+                    Button(
+                        onClick = ::addTag,
+                        enabled = newTagInput.isNotBlank(),
+                        shape = MaterialTheme.shapes.small,
+                        contentPadding = ButtonDefaults.ContentPadding,
                     ) {
                         Text(stringResource(R.string.btn_add))
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(stringResource(R.string.select_tags), style = MaterialTheme.typography.labelMedium)
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // 2. 现有标签选择区域 (混合了系统已有标签和刚才新增的标签)
-                // 这里的集合应该是 allTags + currentSelected (去重)，确保新加的也能看到
-                val displayTags = (allTags + currentSelected).distinct().sorted()
-
-                if (displayTags.isEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
-                        stringResource(R.string.no_tags),
-                        color = Color.Gray,
-                        style = MaterialTheme.typography.bodySmall
+                        text = stringResource(R.string.select_tags),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = TextPrimary,
+                        fontWeight = FontWeight.Medium,
                     )
-                } else {
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        displayTags.forEach { tag ->
-                            val isSelected = currentSelected.contains(tag)
-                            FilterChip(
-                                selected = isSelected,
-                                onClick = {
-                                    if (isSelected) {
-                                        currentSelected.remove(tag)
-                                    } else {
-                                        currentSelected.add(tag)
-                                    }
-                                },
-                                label = { Text(tag) },
-                                leadingIcon = if (isSelected) {
-                                    {
-                                        Icon(
-                                            Icons.Default.CheckCircle, null,
-                                            Modifier.size(16.dp)
-                                        )
-                                    }
-                                } else null
+
+                    val displayTags = (allTags + currentSelected).distinct().sorted()
+                    if (displayTags.isEmpty()) {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            color = Color.White.copy(alpha = 0.72f),
+                            shape = MaterialTheme.shapes.small,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, BorderDefault),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.no_tags),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = TextSecondary,
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 18.dp),
                             )
+                        }
+                    } else {
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            displayTags.forEach { tag ->
+                                val selected = tag in currentSelected
+                                FilterChipStyled(
+                                    label = tag,
+                                    selected = selected,
+                                    showCheck = false,
+                                    onClick = {
+                                        if (selected) currentSelected.remove(tag)
+                                        else currentSelected.add(tag)
+                                    },
+                                )
+                            }
                         }
                     }
                 }
             }
         },
         confirmButton = {
-            TextButton(
+            Button(
                 onClick = {
                     onConfirm(currentSelected.toList())
                     onDismiss()
-                }
+                },
+                shape = MaterialTheme.shapes.small,
             ) {
                 Text(stringResource(R.string.confirm))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(
+                onClick = onDismiss,
+                colors = ButtonDefaults.textButtonColors(contentColor = TextSecondary),
+            ) {
                 Text(stringResource(R.string.cancel))
             }
-        }
+        },
     )
 }
 
-@Composable
 @Preview("TagManageDialog")
-fun PreviewTagManageDialog(){
-    TagManageDialog(listOf(), listOf(), {}, {})
+@Composable
+private fun PreviewTagManageDialog() {
+    TagManageDialog(
+        allTags = listOf("常用", "季节", "联动"),
+        selectedTags = listOf("常用"),
+        onDismiss = {},
+        onConfirm = {},
+    )
 }
