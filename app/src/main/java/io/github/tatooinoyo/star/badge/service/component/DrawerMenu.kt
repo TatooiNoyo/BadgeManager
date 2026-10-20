@@ -1,6 +1,5 @@
 package io.github.tatooinoyo.star.badge.service.component
 
-import android.util.Log
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -87,7 +86,6 @@ fun DrawerMenu(
                 detectHorizontalDragGestures(
                     onDragStart = { totalDrag = 0f },
                     onHorizontalDrag = { change, dragAmount ->
-                        Log.d("DrawerMenu", "onHorizontalDrag: $dragAmount")
                         change.consume()
                         totalDrag += dragAmount
                     },

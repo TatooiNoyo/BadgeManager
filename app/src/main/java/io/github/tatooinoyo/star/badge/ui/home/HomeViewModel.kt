@@ -12,6 +12,7 @@ import android.nfc.tech.Ndef
 import android.util.Log
 import android.os.Build
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import io.github.tatooinoyo.star.badge.R
 import io.github.tatooinoyo.star.badge.data.Badge
@@ -25,6 +26,7 @@ import io.github.tatooinoyo.star.badge.utils.preset.PresetResolver
 import io.github.tatooinoyo.star.badge.utils.SkExtractException
 import io.github.tatooinoyo.star.badge.utils.SkExtractor
 import io.github.tatooinoyo.star.badge.utils.export.BadgeShareCrypto
+import io.github.tatooinoyo.star.badge.utils.export.BadgeBackupExporter
 import io.github.tatooinoyo.star.badge.utils.export.BadgeShareError
 import io.github.tatooinoyo.star.badge.utils.export.BadgeShareExporter
 import io.github.tatooinoyo.star.badge.utils.export.BadgeShareFormat
@@ -39,6 +41,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -106,9 +109,16 @@ private data class NfcWriteOutcome(
     val detail: String? = null,
 )
 
-class HomeViewModel(application: Application) : AndroidViewModel(application) {
+class HomeViewModel(
+    application: Application,
+    private val savedStateHandle: SavedStateHandle,
+) : AndroidViewModel(application) {
 
-    private val _uiState = MutableStateFlow(BadgeUiState())
+    private val _uiState = MutableStateFlow(
+        BadgeUiState(
+            pendingImportUri = savedStateHandle.get<String>(PENDING_IMPORT_URI)?.let(android.net.Uri::parse),
+        )
+    )
     val uiState: StateFlow<BadgeUiState> = _uiState.asStateFlow()
 
     // 创建事件流
@@ -118,6 +128,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val _selectedTag = MutableStateFlow<String?>(null) // null 代表显示全部
     private var nfcWriteGeneration = 0L
     private var nfcWriteJob: Job? = null
+    private var receiveShareJob: Job? = null
     private val packageChangeReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             refreshInstalledChannels()
@@ -166,6 +177,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     )
                 }
             }
+        }
+        // 进程被回收时若文件尚未复制完，恢复待处理请求；普通重建继续使用原 ViewModel。
+        savedStateHandle.get<String>(INCOMING_IMPORT_URI)?.let {
+            receiveShareImport(android.net.Uri.parse(it))
         }
     }
 
@@ -259,6 +274,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun dismissShareImport() {
+        savedStateHandle.remove<String>(PENDING_IMPORT_URI)
         _uiState.update {
             it.copy(
                 pendingImportUri = null,
@@ -267,20 +283,27 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun receiveShareImport(uri: android.net.Uri) {
-        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        receiveShareJob?.cancel()
+        savedStateHandle[INCOMING_IMPORT_URI] = uri.toString()
+        receiveShareJob = viewModelScope.launch {
             try {
                 val context = getApplication<Application>()
-                val stableUri = BadgeShareExporter.copyIncomingShareToCache(context, uri)
-                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                    _uiState.update {
-                        it.copy(
-                            pendingImportUri = stableUri,
-                            isFunctionAreaExpanded = true,
-                            functionTabIndex = 0,
-                        )
-                    }
+                val stableUri = withContext(Dispatchers.IO) {
+                    BadgeShareExporter.copyIncomingShareToCache(context, uri)
                 }
+                savedStateHandle[PENDING_IMPORT_URI] = stableUri.toString()
+                savedStateHandle.remove<String>(INCOMING_IMPORT_URI)
+                _uiState.update {
+                    it.copy(
+                        pendingImportUri = stableUri,
+                        isFunctionAreaExpanded = true,
+                        functionTabIndex = 0,
+                    )
+                }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: BadgeShareError.InvalidFile) {
+                savedStateHandle.remove<String>(INCOMING_IMPORT_URI)
                 Log.w("HomeViewModel", "Incoming share is not a badgeenc file", e)
                 _uiEvent.emit(
                     BadgeUiEvent.ShowToast(
@@ -288,6 +311,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     )
                 )
             } catch (e: Exception) {
+                savedStateHandle.remove<String>(INCOMING_IMPORT_URI)
                 Log.e("HomeViewModel", "Failed to receive shared file", e)
                 _uiEvent.emit(
                     BadgeUiEvent.ShowToast(
@@ -796,30 +820,22 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         onResult: (Boolean) -> Unit
     ) {
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            try {
+            val success = try {
                 // 1. 获取数据快照
                 val badges = BadgeRepository.getAllBadgesSnapshot()
-                val gson =
-                    com.google.gson.GsonBuilder()
-                        .setPrettyPrinting()
-                        .disableHtmlEscaping() // 允许非 ASCII 字符以原文形式保存
-                        .create() // 使用格式化输出，方便阅读
-                val jsonString = gson.toJson(badges)
-
-                // 2. 写入文件
-                context.contentResolver.openOutputStream(uri)?.use { outputStream ->
-                    outputStream.write(jsonString.toByteArray(Charsets.UTF_8))
+                // 输出流存在，且写入、刷新、关闭均完成后才算成功。
+                BadgeBackupExporter.write(badges) {
+                    context.contentResolver.openOutputStream(uri)
                 }
-
-                // 切回主线程通知结果
-                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                    onResult(true)
-                }
+                true
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                e.printStackTrace()
-                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                    onResult(false)
-                }
+                Log.e("HomeViewModel", "Backup export failed", e)
+                false
+            }
+            withContext(Dispatchers.Main) {
+                onResult(success)
             }
         }
     }
@@ -852,4 +868,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    companion object {
+        private const val PENDING_IMPORT_URI = "pending_import_uri"
+        private const val INCOMING_IMPORT_URI = "incoming_import_uri"
+    }
 }

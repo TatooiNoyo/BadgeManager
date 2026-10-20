@@ -48,6 +48,7 @@ class MainActivity : ComponentActivity() {
     // 共享的 ViewModel 实例
     // 这样 Activity 和 Compose 都使用同一个实例，避免了状态不同步问题
     private lateinit var homeViewModel: HomeViewModel
+    private var shareIntentHandled = false
 
     // 增加一个辅助属性，方便判断是否支持 NFC
     private val isNfcSupported: Boolean
@@ -75,6 +76,7 @@ class MainActivity : ComponentActivity() {
         LanguageManager.getInstance(this).applyLanguage(this)
 
         super.onCreate(savedInstanceState)
+        shareIntentHandled = savedInstanceState?.getBoolean(STATE_SHARE_INTENT_HANDLED) ?: false
         enableEdgeToEdge()
         // 初始化数据库
         BadgeRepository.initialize(applicationContext)
@@ -158,6 +160,8 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        // 每次新投递都是独立操作，允许用户再次打开同一个文件。
+        shareIntentHandled = false
         // 扩展判断条件，处理 TAG_DISCOVERED 和 TECH_DISCOVERED
         if (isNfcSupported && (
                     NfcAdapter.ACTION_NDEF_DISCOVERED == intent.action ||
@@ -320,7 +324,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleIncomingIntent(intent: Intent?) {
-        if (intent == null || !::homeViewModel.isInitialized) return
+        if (intent == null || !::homeViewModel.isInitialized || shareIntentHandled) return
 
         when (intent.action) {
             Intent.ACTION_SEND -> {
@@ -331,13 +335,20 @@ class MainActivity : ComponentActivity() {
                     intent.getParcelableExtra(Intent.EXTRA_STREAM)
                 } ?: return
 
+                shareIntentHandled = true
                 homeViewModel.receiveShareImport(uri)
             }
             Intent.ACTION_VIEW -> {
                 val uri = intent.data ?: return
+                shareIntentHandled = true
                 homeViewModel.receiveShareImport(uri)
             }
         }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putBoolean(STATE_SHARE_INTENT_HANDLED, shareIntentHandled)
+        super.onSaveInstanceState(outState)
     }
 
     // 可选：Activity 销毁时是否要关闭悬浮窗？
@@ -345,5 +356,9 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         super.onDestroy()
         // stopService(Intent(this, FloatingButtonService::class.java))
+    }
+
+    companion object {
+        private const val STATE_SHARE_INTENT_HANDLED = "share_intent_handled"
     }
 }

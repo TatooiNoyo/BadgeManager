@@ -95,6 +95,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.tatooinoyo.star.badge.R
 import io.github.tatooinoyo.star.badge.data.Badge
 import io.github.tatooinoyo.star.badge.data.BadgeChannelTarget
+import io.github.tatooinoyo.star.badge.data.InstalledChannelProvider
 import io.github.tatooinoyo.star.badge.ui.about.UpdateCheckDialog
 import io.github.tatooinoyo.star.badge.ui.component.BadgeContentCard
 import io.github.tatooinoyo.star.badge.ui.component.FilterChipStyled
@@ -121,7 +122,10 @@ import io.github.tatooinoyo.star.badge.utils.export.BadgeShareFormat
 import io.github.tatooinoyo.star.badge.utils.update.UpdateCheckResult
 import io.github.tatooinoyo.star.badge.utils.update.UpdateChecker
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.withContext
 
 @Composable
 fun HomeScreen(
@@ -935,29 +939,63 @@ fun BadgeInputForm(
     var lastLinkContent by remember { mutableStateOf("") }
     var showTagDialog by remember { mutableStateOf(false) }
     val directChannels = availableChannels.filter { it.acceptsBadgeLinks }
-    val otherApps = availableChannels.filterNot { it.acceptsBadgeLinks }
     if (otherAppsExpanded) {
+        val context = LocalContext.current
+        var otherApps by remember { mutableStateOf<List<BadgeChannelTarget>?>(null) }
+        var loadFailed by remember { mutableStateOf(false) }
+        LaunchedEffect(context, directChannels) {
+            otherApps = null
+            loadFailed = false
+            try {
+                otherApps = withContext(Dispatchers.IO) {
+                    InstalledChannelProvider.discoverOtherApps(
+                        context, directChannels.mapTo(HashSet()) { it.packageName },
+                    )
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                loadFailed = true
+                otherApps = emptyList()
+            }
+        }
         AlertDialog(
             onDismissRequest = { otherAppsExpanded = false },
             title = { Text(stringResource(R.string.channel_choose_other_app)) },
             text = {
-                LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 420.dp)) {
-                    items(otherApps, key = { it.packageName }) { option ->
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    onChannelChange(option)
-                                    otherAppsExpanded = false
-                                }
-                                .padding(vertical = 10.dp),
-                        ) {
-                            Text(option.getLabel(LocalContext.current))
-                            Text(
-                                option.packageName,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                val apps = otherApps
+                if (apps == null) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().height(80.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                } else if (apps.isEmpty()) {
+                    Text(
+                        stringResource(
+                            if (loadFailed) R.string.channel_load_apps_failed else R.string.channel_no_other_apps,
+                        )
+                    )
+                } else {
+                    LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 420.dp)) {
+                        items(apps, key = { it.packageName }) { option ->
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        onChannelChange(option)
+                                        otherAppsExpanded = false
+                                    }
+                                    .padding(vertical = 10.dp),
+                            ) {
+                                Text(option.getLabel(LocalContext.current))
+                                Text(
+                                    option.packageName,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                         }
                     }
                 }
@@ -1161,33 +1199,24 @@ fun BadgeInputForm(
                             ),
                         )
                     }
-                    if (otherApps.isNotEmpty()) {
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                            color = BorderDefault,
-                        )
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    text = stringResource(R.string.channel_choose_other_app),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = BrandOrange,
-                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
-                                )
-                            },
-                            onClick = {
-                                channelMenuExpanded = false
-                                otherAppsExpanded = true
-                            },
-                        )
-                    }
-                    if (directChannels.isEmpty() && otherApps.isEmpty()) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.channel_none_installed)) },
-                            onClick = {},
-                            enabled = false,
-                        )
-                    }
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                        color = BorderDefault,
+                    )
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = stringResource(R.string.channel_choose_other_app),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = BrandOrange,
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+                            )
+                        },
+                        onClick = {
+                            channelMenuExpanded = false
+                            otherAppsExpanded = true
+                        },
+                    )
                 }
             }
             Row(

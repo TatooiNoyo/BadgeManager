@@ -168,6 +168,8 @@
     <string name="channel_custom">Other app</string>
     <string name="channel_none_installed">No compatible app installed</string>
     <string name="channel_choose_other_app">Choose another app</string>
+    <string name="channel_no_other_apps">No other apps available</string>
+    <string name="channel_load_apps_failed">Could not load apps. Please try again.</string>
     <string name="channel_installed">Installed</string>
     <string name="channel_label">Channel</string>
     <string name="edit_badge_details">Edit Badge Details</string>
@@ -199,6 +201,7 @@
     <string name="submit_all_badges">Submit badge data</string>
     <string name="submit_badges_in_progress">Submitting…</string>
     <string name="submit_badges_success">Submitted %1$d badges</string>
+    <string name="submit_badges_partial">Submitted %1$d badges; %2$d failed. Copied failed items and opened form</string>
     <string name="submit_badges_failed">Submit failed, copied info and opened form</string>
     <!-- Preset Badges Titles -->
     <string name="preset_badge_valley_of_prophecy">Valley of Prophecy</string>

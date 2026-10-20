@@ -87,12 +87,12 @@ fun HelpUsScreen(
         }
     }
 
-    fun openQuestionnaireFallback() {
-        val badgesInfo = BadgeFormatterUtils.formatUnrecordedBadges(context, unrecordedBadges)
+    fun openQuestionnaireFallback(failedBadges: List<Badge> = unrecordedBadges) {
+        val badgesInfo = BadgeFormatterUtils.formatUnrecordedBadges(context, failedBadges)
         clipboardManager.setText(AnnotatedString(badgesInfo))
         android.widget.Toast.makeText(
             context,
-            context.getString(R.string.copy_all_badges_success, unrecordedBadges.size),
+            context.getString(R.string.copy_all_badges_success, failedBadges.size),
             android.widget.Toast.LENGTH_SHORT,
         ).show()
         uriHandler.openUri(pollUrl)
@@ -149,24 +149,30 @@ fun HelpUsScreen(
                         if (isSubmitting) return@PrimaryOrangeButton
                         isSubmitting = true
                         scope.launch {
-                            val result = PresetSubmissionHelper.submitUnrecordedBadges(unrecordedBadges)
-                            isSubmitting = false
-                            if (result.isSuccess) {
-                                android.widget.Toast.makeText(
-                                    context,
-                                    context.getString(
+                            try {
+                                val result = PresetSubmissionHelper.submitUnrecordedBadges(unrecordedBadges)
+                                val message = when {
+                                    result.isComplete -> context.getString(
                                         R.string.submit_badges_success,
-                                        result.getOrElse { 0 },
-                                    ),
-                                    android.widget.Toast.LENGTH_SHORT,
-                                ).show()
-                            } else {
+                                        result.submittedCount,
+                                    )
+                                    result.submittedCount > 0 -> context.getString(
+                                        R.string.submit_badges_partial,
+                                        result.submittedCount,
+                                        result.failedBadges.size,
+                                    )
+                                    else -> context.getString(R.string.submit_badges_failed)
+                                }
+                                if (result.failedBadges.isNotEmpty()) {
+                                    openQuestionnaireFallback(result.failedBadges)
+                                }
                                 android.widget.Toast.makeText(
                                     context,
-                                    R.string.submit_badges_failed,
-                                    android.widget.Toast.LENGTH_SHORT,
+                                    message,
+                                    android.widget.Toast.LENGTH_LONG,
                                 ).show()
-                                openQuestionnaireFallback()
+                            } finally {
+                                isSubmitting = false
                             }
                         }
                     },

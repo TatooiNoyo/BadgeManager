@@ -169,6 +169,8 @@
     <string name="channel_custom">其他应用</string>
     <string name="channel_none_installed">未安装可接收徽章的应用</string>
     <string name="channel_choose_other_app">选择其他应用</string>
+    <string name="channel_no_other_apps">没有可选择的其他应用</string>
+    <string name="channel_load_apps_failed">无法加载应用列表，请重试</string>
     <string name="channel_installed">已安装</string>
     <string name="channel_label">渠道</string>
     <string name="edit_badge_details">编辑徽章详情</string>
@@ -200,6 +202,7 @@
     <string name="submit_all_badges">上报徽章数据</string>
     <string name="submit_badges_in_progress">正在上报…</string>
     <string name="submit_badges_success">已上报 %1$d 个徽章</string>
+    <string name="submit_badges_partial">已上报 %1$d 个，失败 %2$d 个；已复制失败条目并打开问卷</string>
     <string name="submit_badges_failed">上报失败，已复制信息并打开问卷</string>
     <!-- 预设徽章标题 -->
     <string name="preset_badge_valley_of_prophecy">预言山谷</string>

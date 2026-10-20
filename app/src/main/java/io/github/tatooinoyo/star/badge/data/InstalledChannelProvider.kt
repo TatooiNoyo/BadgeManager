@@ -8,7 +8,7 @@ import android.os.Build
 import java.text.Collator
 import java.util.Locale
 
-/** Discovers direct badge-link handlers plus launcher apps available as explicit targets. */
+/** Keeps primary channel discovery separate from the on-demand launcher app picker. */
 object InstalledChannelProvider {
     private const val PROBE_LINK = "https://sky.thatg.co/?s=discovery-only"
 
@@ -55,6 +55,29 @@ object InstalledChannelProvider {
             )
             .toList()
 
+        val detectedByPackage = detectedGameTargets.associateBy { it.packageName }
+        val presetTargets = BadgeChannel.entries
+            .filterNot { it == BadgeChannel.CUSTOM }
+            .map { channel ->
+                val detected = detectedByPackage[channel.packageName]
+                val installed = isPackageInstalled(packageManager, channel.packageName)
+                val launcherActivity = if (detected == null && installed) {
+                    packageManager.getLaunchIntentForPackage(channel.packageName)?.component?.className
+                } else null
+                BadgeChannelTarget(
+                    channel = channel,
+                    packageName = channel.packageName,
+                    activityName = detected?.activityName ?: launcherActivity ?: channel.className,
+                    label = channel.getLabel(context),
+                    isInstalled = installed,
+                )
+            }
+        val customGameTargets = detectedGameTargets.filter { it.channel == BadgeChannel.CUSTOM }
+        return presetTargets + customGameTargets
+    }
+
+    fun discoverOtherApps(context: Context, excludedPackages: Set<String>): List<BadgeChannelTarget> {
+        val packageManager = context.packageManager
         val launcherIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
         val launchers = if (Build.VERSION.SDK_INT >= 33) {
             packageManager.queryIntentActivities(
@@ -65,12 +88,14 @@ object InstalledChannelProvider {
             @Suppress("DEPRECATION")
             packageManager.queryIntentActivities(launcherIntent, 0)
         }
-        val launcherTargets = launchers.asSequence()
+        val collator = Collator.getInstance(Locale.getDefault())
+        return launchers.asSequence()
             .mapNotNull { info ->
                 val activity = info.activityInfo ?: return@mapNotNull null
                 val application = activity.applicationInfo ?: return@mapNotNull null
                 val packageName = activity.packageName
-                if (packageName == context.packageName || !activity.exported || !activity.enabled ||
+                if (packageName == context.packageName || packageName in excludedPackages ||
+                    !activity.exported || !activity.enabled ||
                     !application.enabled || activity.permission != null) return@mapNotNull null
                 BadgeChannelTarget(
                     channel = BadgeChannel.fromPackageName(packageName) ?: BadgeChannel.CUSTOM,
@@ -83,30 +108,6 @@ object InstalledChannelProvider {
             .distinctBy { it.packageName }
             .sortedWith { left, right -> collator.compare(left.label, right.label) }
             .toList()
-
-        val detectedByPackage = detectedGameTargets.associateBy { it.packageName }
-        val launchersByPackage = launcherTargets.associateBy { it.packageName }
-        val presetTargets = BadgeChannel.entries
-            .filterNot { it == BadgeChannel.CUSTOM }
-            .map { channel ->
-                val detected = detectedByPackage[channel.packageName]
-                val launcher = launchersByPackage[channel.packageName]
-                BadgeChannelTarget(
-                    channel = channel,
-                    packageName = channel.packageName,
-                    activityName = detected?.activityName ?: launcher?.activityName ?: channel.className,
-                    label = channel.getLabel(context),
-                    isInstalled = isPackageInstalled(packageManager, channel.packageName),
-                )
-            }
-        val customGameTargets = (detectedGameTargets + launcherTargets)
-            .filter { it.channel == BadgeChannel.CUSTOM && isSkyGamePackage(it.packageName) }
-            .distinctBy { it.packageName }
-            .map { it.copy(acceptsBadgeLinks = true, isInstalled = true) }
-        val directTargets = presetTargets + customGameTargets
-        val directPackages = directTargets.mapTo(HashSet()) { it.packageName }
-        val otherApps = launcherTargets.filterNot { it.packageName in directPackages }
-        return directTargets + otherApps
     }
 
     private fun isPackageInstalled(packageManager: PackageManager, packageName: String): Boolean =
