@@ -114,6 +114,8 @@ class HomeViewModel(
     private val savedStateHandle: SavedStateHandle,
 ) : AndroidViewModel(application) {
 
+    private val preferences = application.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
+
     private val _uiState = MutableStateFlow(
         BadgeUiState(
             pendingImportUri = savedStateHandle.get<String>(PENDING_IMPORT_URI)?.let(android.net.Uri::parse),
@@ -193,10 +195,19 @@ class HomeViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             val channels = InstalledChannelProvider.discover(getApplication())
             _uiState.update { state ->
+                val savedPackageName = preferences.getString(KEY_ADD_CHANNEL_PACKAGE, null)
+                val restoredChannel = savedPackageName?.let { packageName ->
+                    channels.firstOrNull { it.packageName == packageName }
+                }
                 state.copy(
                     availableChannels = channels,
-                    addChannel = state.addChannel ?: channels.firstOrNull {
+                    addChannel = restoredChannel ?: state.addChannel ?: channels.firstOrNull {
                         it.acceptsBadgeLinks && it.isInstalled
+                    }.also { channel ->
+                        // Persist the initial fallback when there is no usable saved target.
+                        if (restoredChannel == null && state.addChannel == null && channel != null) {
+                            preferences.edit().putString(KEY_ADD_CHANNEL_PACKAGE, channel.packageName).apply()
+                        }
                     },
                 )
             }
@@ -464,6 +475,7 @@ class HomeViewModel(
         tags: List<String> = _uiState.value.addTags
     ) {
         val isLinkChanged = link != _uiState.value.addLink
+        val previousChannel = _uiState.value.addChannel
         var finalTitle = title
         var finalRemark = remark
 
@@ -482,6 +494,12 @@ class HomeViewModel(
             addChannel = channel,
             addTags = tags // 确保更新状态
         )
+        if (channel != previousChannel) {
+            // Selection is persisted separately from the in-progress form fields.
+            channel?.let {
+                preferences.edit().putString(KEY_ADD_CHANNEL_PACKAGE, it.packageName).apply()
+            }
+        }
         if (_uiState.value.isFastMode && link.isNotBlank()) {
             addBadge()
 
@@ -869,6 +887,8 @@ class HomeViewModel(
     }
 
     companion object {
+        private const val PREFERENCES_NAME = "badge_manager_preferences"
+        private const val KEY_ADD_CHANNEL_PACKAGE = "add_channel_package"
         private const val PENDING_IMPORT_URI = "pending_import_uri"
         private const val INCOMING_IMPORT_URI = "incoming_import_uri"
     }
