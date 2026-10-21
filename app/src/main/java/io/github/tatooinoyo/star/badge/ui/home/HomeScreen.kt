@@ -7,15 +7,19 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -80,12 +84,14 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -203,119 +209,203 @@ fun HomeScreen(
         }
     }
 
-    AnimatedContent(
-        targetState = uiState.editingBadge,
-        contentKey = { badge -> badge?.id ?: "badge-list" },
-        transitionSpec = {
-            val enteringDetail = targetState != null
-            val transform = if (enteringDetail) {
-                (slideInHorizontally(
-                    animationSpec = tween(280, easing = FastOutSlowInEasing),
-                    initialOffsetX = { width -> width },
-                ) + fadeIn(animationSpec = tween(180, delayMillis = 40))) togetherWith
-                    (slideOutHorizontally(
-                        animationSpec = tween(240, easing = FastOutSlowInEasing),
-                        targetOffsetX = { width -> -width / 5 },
-                    ) + fadeOut(animationSpec = tween(160)))
-            } else {
-                (slideInHorizontally(
-                    animationSpec = tween(260, easing = FastOutSlowInEasing),
-                    initialOffsetX = { width -> -width / 5 },
-                ) + fadeIn(animationSpec = tween(200, delayMillis = 30))) togetherWith
-                    (slideOutHorizontally(
-                        animationSpec = tween(280, easing = FastOutSlowInEasing),
-                        targetOffsetX = { width -> width },
-                    ) + fadeOut(animationSpec = tween(180)))
-            }
-            transform.using(SizeTransform(clip = false))
-        },
-        label = "badgeDetailTransition",
-    ) { editingBadge ->
-    if (editingBadge == null) {
-        BadgeListContent(
-            uiState = uiState,
-            listState = listState,
-            onInputTitleChange = { viewModelInstance.updateAddInput(title = it) },
-            onInputRemarkChange = { viewModelInstance.updateAddInput(remark = it) },
-            onInputLinkChange = { viewModelInstance.updateAddInput(link = it) },
-            onInputChannelChange = { viewModelInstance.updateAddInput(channel = it) },
-            onFastModeChange = viewModelInstance::toggleFastMode,
-            onAddClick = { viewModelInstance.addBadge() },
-            onItemClick = { badge ->
-                if (uiState.isShareSelecting) {
-                    viewModelInstance.toggleShareSelection(badge.id)
-                } else {
-                    viewModelInstance.selectBadge(badge)
-                }
-            },
-            onToggleFunctionArea = { viewModelInstance.toggleFunctionArea() },
-            onSetFunctionAreaExpanded = { viewModelInstance.setFunctionAreaExpanded(it) },
-            onExtractSkClick = { link -> viewModelInstance.extractSkFromLink(link) },
-            onTagsChange = { viewModelInstance.updateAddInput(tags = it) },
-            onSharedFileSelected = viewModelInstance::receiveShareImport,
-            onTagSelected = { tag -> viewModelInstance.selectTag(tag) },
-            onMove = { badgeId, insertBeforeId ->
-                viewModelInstance.moveBadge(badgeId, insertBeforeId)
-            },
-            onSaveOrder = { viewModelInstance.saveOrder() },
-            // === 传递同步参数 ===
-            syncState = syncState,
-            onStartSender = { badgeSyncViewModel.startSenderMode() },
-            onStopSender = { badgeSyncViewModel.stopSenderMode() },
-            onStartReceiver = { code -> badgeSyncViewModel.startReceiverMode(code) },
-            onStopReceiver = { badgeSyncViewModel.stopReceiverMode() },
-            onConfirmImport = { badgeSyncViewModel.confirmImport() },
-            onCancelImport = { badgeSyncViewModel.cancelImport() },
-            onImport = { ctx, uri, onResult ->
-                viewModelInstance.importBadgesFromUri(ctx, uri, onResult)
-            },
-            onExport = { ctx, uri, onResult ->
-                viewModelInstance.exportBadgesToUri(ctx, uri, onResult)
-            },
-            onShareSelectBadges = { viewModelInstance.enterShareSelection() },
-            onShareExport = { viewModelInstance.prepareShareExport() },
-            onShareFormatChange = { viewModelInstance.setShareFormat(it) },
-            onCopyShareCode = { code ->
-                clipboardManager.setText(AnnotatedString(code))
-                Toast.makeText(
-                    context,
-                    context.getString(R.string.msg_copy_success),
-                    Toast.LENGTH_SHORT,
-                ).show()
-            },
-            onCancelShareSelection = { viewModelInstance.cancelShareSelection() },
-            onSelectAllForShare = { viewModelInstance.selectAllVisibleForShare() },
-            onFinishShareSelection = { viewModelInstance.finishShareSelection() },
-            // 导航相关
-            onSettingsClick = onNavigateToSettings,
-            onAboutClick = onNavigateToAbout,
-            onUnrecordedBadgesClick = onNavigateToUnrecordedBadges
-        )
-    } else {
-        BadgeDetailContent(
-            badge = editingBadge,
-            title = uiState.detailTitle,
-            remark = uiState.detailRemark,
-            link = uiState.detailLink,
-            channel = uiState.detailChannel,
-            availableChannels = uiState.availableChannels,
-            tags = uiState.detailTags,
-            allTags = uiState.allTags,
-            onTagsChange = { viewModelInstance.updateDetailInput(tags = it) },
-            isWritingNfc = uiState.isWritingNfc,
-            isNfcWriteInProgress = uiState.isNfcWriteInProgress,
-            onTitleChange = { viewModelInstance.updateDetailInput(title = it) },
-            onRemarkChange = { viewModelInstance.updateDetailInput(remark = it) },
-            onLinkChange = { viewModelInstance.updateDetailInput(link = it) },
-            onChannelChange = { viewModelInstance.updateDetailInput(channel = it) },
-            onWriteNfcClick = { viewModelInstance.startWritingNfc() },
-            onCancelWriteNfcClick = { viewModelInstance.cancelWritingNfc() },
-            onSaveClick = { viewModelInstance.saveBadgeUpdate() },
-            onDeleteClick = { viewModelInstance.deleteBadge() },
-            onExitClick = { viewModelInstance.exitEditMode() },
-            onExtractSkClick = { link -> viewModelInstance.extractSkFromLink(link) }
+    // Details update the same ViewModel state object on every keystroke. Keep a list-only
+    // snapshot so those edits do not force the hidden list subtree to recompose.
+    val listUiState = remember(
+        uiState.badges,
+        uiState.allBadgesUnfiltered,
+        uiState.addTitle,
+        uiState.addRemark,
+        uiState.addLink,
+        uiState.addChannel,
+        uiState.availableChannels,
+        uiState.isFastMode,
+        uiState.isFunctionAreaExpanded,
+        uiState.selectedTag,
+        uiState.addTags,
+        uiState.allTags,
+        uiState.isShareSelecting,
+        uiState.shareSelectedIds,
+        uiState.pendingShareCode,
+        uiState.shareFormat,
+        uiState.functionTabIndex,
+    ) {
+        uiState.copy(
+            editingBadge = null,
+            detailTitle = "",
+            detailRemark = "",
+            detailLink = "",
+            detailChannel = null,
+            detailTags = emptyList(),
+            isWritingNfc = false,
+            isNfcWriteInProgress = false,
+            extractedSk = null,
         )
     }
+    val isShowingDetail = uiState.editingBadge != null
+    val detailTransition = updateTransition(
+        targetState = isShowingDetail,
+        label = "badgeDetailTransition",
+    )
+    val listOffsetFraction by detailTransition.animateFloat(
+        transitionSpec = {
+            tween(
+                durationMillis = if (targetState) 240 else 260,
+                easing = FastOutSlowInEasing,
+            )
+        },
+        label = "badgeListOffset",
+    ) { showingDetail -> if (showingDetail) -0.2f else 0f }
+    val listAlpha by detailTransition.animateFloat(
+        transitionSpec = {
+            if (targetState) tween(160) else tween(200, delayMillis = 30)
+        },
+        label = "badgeListAlpha",
+    ) { showingDetail -> if (showingDetail) 0f else 1f }
+
+    Box(Modifier.fillMaxSize()) {
+        // Keep the list subtree composed while the detail editor is open so its remembered
+        // state and lazy-list composition survive returning from the editor.
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    translationX = size.width * listOffsetFraction
+                    alpha = listAlpha
+                }
+                .then(
+                    if (isShowingDetail) Modifier.clearAndSetSemantics {} else Modifier,
+                ),
+        ) {
+            BadgeListContent(
+                uiState = listUiState,
+                listState = listState,
+                onInputTitleChange = { viewModelInstance.updateAddInput(title = it) },
+                onInputRemarkChange = { viewModelInstance.updateAddInput(remark = it) },
+                onInputLinkChange = { viewModelInstance.updateAddInput(link = it) },
+                onInputChannelChange = { viewModelInstance.updateAddInput(channel = it) },
+                onFastModeChange = viewModelInstance::toggleFastMode,
+                onAddClick = { viewModelInstance.addBadge() },
+                onItemClick = { badge ->
+                    if (listUiState.isShareSelecting) {
+                        viewModelInstance.toggleShareSelection(badge.id)
+                    } else {
+                        focusManager.clearFocus()
+                        viewModelInstance.selectBadge(badge)
+                    }
+                },
+                onToggleFunctionArea = { viewModelInstance.toggleFunctionArea() },
+                onSetFunctionAreaExpanded = { viewModelInstance.setFunctionAreaExpanded(it) },
+                onExtractSkClick = { link -> viewModelInstance.extractSkFromLink(link) },
+                onTagsChange = { viewModelInstance.updateAddInput(tags = it) },
+                onSharedFileSelected = viewModelInstance::receiveShareImport,
+                onTagSelected = { tag -> viewModelInstance.selectTag(tag) },
+                onMove = { badgeId, insertBeforeId ->
+                    viewModelInstance.moveBadge(badgeId, insertBeforeId)
+                },
+                onSaveOrder = { viewModelInstance.saveOrder() },
+                // === 传递同步参数 ===
+                syncState = syncState,
+                onStartSender = { badgeSyncViewModel.startSenderMode() },
+                onStopSender = { badgeSyncViewModel.stopSenderMode() },
+                onStartReceiver = { code -> badgeSyncViewModel.startReceiverMode(code) },
+                onStopReceiver = { badgeSyncViewModel.stopReceiverMode() },
+                onConfirmImport = { badgeSyncViewModel.confirmImport() },
+                onCancelImport = { badgeSyncViewModel.cancelImport() },
+                onImport = { ctx, uri, onResult ->
+                    viewModelInstance.importBadgesFromUri(ctx, uri, onResult)
+                },
+                onExport = { ctx, uri, onResult ->
+                    viewModelInstance.exportBadgesToUri(ctx, uri, onResult)
+                },
+                onShareSelectBadges = { viewModelInstance.enterShareSelection() },
+                onShareExport = { viewModelInstance.prepareShareExport() },
+                onShareFormatChange = { viewModelInstance.setShareFormat(it) },
+                onCopyShareCode = { code ->
+                    clipboardManager.setText(AnnotatedString(code))
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.msg_copy_success),
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                },
+                onCancelShareSelection = { viewModelInstance.cancelShareSelection() },
+                onSelectAllForShare = { viewModelInstance.selectAllVisibleForShare() },
+                onFinishShareSelection = { viewModelInstance.finishShareSelection() },
+                // 导航相关
+                onSettingsClick = onNavigateToSettings,
+                onAboutClick = onNavigateToAbout,
+                onUnrecordedBadgesClick = onNavigateToUnrecordedBadges,
+            )
+        }
+
+        if (isShowingDetail) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .zIndex(1f)
+                    .clearAndSetSemantics {}
+                    .pointerInput(Unit) {
+                        awaitPointerEventScope {
+                            while (true) {
+                                awaitPointerEvent().changes.forEach { it.consume() }
+                            }
+                        }
+                    },
+            )
+        }
+
+        AnimatedContent(
+            targetState = uiState.editingBadge,
+            contentKey = { badge -> badge?.id ?: "no-badge-detail" },
+            modifier = Modifier
+                .fillMaxSize()
+                .zIndex(2f),
+            transitionSpec = {
+                if (targetState != null) {
+                    (slideInHorizontally(
+                        animationSpec = tween(280, easing = FastOutSlowInEasing),
+                        initialOffsetX = { width -> width },
+                    ) + fadeIn(animationSpec = tween(180, delayMillis = 40))) togetherWith
+                        ExitTransition.None
+                } else {
+                    EnterTransition.None togetherWith
+                        (slideOutHorizontally(
+                            animationSpec = tween(280, easing = FastOutSlowInEasing),
+                            targetOffsetX = { width -> width },
+                        ) + fadeOut(animationSpec = tween(180)))
+                }.using(SizeTransform(clip = false))
+            },
+            label = "badgeDetailOverlayTransition",
+        ) { editingBadge ->
+            Box(Modifier.fillMaxSize()) {
+                editingBadge?.let { badge ->
+                    BadgeDetailContent(
+                        badge = badge,
+                        title = uiState.detailTitle,
+                        remark = uiState.detailRemark,
+                        link = uiState.detailLink,
+                        channel = uiState.detailChannel,
+                        availableChannels = uiState.availableChannels,
+                        tags = uiState.detailTags,
+                        allTags = uiState.allTags,
+                        onTagsChange = { viewModelInstance.updateDetailInput(tags = it) },
+                        isWritingNfc = uiState.isWritingNfc,
+                        isNfcWriteInProgress = uiState.isNfcWriteInProgress,
+                        onTitleChange = { viewModelInstance.updateDetailInput(title = it) },
+                        onRemarkChange = { viewModelInstance.updateDetailInput(remark = it) },
+                        onLinkChange = { viewModelInstance.updateDetailInput(link = it) },
+                        onChannelChange = { viewModelInstance.updateDetailInput(channel = it) },
+                        onWriteNfcClick = { viewModelInstance.startWritingNfc() },
+                        onCancelWriteNfcClick = { viewModelInstance.cancelWritingNfc() },
+                        onSaveClick = { viewModelInstance.saveBadgeUpdate() },
+                        onDeleteClick = { viewModelInstance.deleteBadge() },
+                        onExitClick = { viewModelInstance.exitEditMode() },
+                        onExtractSkClick = { link -> viewModelInstance.extractSkFromLink(link) },
+                    )
+                }
+            }
+        }
     }
 
     uiState.extractedSk?.let { sk ->
