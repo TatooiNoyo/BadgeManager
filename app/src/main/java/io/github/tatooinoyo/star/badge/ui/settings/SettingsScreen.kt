@@ -122,6 +122,15 @@ fun SettingsScreen(
                             restartApp(context)
                         },
                     )
+                    LanguageOption(
+                        text = stringResource(R.string.japanese),
+                        isSelected = selectedLanguage == LanguageUtils.LANGUAGE_JAPANESE,
+                        onClick = {
+                            selectedLanguage = LanguageUtils.LANGUAGE_JAPANESE
+                            languageManager.setLanguage(LanguageUtils.LANGUAGE_JAPANESE)
+                            restartApp(context)
+                        },
+                    )
                 }
             }
 

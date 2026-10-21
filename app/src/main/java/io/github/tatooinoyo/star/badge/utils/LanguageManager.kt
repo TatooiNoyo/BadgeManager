@@ -59,6 +59,7 @@ class LanguageManager private constructor(private val context: Context) {
             LanguageUtils.LANGUAGE_ENGLISH -> Locale.ENGLISH
             LanguageUtils.LANGUAGE_CHINESE -> Locale.SIMPLIFIED_CHINESE
             LanguageUtils.LANGUAGE_CHINESE_TRADITIONAL -> Locale.TRADITIONAL_CHINESE
+            LanguageUtils.LANGUAGE_JAPANESE -> Locale.JAPANESE
             // auto：必须读系统 locale。applicationContext.resources 可能已被
             // updateConfiguration 改成上次所选语言（如 English），不能再依赖它。
             else -> getSystemLocale()

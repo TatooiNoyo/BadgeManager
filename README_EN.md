@@ -4,7 +4,7 @@
 [![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/tatooinoyo/BadgeManager)](https://github.com/tatooinoyo/BadgeManager/releases)
 [![GitHub all releases](https://img.shields.io/github/downloads/tatooinoyo/BadgeManager/total)](https://github.com/tatooinoyo/BadgeManager/releases)
 
-[中文版本](README.md)
+[中文版本](README.md) | [日本語版](README_JA.md)
 
 Badge Manager is an Android application that helps players manage and quickly launch “Sky: Children of the Light STAR badges.” With it, players can quickly use STAR badges in the game.
 

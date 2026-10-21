@@ -4,7 +4,7 @@
 [![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/tatooinoyo/BadgeManager)](https://github.com/tatooinoyo/BadgeManager/releases)
 [![GitHub all releases](https://img.shields.io/github/downloads/tatooinoyo/BadgeManager/total)](https://github.com/tatooinoyo/BadgeManager/releases)
 
-[English Version](README_EN.md)
+[English Version](README_EN.md) | [日本語版](README_JA.md)
 
 Badge Manager 是一个Android 应用程序，帮助玩家管理和快速启动“光遇 Star 徽章”。使用它, 能在游戏中快速使用Star 徽章。
 

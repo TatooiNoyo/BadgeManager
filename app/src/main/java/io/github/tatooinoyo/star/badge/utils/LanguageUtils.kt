@@ -9,6 +9,7 @@ object LanguageUtils {
     const val LANGUAGE_ENGLISH = "en"
     const val LANGUAGE_CHINESE = "zh"
     const val LANGUAGE_CHINESE_TRADITIONAL = "zh-TW"
+    const val LANGUAGE_JAPANESE = "ja"
 
     /**
      * 设置应用语言
@@ -18,6 +19,7 @@ object LanguageUtils {
             LANGUAGE_ENGLISH -> Locale.ENGLISH
             LANGUAGE_CHINESE -> Locale.CHINESE
             LANGUAGE_CHINESE_TRADITIONAL -> Locale.TRADITIONAL_CHINESE
+            LANGUAGE_JAPANESE -> Locale.JAPANESE
             else -> Locale.getDefault()
         }
         

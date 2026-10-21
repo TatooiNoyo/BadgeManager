@@ -118,6 +118,7 @@
     <string name="chinese">Chinese</string>
     <string name="chinese_simplified">Simplified Chinese</string>
     <string name="chinese_traditional">Traditional Chinese</string>
+    <string name="japanese">Japanese</string>
     <string name="tag_all">All</string>
     <string name="all_tags">All tags</string>
     <string name="new_tag">New tag</string>

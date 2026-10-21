@@ -118,6 +118,7 @@
     <string name="chinese">中文</string>
     <string name="chinese_simplified">简体中文</string>
     <string name="chinese_traditional">繁體中文</string>
+    <string name="japanese">日语</string>
     <string name="tag_all">全部</string>
     <string name="all_tags">全部标签</string>
     <string name="new_tag">新建标签</string>
