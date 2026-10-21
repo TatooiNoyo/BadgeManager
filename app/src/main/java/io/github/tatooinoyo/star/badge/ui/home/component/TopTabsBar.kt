@@ -33,7 +33,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.AlertDialog
+import io.github.tatooinoyo.star.badge.ui.component.BadgeAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -205,10 +205,15 @@ fun BadgeInputPanel(
     }
 
     if (showContinuousHelp) {
-        AlertDialog(
+        BadgeAlertDialog(
             onDismissRequest = { showContinuousHelp = false },
             title = { Text(stringResource(R.string.continuous_entry_help_title)) },
-            text = { Text(stringResource(R.string.continuous_entry_help_desc)) },
+            text = {
+                Text(
+                    text = stringResource(R.string.continuous_entry_help_desc),
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                )
+            },
             confirmButton = {
                 TextButton(onClick = { showContinuousHelp = false }) {
                     Text(stringResource(R.string.btn_confirm))

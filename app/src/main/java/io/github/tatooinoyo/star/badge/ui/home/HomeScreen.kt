@@ -56,7 +56,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material3.AlertDialog
+import io.github.tatooinoyo.star.badge.ui.component.BadgeAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -410,7 +410,7 @@ fun HomeScreen(
     }
 
     uiState.extractedSk?.let { sk ->
-        AlertDialog(
+        BadgeAlertDialog(
             onDismissRequest = { viewModelInstance.dismissSkDialog() },
             title = { Text(stringResource(R.string.dialog_sk_title)) },
             text = {
@@ -936,7 +936,7 @@ fun BadgeDetailContent(
 
     // === 删除确认弹窗 ===
     if (showDeleteConfirm) {
-        AlertDialog(
+        BadgeAlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
             title = { Text(stringResource(R.string.confirm_delete)) },
             text = { Text(stringResource(R.string.confirm_delete_message, badge.title)) },
@@ -961,7 +961,7 @@ fun BadgeDetailContent(
 
     // === 更新确认弹窗 ===
     if (showUpdateConfirm) {
-        AlertDialog(
+        BadgeAlertDialog(
             onDismissRequest = { showUpdateConfirm = false },
             title = { Text(stringResource(R.string.confirm_update)) },
             text = { Text(stringResource(R.string.confirm_update_message, badge.title)) },
@@ -983,7 +983,7 @@ fun BadgeDetailContent(
 
     // === NFC 写入等待弹窗 ===
     if (isWritingNfc) {
-        AlertDialog(
+        BadgeAlertDialog(
             onDismissRequest = onCancelWriteNfcClick,
             title = {
                 Text(
@@ -1059,7 +1059,7 @@ fun BadgeInputForm(
                 otherApps = emptyList()
             }
         }
-        AlertDialog(
+        BadgeAlertDialog(
             onDismissRequest = { otherAppsExpanded = false },
             title = { Text(stringResource(R.string.channel_choose_other_app)) },
             text = {

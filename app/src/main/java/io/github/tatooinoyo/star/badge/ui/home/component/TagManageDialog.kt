@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material3.AlertDialog
+import io.github.tatooinoyo.star.badge.ui.component.BadgeAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -42,7 +42,6 @@ import io.github.tatooinoyo.star.badge.ui.icons.BadgeIcons
 import io.github.tatooinoyo.star.badge.ui.theme.BorderDefault
 import io.github.tatooinoyo.star.badge.ui.theme.BrandOrange
 import io.github.tatooinoyo.star.badge.ui.theme.BrandOrangeLight
-import io.github.tatooinoyo.star.badge.ui.theme.SurfacePanel
 import io.github.tatooinoyo.star.badge.ui.theme.TextPrimary
 import io.github.tatooinoyo.star.badge.ui.theme.TextSecondary
 
@@ -64,10 +63,8 @@ fun TagManageDialog(
         newTagInput = ""
     }
 
-    AlertDialog(
+    BadgeAlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = SurfacePanel,
-        shape = MaterialTheme.shapes.large,
         title = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,

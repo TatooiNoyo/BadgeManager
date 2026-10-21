@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
+import io.github.tatooinoyo.star.badge.ui.component.BadgeAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -32,7 +32,7 @@ fun UpdateCheckDialog(
 ) {
     val uriHandler = LocalUriHandler.current
 
-    AlertDialog(
+    BadgeAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.check_update)) },
         text = {

@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.AlertDialog
+import io.github.tatooinoyo.star.badge.ui.component.BadgeAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -41,7 +41,7 @@ fun QiguangImportDialog(
         if (!state.passwordRequired) password = ""
     }
 
-    AlertDialog(
+    BadgeAlertDialog(
         onDismissRequest = { if (!state.isProcessing) onDismiss() },
         title = { Text(stringResource(R.string.qiguang_import_title)) },
         text = {

@@ -9,6 +9,7 @@ val BadgeShapes = Shapes(
     small = RoundedCornerShape(10.dp),
     medium = RoundedCornerShape(14.dp),
     large = RoundedCornerShape(24.dp),
+    extraLarge = RoundedCornerShape(24.dp),
 )
 
 val IconContainerShape = RoundedCornerShape(12.dp)

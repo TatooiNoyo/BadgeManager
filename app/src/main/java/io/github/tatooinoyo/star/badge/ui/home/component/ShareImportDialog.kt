@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.AlertDialog
+import io.github.tatooinoyo.star.badge.ui.component.BadgeAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -38,7 +38,7 @@ fun ShareImportDialog(
     var importCode by rememberSaveable(uri) { mutableStateOf("") }
     var isImporting by rememberSaveable(uri) { mutableStateOf(false) }
 
-    AlertDialog(
+    BadgeAlertDialog(
         onDismissRequest = {
             if (!isImporting) onDismiss()
         },
