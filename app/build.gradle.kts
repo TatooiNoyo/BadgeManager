@@ -24,7 +24,7 @@ android {
 
                 val projectName = rootProject.name
 
-                // 最终名称格式: BadgeManager_2.2.0_32_release.apk
+                // 最终名称格式: BadgeManager_2.3.0_33_release.apk
                 val fileName =
                     "${projectName}_${variant.versionName}_${variant.versionCode}_release.apk"
 
@@ -37,8 +37,8 @@ android {
         applicationId = "io.github.tatooinoyo.star.badge"
         minSdk = 29
         targetSdk = 35
-        versionCode = 32
-        versionName = "2.2.0"
+        versionCode = 33
+        versionName = "2.3.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
