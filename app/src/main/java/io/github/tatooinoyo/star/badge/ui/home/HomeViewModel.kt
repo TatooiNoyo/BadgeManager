@@ -21,6 +21,7 @@ import io.github.tatooinoyo.star.badge.data.BadgeRepository
 import io.github.tatooinoyo.star.badge.data.InstalledChannelProvider
 import io.github.tatooinoyo.star.badge.utils.LanguageManager
 import io.github.tatooinoyo.star.badge.utils.BadgeImportValidator
+import io.github.tatooinoyo.star.badge.utils.QiguangBackupParser
 import io.github.tatooinoyo.star.badge.utils.readBoundedBytes
 import io.github.tatooinoyo.star.badge.utils.preset.PresetResolver
 import io.github.tatooinoyo.star.badge.utils.SkExtractException
@@ -45,7 +46,9 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.io.IOException
+import java.util.UUID
 
 // 定义 UI 状态
 data class BadgeUiState(
@@ -78,7 +81,18 @@ data class BadgeUiState(
     val pendingShareCode: String? = null,
     val shareFormat: BadgeShareFormat = BadgeShareFormat.TEXT,
     val pendingImportUri: android.net.Uri? = null,
+    val pendingQiguangImport: QiguangImportUiState? = null,
     val functionTabIndex: Int = 0,
+)
+
+data class QiguangImportUiState(
+    val filePath: String,
+    val format: QiguangBackupParser.Format? = null,
+    val passwordRequired: Boolean = false,
+    val badgeCount: Int = 0,
+    val skippedCount: Int = 0,
+    val encryptedShare: Boolean = false,
+    val isProcessing: Boolean = false,
 )
 
 // 定义一次性 UI 事件
@@ -131,6 +145,8 @@ class HomeViewModel(
     private var nfcWriteGeneration = 0L
     private var nfcWriteJob: Job? = null
     private var receiveShareJob: Job? = null
+    private var qiguangImportJob: Job? = null
+    private var pendingQiguangParsedImport: QiguangBackupParser.ParsedImport? = null
     private val packageChangeReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             refreshInstalledChannels()
@@ -183,6 +199,14 @@ class HomeViewModel(
         // 进程被回收时若文件尚未复制完，恢复待处理请求；普通重建继续使用原 ViewModel。
         savedStateHandle.get<String>(INCOMING_IMPORT_URI)?.let {
             receiveShareImport(android.net.Uri.parse(it))
+        }
+        savedStateHandle.get<String>(PENDING_QIGUANG_IMPORT_PATH)?.let { path ->
+            qiguangImportJob = viewModelScope.launch(Dispatchers.IO) {
+                _uiState.update {
+                    it.copy(pendingQiguangImport = QiguangImportUiState(path, isProcessing = true))
+                }
+                parseStagedQiguangImport(path, password = null, restored = true)
+            }
         }
     }
 
@@ -453,6 +477,234 @@ class HomeViewModel(
                     onResult(-1)
                 }
             }
+        }
+    }
+
+    /** Handles files selected from the badge-entry page, identifying formats by content. */
+    fun receiveBadgeFileImport(uri: android.net.Uri) {
+        val previousStagedPath = savedStateHandle.get<String>(PENDING_QIGUANG_IMPORT_PATH)
+        qiguangImportJob?.cancel()
+        pendingQiguangParsedImport = null
+        savedStateHandle.remove<String>(PENDING_QIGUANG_IMPORT_PATH)
+        savedStateHandle.remove<String>(PENDING_IMPORT_URI)
+        _uiState.update {
+            it.copy(pendingImportUri = null, pendingQiguangImport = null)
+        }
+        previousStagedPath?.let { path ->
+            viewModelScope.launch(Dispatchers.IO) { deleteStagedQiguangFile(path) }
+        }
+        qiguangImportJob = viewModelScope.launch(Dispatchers.IO) {
+            var stagedFile: File? = null
+            try {
+                val context = getApplication<Application>()
+                val bytes = context.contentResolver.openInputStream(uri)?.use {
+                    it.readBoundedBytes(QiguangBackupParser.MAX_FILE_BYTES)
+                } ?: throw IOException("Cannot read selected file")
+
+                if (BadgeShareCrypto.looksLikeEncryptedShare(bytes)) {
+                    val stableUri = BadgeShareExporter.cacheIncomingShare(context, bytes)
+                    savedStateHandle[PENDING_IMPORT_URI] = stableUri.toString()
+                    withContext(Dispatchers.Main) {
+                        _uiState.update {
+                            it.copy(
+                                pendingImportUri = stableUri,
+                                pendingQiguangImport = null,
+                                isFunctionAreaExpanded = true,
+                                functionTabIndex = 0,
+                            )
+                        }
+                    }
+                    return@launch
+                }
+
+                val importDir = File(context.cacheDir, QIGUANG_IMPORT_DIR).apply { mkdirs() }
+                stagedFile = File(importDir, "import_${UUID.randomUUID()}.bin")
+                stagedFile.writeBytes(bytes)
+                val path = stagedFile.canonicalPath
+                savedStateHandle[PENDING_QIGUANG_IMPORT_PATH] = path
+                savedStateHandle.remove<String>(PENDING_IMPORT_URI)
+                withContext(Dispatchers.Main) {
+                    _uiState.update {
+                        it.copy(
+                            pendingImportUri = null,
+                            pendingQiguangImport = QiguangImportUiState(path, isProcessing = true),
+                            isFunctionAreaExpanded = true,
+                            functionTabIndex = 0,
+                        )
+                    }
+                }
+                parseStagedQiguangImport(path, password = null, restored = false)
+            } catch (e: CancellationException) {
+                stagedFile?.delete()
+                throw e
+            } catch (e: Exception) {
+                stagedFile?.delete()
+                Log.w("HomeViewModel", "Selected badge file could not be opened", e)
+                savedStateHandle.remove<String>(PENDING_QIGUANG_IMPORT_PATH)
+                withContext(Dispatchers.Main) {
+                    _uiState.update { it.copy(pendingQiguangImport = null) }
+                    _uiEvent.emit(
+                        BadgeUiEvent.ShowToast(
+                            getApplication<Application>().getString(R.string.qiguang_import_invalid_file)
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    fun unlockQiguangImport(password: String) {
+        val prompt = _uiState.value.pendingQiguangImport ?: return
+        if (!prompt.passwordRequired || prompt.isProcessing) return
+        _uiState.update { it.copy(pendingQiguangImport = prompt.copy(isProcessing = true)) }
+        qiguangImportJob = viewModelScope.launch(Dispatchers.IO) {
+            parseStagedQiguangImport(prompt.filePath, password, restored = false)
+        }
+    }
+
+    fun confirmQiguangImport() {
+        val prompt = _uiState.value.pendingQiguangImport ?: return
+        val parsed = pendingQiguangParsedImport ?: return
+        if (prompt.isProcessing || prompt.passwordRequired) return
+        _uiState.update { it.copy(pendingQiguangImport = prompt.copy(isProcessing = true)) }
+        qiguangImportJob = viewModelScope.launch(Dispatchers.IO) {
+            try {
+                BadgeRepository.importBadgeCopies(parsed.badges)
+                pendingQiguangParsedImport = null
+                savedStateHandle.remove<String>(PENDING_QIGUANG_IMPORT_PATH)
+                deleteStagedQiguangFile(prompt.filePath)
+                _uiState.update { it.copy(pendingQiguangImport = null) }
+                val context = getApplication<Application>()
+                val message = if (parsed.skippedCount == 0) {
+                    context.getString(R.string.qiguang_import_success, parsed.badges.size)
+                } else {
+                    context.getString(
+                        R.string.qiguang_import_success_skipped,
+                        parsed.badges.size,
+                        parsed.skippedCount,
+                    )
+                }
+                _uiEvent.emit(BadgeUiEvent.ShowToast(message))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e("HomeViewModel", "Qiguang import failed", e)
+                _uiState.update {
+                    it.copy(pendingQiguangImport = prompt.copy(isProcessing = false))
+                }
+                _uiEvent.emit(
+                    BadgeUiEvent.ShowToast(
+                        getApplication<Application>().getString(R.string.qiguang_import_failed)
+                    )
+                )
+            }
+        }
+    }
+
+    fun dismissQiguangImport() {
+        val prompt = _uiState.value.pendingQiguangImport ?: return
+        if (prompt.isProcessing) return
+        qiguangImportJob?.cancel()
+        qiguangImportJob = null
+        pendingQiguangParsedImport = null
+        savedStateHandle.remove<String>(PENDING_QIGUANG_IMPORT_PATH)
+        _uiState.update { it.copy(pendingQiguangImport = null) }
+        viewModelScope.launch(Dispatchers.IO) { deleteStagedQiguangFile(prompt.filePath) }
+    }
+
+    private suspend fun parseStagedQiguangImport(
+        path: String,
+        password: String?,
+        restored: Boolean,
+    ) {
+        try {
+            val file = resolveStagedQiguangFile(path)
+            val bytes = file.inputStream().use {
+                it.readBoundedBytes(QiguangBackupParser.MAX_FILE_BYTES)
+            }
+            val parsed = withContext(Dispatchers.Default) {
+                QiguangBackupParser.parse(bytes, password)
+            }
+            pendingQiguangParsedImport = parsed
+            _uiState.update {
+                it.copy(
+                    pendingQiguangImport = QiguangImportUiState(
+                        filePath = path,
+                        format = parsed.format,
+                        badgeCount = parsed.badges.size,
+                        skippedCount = parsed.skippedCount,
+                        encryptedShare = parsed.encryptedShare,
+                    )
+                )
+            }
+        } catch (e: QiguangBackupParser.PasswordRequired) {
+            pendingQiguangParsedImport = null
+            _uiState.update {
+                it.copy(
+                    pendingQiguangImport = QiguangImportUiState(
+                        filePath = path,
+                        format = e.format,
+                        passwordRequired = true,
+                    )
+                )
+            }
+        } catch (e: QiguangBackupParser.WrongPassword) {
+            pendingQiguangParsedImport = null
+            _uiState.update { state ->
+                val current = state.pendingQiguangImport
+                state.copy(
+                    pendingQiguangImport = current?.copy(
+                        passwordRequired = true,
+                        isProcessing = false,
+                    ) ?: QiguangImportUiState(path, passwordRequired = true),
+                )
+            }
+            _uiEvent.emit(
+                BadgeUiEvent.ShowToast(
+                    getApplication<Application>().getString(R.string.qiguang_import_wrong_password)
+                )
+            )
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w("HomeViewModel", "Qiguang backup is invalid", e)
+            pendingQiguangParsedImport = null
+            if (password != null && !restored) {
+                _uiState.update { state ->
+                    state.copy(
+                        pendingQiguangImport = state.pendingQiguangImport?.copy(isProcessing = false)
+                    )
+                }
+                _uiEvent.emit(
+                    BadgeUiEvent.ShowToast(
+                        getApplication<Application>().getString(R.string.qiguang_import_invalid_file)
+                    )
+                )
+            } else {
+                savedStateHandle.remove<String>(PENDING_QIGUANG_IMPORT_PATH)
+                deleteStagedQiguangFile(path)
+                _uiState.update { it.copy(pendingQiguangImport = null) }
+                _uiEvent.emit(
+                    BadgeUiEvent.ShowToast(
+                        getApplication<Application>().getString(R.string.qiguang_import_invalid_file)
+                    )
+                )
+            }
+        }
+    }
+
+    private fun resolveStagedQiguangFile(path: String): File {
+        val context = getApplication<Application>()
+        val importDir = File(context.cacheDir, QIGUANG_IMPORT_DIR).canonicalFile
+        val file = File(path).canonicalFile
+        require(file.parentFile == importDir && file.isFile) { "The staged import file is missing" }
+        return file
+    }
+
+    private fun deleteStagedQiguangFile(path: String) {
+        runCatching {
+            val file = resolveStagedQiguangFile(path)
+            file.delete()
         }
     }
 
@@ -895,5 +1147,7 @@ class HomeViewModel(
         private const val KEY_ADD_CHANNEL_PACKAGE = "add_channel_package"
         private const val PENDING_IMPORT_URI = "pending_import_uri"
         private const val INCOMING_IMPORT_URI = "incoming_import_uri"
+        private const val PENDING_QIGUANG_IMPORT_PATH = "pending_qiguang_import_path"
+        private const val QIGUANG_IMPORT_DIR = "qiguang_imports"
     }
 }

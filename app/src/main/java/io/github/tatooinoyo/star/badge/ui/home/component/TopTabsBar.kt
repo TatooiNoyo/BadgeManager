@@ -106,7 +106,7 @@ fun BadgeInputPanel(
     onSharedFileSelected: (Uri) -> Unit,
 ) {
     var showContinuousHelp by remember { mutableStateOf(false) }
-    val encryptedFilePicker = rememberLauncherForActivityResult(
+    val badgeFilePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
     ) { uri ->
         uri?.let(onSharedFileSelected)
@@ -188,10 +188,17 @@ fun BadgeInputPanel(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        EncryptedShareImportButton(
+        BadgeFileImportButton(
             onClick = {
-                encryptedFilePicker.launch(
-                    arrayOf("application/x-badgeenc", "application/octet-stream"),
+                badgeFilePicker.launch(
+                    arrayOf(
+                        "application/x-badgeenc",
+                        "application/vnd.skybadge",
+                        "application/json",
+                        "text/plain",
+                        "application/zip",
+                        "application/octet-stream",
+                    ),
                 )
             },
         )
@@ -212,7 +219,7 @@ fun BadgeInputPanel(
 }
 
 @Composable
-private fun EncryptedShareImportButton(onClick: () -> Unit) {
+private fun BadgeFileImportButton(onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -249,7 +256,7 @@ private fun EncryptedShareImportButton(onClick: () -> Unit) {
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = stringResource(R.string.import_encrypted_share),
+                    text = stringResource(R.string.import_badge_file),
                     style = MaterialTheme.typography.titleSmall,
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
@@ -263,7 +270,7 @@ private fun EncryptedShareImportButton(onClick: () -> Unit) {
                         .padding(horizontal = 8.dp, vertical = 2.dp),
                 ) {
                     Text(
-                        text = ".badgeenc",
+                    text = stringResource(R.string.import_badge_file_extensions),
                         style = MaterialTheme.typography.labelSmall,
                         color = BrandOrange,
                         fontWeight = FontWeight.SemiBold,
@@ -276,14 +283,14 @@ private fun EncryptedShareImportButton(onClick: () -> Unit) {
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = stringResource(R.string.import_encrypted_share_note_title),
+                text = stringResource(R.string.import_badge_file_note_title),
                 style = MaterialTheme.typography.titleSmall,
                 color = TextPrimary,
                 fontWeight = FontWeight.Bold,
             )
             Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = stringResource(R.string.import_encrypted_share_note),
+                text = stringResource(R.string.import_badge_file_note),
                 style = MaterialTheme.typography.bodySmall,
                 color = TextSecondary,
             )

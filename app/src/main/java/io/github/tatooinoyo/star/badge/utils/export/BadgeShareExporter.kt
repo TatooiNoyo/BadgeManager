@@ -49,12 +49,17 @@ object BadgeShareExporter {
 
     @Synchronized
     fun copyIncomingShareToCache(context: Context, sourceUri: Uri): Uri {
-        val dir = File(context.cacheDir, "$EXPORT_DIR/incoming").apply { mkdirs() }
         val bytes = context.contentResolver.openInputStream(sourceUri)?.use { it.readBoundedBytes(BadgeShareCrypto.MAX_FILE_BYTES) }
             ?: throw IllegalArgumentException("Cannot read shared content")
+        return cacheIncomingShare(context, bytes)
+    }
+
+    @Synchronized
+    fun cacheIncomingShare(context: Context, bytes: ByteArray): Uri {
         if (!BadgeShareCrypto.looksLikeEncryptedShare(bytes)) {
             throw BadgeShareError.InvalidFile
         }
+        val dir = File(context.cacheDir, "$EXPORT_DIR/incoming").apply { mkdirs() }
         cleanupOldFiles(dir)
         val file = File(dir, "import_${System.currentTimeMillis()}_${System.nanoTime()}$FILE_EXT")
         file.writeBytes(bytes)

@@ -113,6 +113,7 @@ import io.github.tatooinoyo.star.badge.ui.component.SecondaryScreenHeader
 import io.github.tatooinoyo.star.badge.ui.home.badge_sync.BadgeSyncViewModel
 import io.github.tatooinoyo.star.badge.ui.home.component.BadgeFunctionArea
 import io.github.tatooinoyo.star.badge.ui.home.component.BadgeReorderList
+import io.github.tatooinoyo.star.badge.ui.home.component.QiguangImportDialog
 import io.github.tatooinoyo.star.badge.ui.home.component.ShareImportDialog
 import io.github.tatooinoyo.star.badge.ui.home.component.TagFilterBar
 import io.github.tatooinoyo.star.badge.ui.home.component.TagManageDialog
@@ -298,7 +299,7 @@ fun HomeScreen(
                 onSetFunctionAreaExpanded = { viewModelInstance.setFunctionAreaExpanded(it) },
                 onExtractSkClick = { link -> viewModelInstance.extractSkFromLink(link) },
                 onTagsChange = { viewModelInstance.updateAddInput(tags = it) },
-                onSharedFileSelected = viewModelInstance::receiveShareImport,
+                onSharedFileSelected = viewModelInstance::receiveBadgeFileImport,
                 onTagSelected = { tag -> viewModelInstance.selectTag(tag) },
                 onMove = { badgeId, insertBeforeId ->
                     viewModelInstance.moveBadge(badgeId, insertBeforeId)
@@ -458,6 +459,15 @@ fun HomeScreen(
             onImportSharedBadges = { ctx, importUri, code, onResult ->
                 viewModelInstance.importSharedBadges(ctx, importUri, code, onResult)
             },
+        )
+    }
+
+    uiState.pendingQiguangImport?.let { importState ->
+        QiguangImportDialog(
+            state = importState,
+            onDismiss = viewModelInstance::dismissQiguangImport,
+            onUnlock = viewModelInstance::unlockQiguangImport,
+            onImport = viewModelInstance::confirmQiguangImport,
         )
     }
 }
