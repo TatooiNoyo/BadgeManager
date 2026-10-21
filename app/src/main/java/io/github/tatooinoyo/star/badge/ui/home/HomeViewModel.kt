@@ -198,6 +198,10 @@ class HomeViewModel(
                 val savedPackageName = preferences.getString(KEY_ADD_CHANNEL_PACKAGE, null)
                 val restoredChannel = savedPackageName?.let { packageName ->
                     channels.firstOrNull { it.packageName == packageName }
+                        ?: InstalledChannelProvider.discoverOtherApps(
+                            getApplication(),
+                            channels.mapTo(HashSet()) { it.packageName },
+                        ).firstOrNull { it.packageName == packageName }
                 }
                 state.copy(
                     availableChannels = channels,
